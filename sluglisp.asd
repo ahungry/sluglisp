@@ -21,12 +21,20 @@
 
                ;; for DB
                :datafly
-               :sxql)
+               :sxql
+
+               ;; misc
+               :3bmd
+               :3bmd-ext-code-blocks
+               :split-sequence
+               :drakma
+               :glyphs)
   :components ((:module "src"
                 :components
-                ((:file "main" :depends-on ("config" "view" "db"))
-                 (:file "web" :depends-on ("view"))
+                ((:file "main" :depends-on ("config" "view" "db" "model"))
+                 (:file "web" :depends-on ("view" "model"))
                  (:file "view" :depends-on ("config"))
+                 (:file "model" :depends-on ("config"))
                  (:file "db" :depends-on ("config"))
                  (:file "config"))))
   :description "Web based index of Quicklisp projects"

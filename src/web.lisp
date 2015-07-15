@@ -4,6 +4,7 @@
         :caveman2
         :sluglisp.config
         :sluglisp.view
+        :sluglisp.model
         :sluglisp.db
         :datafly
         :sxql)
@@ -24,7 +25,20 @@
 ;; Routing rules
 
 (defroute "/" ()
-  (render #P"index.html"))
+  (render #P"index.html"
+          (list
+           :packages (package-names)
+           )))
+
+(defroute "/package/*" (&key splat)
+  (render #P"package.html"
+          (list
+           :package (list :name (car splat)
+                          :type (cadr (package-source (car splat)))
+                          :remote (cadr (package-source (car splat)))
+                          :readme (package-readme (car splat))
+                          ))))
+
 
 ;;
 ;; Error pages

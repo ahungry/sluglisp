@@ -17,5 +17,22 @@ a:hover {
 }
 
 #main {
-  text-align: center;
+  text-align: left;
+}
+
+#plist {
+    left:0px;
+    top:0px;
+    position:fixed;
+    height:100%;
+    overflow-y:scroll;
+    width:30%;
+}
+
+#package-details {
+    float:left;
+    height:600px;
+    padding:5%;
+    padding-left:35%;
+    width:60%;
 }

@@ -1,0 +1,8 @@
+<div>
+  <h1>{{ package.name }}</h1>
+  <p><a href="{{ package.remote }}">{{ package.remote }}</a></p>
+
+  {% autoescape off %}
+  {{ package.readme }}
+  {% endautoescape %}
+</div>
