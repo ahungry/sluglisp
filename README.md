@@ -23,6 +23,9 @@ And then visit:
 
 http://localhost:5000
 
+For now (or then) scroll up and down the left pane and click on a
+project to learn more about it.
+
 ## Installation
 
 For now if you want to toy with the files, clone the repo:
