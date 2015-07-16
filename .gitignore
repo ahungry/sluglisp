@@ -6,3 +6,6 @@
 *.x86f
 *~
 .#*
+cache/
+cache/
+static/third_party/

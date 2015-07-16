@@ -2,11 +2,24 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>{% block title %}{% endblock %}</title>
+
+  <!-- Bootstrap -->
+  <link href="/third_party/bootstrap-3.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/third_party/bootstrap-3.3.1/dist/css/bootstrap-theme.min.css" rel="stylesheet">
+
   <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css">
 
   <script src="/third_party/jquery-1.11.3.min.js"></script>
+  <script src="/third_party/stupidtable/jq-st/stupidtable.min.js"></script>
   <script src="/js/main.js"></script>
+
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  <script src="/third_party/bootstrap-3.3.1/dist/js/bootstrap.min.js"></script>
+
 </head>
 <body>
   {% block content %}{% endblock %}

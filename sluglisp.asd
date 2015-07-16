@@ -24,6 +24,7 @@
                :sxql
 
                ;; misc
+               :cl-json
                :3bmd
                :3bmd-ext-code-blocks
                :split-sequence

@@ -1,15 +1,52 @@
 {% extends "layouts/default.html" %}
 {% block title %}Sluglisp - like Quicklisp, but slower{% endblock %}
 {% block content %}
-<div id="main">
-  <div id="plist">
-  <ul>
-  {% for package in packages %}
-    <li><a href="/package/{{ package.name }}" class="package-name">{{ package.name }}</a></li>
-  {% endfor %}
-  </ul>
+  <div id="main">
+    <div id="plist">
+      <div id="filter-area">
+        <a href="http://ahungry.com"><img src="/images/logo-small.png"></a>
+        <img src="/images/made-with-lisp-small.png">
+        <br>
+        Filter: <input type="text" name="filter" id="filter">
+        <button id="go">go</button>
+        <button id="reset">reset</button>
+      </div>
+      <hr>
+      <div class="legend">
+        <span class="readme">&#9733;</span> = cached a readme file
+      </div>
+      <table id="plist-table">
+        <thead>
+          <tr>
+            <th data-sort="string" class="but">Name&nbsp;&darr;</th>
+            <th data-sort="int" class="but">Stars&nbsp;&darr;</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for package in packages %}
+            <tr>
+              <td>
+                {% ifequal package.type "git" %}
+                  <a href="/package/{{ package.name }}" class="package-name">{{ package.name }}</a>
+                {% else %}
+                  <a href="/package/{{ package.name }}" class="package-name noinfo">{{ package.name }}</a>
+                {% endifequal %}
+
+                {% ifequal package.readme "1" %}
+                  <span class="readme">&#9733;</span>
+                {% endifequal %}
+
+                <span class="type">{{ package.type }}</span>
+              </td>
+              <td>
+                <span class="starlist">{{ package.stars }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="package-details">
+    </div>
   </div>
-  <div id="package-details">
-  </div>
-</div>
 {% endblock %}

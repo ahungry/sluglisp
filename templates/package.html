@@ -1,8 +1,23 @@
 <div>
   <h1>{{ package.name }}</h1>
-  <p><a href="{{ package.remote }}">{{ package.remote }}</a></p>
+  <p>
+    <a href="{{ package.href }}">{{ package.href }}</a>
+  </p>
 
+  {% ifequal package.type "git" %}
+    <code class="clone">
+    git clone '{{ package.remote }}'
+      <br>
+      <br>
+(ql:quickload :{{ package.name }})
+    </code>
+  {% endifequal %}
+
+  <div class="star-area">
+    <span class="starlabel">&#9733;</span><span class="stars">{{ package.stars }}</span>
+  </div>
+  <hr>
   {% autoescape off %}
-  {{ package.readme }}
+    {{ package.readme }}
   {% endautoescape %}
 </div>

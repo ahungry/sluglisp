@@ -34,8 +34,10 @@
   (render #P"package.html"
           (list
            :package (list :name (car splat)
-                          :type (cadr (package-source (car splat)))
+                          :type (car (package-source (car splat)))
+                          :href (build-github-href (cadr (package-source (car splat))))
                           :remote (cadr (package-source (car splat)))
+                          :stars (package-stars (car splat))
                           :readme (package-readme (car splat))
                           ))))
 
