@@ -2,20 +2,31 @@
 {% block title %}Sluglisp - like Quicklisp, but slower{% endblock %}
 {% block content %}
   <div id="main">
-    <div id="plist">
-      <div id="filter-area">
-        <a href="http://ahungry.com"><img src="/images/logo-small.png"></a>
-        <img src="/images/made-with-lisp-small.png">
+    <div id="filter-area">
+      <span class="tip">
+        You can search project contents by regex, and filter by
+        package name.
+      </span>
+      <a href="http://ahungry.com"><img src="/images/logo-small.png"></a>
+      <img src="/images/made-with-lisp-small.png">
+      <br style="clear:both;">
+
+      <input type="text" name="search" id="search" value={{ search }}>
+      <button id="sgo">search</button>
+      <button id="sreset">reset all</button>
+      <br>
+
+      <input type="text" name="filter" id="filter">
+      <button id="go">filter</button>
+      <button id="reset">reset filter</button>
+
+      <div class="legend">
+        &#9733; = cached a readme file
         <br>
-        Filter: <input type="text" name="filter" id="filter">
-        <button id="go">go</button>
-        <button id="reset">reset</button>
-        <hr>
-        <div class="legend">
-          <span class="readme">&#9733;</span> = cached a readme file
-        </div>
+        Showing {{ projectc }} matching projects
       </div>
-      <hr>
+    </div>
+    <div id="plist">
       <table id="plist-table">
         <thead>
           <tr>

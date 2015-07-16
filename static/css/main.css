@@ -16,7 +16,20 @@ a:hover {
   text-decoration: underline;
 }
 
+.tip {
+    display:block;
+    float:left;
+    font-style:italic;
+    padding:4px;
+    text-align:justify;
+    width:150px;
+}
+
 .legend {
+    background:#333;
+    border-radius:9px;
+    color:lime;
+    padding:6px;
     text-align:center;
 }
 
@@ -25,13 +38,18 @@ a:hover {
 }
 
 #filter-area {
+    font-size:.9em;
+    width:30%;
     background:#fff;
-    padding-left:20px;
-    padding-top:20px;
+    padding:0px;
     position:fixed;
     top:0px;
     left:0px;
     z-index:9;
+    text-align:left;
+    margin-right:10px;
+    height:180px;
+    padding:10px;
 }
 
 #plist {
@@ -42,6 +60,7 @@ a:hover {
     height:100%;
     overflow-y:scroll;
     width:30%;
+    margin-top:180px;
 }
 
 #plist input {
@@ -53,7 +72,6 @@ a:hover {
 }
 
 #plist-table {
-    margin-top:160px;
     width:100%;
 }
 
@@ -124,9 +142,10 @@ a:hover {
     #plist {
         border-bottom:2px solid #bbb;
         box-shadow:3px 3px 6px #000 inset;
-        height:35%;
+        height:200px;
         position:absolute;
         width:100%;
+        margin-top:150px;
     }
     #plist table {
         width:100%;
@@ -137,10 +156,21 @@ a:hover {
         padding:10px;
         padding-left:30px;
         padding-right:30px;
-        width:70%;
+        width:90%;
     }
     #package-details {
         padding:10px;
-        padding-top:50%;
+        padding-top:400px;
+    }
+    #filter-area {
+        height:150px;
+        width:100%;
+    }
+    #filter-area input {
+        width:50%;
+    }
+    hr {
+        margin:0px;
+        padding:0px;
     }
 }

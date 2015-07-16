@@ -25,10 +25,21 @@
 ;; Routing rules
 
 (defroute "/" ()
-  (render #P"index.html"
-          (list
-           :packages (package-names)
-           )))
+  (let ((packages (package-names)))
+    (render #P"index.html"
+            (list
+             :packages packages
+             :projectc (length packages)
+             ))))
+
+(defroute "/search/*" (&key splat)
+  (let ((packages (package-search (car splat))))
+    (render #P"index.html"
+            (list
+             :packages packages
+             :search (car splat)
+             :projectc (length packages)
+             ))))
 
 (defroute "/package/*" (&key splat)
   (render #P"package.html"

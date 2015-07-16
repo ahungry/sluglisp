@@ -1,6 +1,6 @@
 (in-package :cl-user)
 (defpackage sluglisp.model
-  (:use :cl :split-sequence :glyphs :drakma :cl-json)
+  (:use :cl :split-sequence :glyphs :drakma :cl-json :cl-ppcre)
   (:import-from :sluglisp.config
                 :config)
   (:export
@@ -9,6 +9,7 @@
    :package-source
    :package-readme
    :package-stars
+   :package-search
    :package-names))
 (in-package :sluglisp.model)
 
@@ -153,3 +154,14 @@ cl-json."
                 (cache-save name "readme" (package-readme-remote name)))))
   (when (stringp (gethash name *project-readme*))
     (md-to-html (gethash name *project-readme*))))
+
+(defun search-match-p (name term)
+  "Scan a file for a match"
+  (let ((markdown (cache-load name "readme")))
+    (scan (format nil "(?m)(?i)~a" term) markdown)))
+
+(defun package-search (term)
+  "Scan the packages for a term"
+  (remove-if-not
+   (lambda (n) (search-match-p (getf n :name) term))
+   (package-names)))

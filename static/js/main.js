@@ -46,7 +46,7 @@ $(document).ready(function() {
     }
     else
     {
-        window.location.href='#/saved/package/sluglisp';
+        //window.location.href='#/saved/package/sluglisp';
         package_details('/package/sluglisp');
     }
 
@@ -63,8 +63,20 @@ $(document).ready(function() {
         filter($(this).val());
     });
 
+    $('#search').change(function() {
+        window.location = '/search/' + $('#search').val();
+    });
+
+    $('#sgo').click(function() {
+        window.location = '/search/' + $('#search').val();
+    });
+
     $('#go').click(function() {
         filter($('#filter').val());
+    });
+
+    $('#sreset').click(function() {
+        window.location.href = '/';
     });
 
     $('#reset').click(function() {
