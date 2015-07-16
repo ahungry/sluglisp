@@ -1,0 +1,198 @@
+<h1>glkit</h1>
+
+<p>This is a utility kit for functionality related to OpenGL.  Right now,
+it provides the following:</p>
+
+<ul>
+<li><p><code>kit.glm</code>: This re-exports <a href="https://github.com/nikodemus/sb-cga" >sb-cga</a>
+  and <a href="https://github.com/lispgames/mathkit" >mathkit</a> for convenience.</p></li>
+<li><p><code>kit.gl.shader</code>: This provides shader dictionary and compilation
+  functionality similar to what was originally found in
+  <a href="https://github.com/lispgames/sdl2kit" >sdl2kit</a>.</p></li>
+<li><p><code>kit.gl.vao</code>: This provides an interface for Vertex Array Objects.</p></li>
+</ul>
+
+<h2>Shaders</h2>
+
+<p><code>kit.gl.shader</code> provides a thin, extensible, program-oriented model
+for GL shaders.  This closely mimics how GL works:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defdict</span></i> shaders-3.3 <span class="paren2">(<span class="code"><span class="keyword">:shader-path</span> #P<span class="string">"..."</span></span>)</span>
+   <span class="paren2">(<span class="code">shader basic-vertex <span class="keyword">:vertex-shader</span> <span class="paren3">(<span class="code"><span class="keyword">:file</span> <span class="string">"vertex.glsl"</span></span>)</span></span>)</span>
+   <span class="paren2">(<span class="code">program <span class="keyword">:solid</span> <span class="paren3">(<span class="code"><span class="keyword">:color</span></span>)</span>
+     <span class="paren3">(<span class="code"><span class="keyword">:vertex-shader</span> basic-vertex</span>)</span>
+     <span class="paren3">(<span class="code"><span class="keyword">:fragment-shader</span> <span class="string">"..."</span></span>)</span></span>)</span>
+   <span class="paren2">(<span class="code">program <span class="paren3">(<span class="code"><span class="keyword">:sprite</span>
+              <span class="keyword">:uniforms</span> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code"><span class="keyword">:texture</span> <span class="string">"texture_id"</span></span>)</span></span>)</span>
+              <span class="keyword">:attrs</span> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code"><span class="keyword">:vertex</span> 0</span>)</span>
+                      <span class="paren5">(<span class="code"><span class="keyword">:uv</span> 1</span>)</span>
+                      ...</span>)</span></span>)</span>
+     <span class="paren3">(<span class="code"><span class="keyword">:vertex-shader</span> basic-vertex</span>)</span>
+     <span class="paren3">(<span class="code"><span class="keyword">:fragment-shader</span> <span class="paren4">(<span class="code"><span class="keyword">:file</span> <span class="string">"..."</span></span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>This defines a series of shader programs grouped into a &ldquo;dictionary&rdquo;.
+Once in a GL context, one or more dictionaries may be compiled,
+programs activated, and uniforms set, all symbolically.</p>
+
+<p>You may specify any legal combination of shaders in the shaders
+section.  Reusing text between shaders is easy by defining named
+shaders with the <code>SHADER</code> directive.  Text may also be loaded from a
+file using <code>(:file PATHNAME)</code> as above.  Additional handling may be
+defined; see below.</p>
+
+<p>To actually compile and use a dictionary, call the following; it will
+attempt to compile and link all the specified programs, reporting any
+errors along the way to <code>*error-output*</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">compile-shader-dictionary <span class="paren2">(<span class="code">dict shaders-3.3</span>)</span></span>)</span>
+  <span class="comment">;; =&gt; DICTIONARY</span></span></code></pre>
+
+<p>This <strong>requires</strong> a valid GL context, will only work when it is
+otherwise legal to make GL calls.  As well, the returned
+<code>SHADER-DICTIONARY</code> object is only valid in the GL context in which it
+was compiled.  It will <strong>not</strong> work in others.  If desired, more than
+one dictionary may be compiled in a context; nothing besides
+convenience groups programs in a dictionary.</p>
+
+<p>Once you have this object, you may do interesting things with it:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">kit.gl.shader:use-program DICTIONARY <span class="keyword">:name</span></span>)</span>
+
+<span class="comment">;; Note these apply only to the *current program*,
+</span><span class="comment">;; different programs have different sets of uniforms
+</span><span class="paren1">(<span class="code">kit.gl.shader:uniformi DICTIONARY <span class="keyword">:v1</span> 0</span>)</span>
+<span class="paren1">(<span class="code">kit.gl.shader:uniformf DICTIONARY <span class="keyword">:v2</span> x y</span>)</span>
+
+<span class="comment">;; etc</span></span></code></pre>
+
+<p>Note these are different functions than the <code>cl-opengl</code> variety; they
+take the <em>dictionary</em> object, as well as symbolic names, rather than
+IDs.</p>
+
+<h3>Customizing</h3>
+
+<p>It&apos;s also possible to define other ways to produce shader strings, by
+specializing either of the following generic functions:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">parse-shader-source SOURCE SHADER-TYPE SHADER-LIST</span>)</span>
+<span class="paren1">(<span class="code">parse-shader-source-complex KEY PARAMS SHADER-TYPE SHADER-LIST</span>)</span></span></code></pre>
+
+<p>The first specializes on a few <code>SOURCE</code> types by default; do not alter
+these:</p>
+
+<ul>
+<li><code>string</code>: A simple string which is used directly as source</li>
+<li><code>list</code>: A list which is processed further by
+  <code>PARSE-SHADER-SOURCE-COMPLEX</code></li>
+<li><code>symbol</code>: A symbol which is looked up in the current list of &ldquo;named&rdquo;
+  shaders</li>
+</ul>
+
+<p>The <code>SHADER-TYPE</code> parameter is any valid shader type,
+e.g. <code>:vertex-shader</code>; <code>SHADER-LIST</code> is the current list of &ldquo;named&rdquo;
+shaders, in the form <code>(NAME . (TYPE VALUE))</code>.  Notably, <code>VALUE</code> is not
+processed, and should be passed recursively to <code>PARSE-SHADER-SOURCE</code>
+if used.</p>
+
+<p>To process forms like <code>(:file PATHNAME)</code>,
+<code>PARSE-SHADER-SOURCE-COMPLEX</code> takes the CAR and CDR or that list, as
+well other parameters similar to <code>PARSE-SHADER-SOURCE</code>.</p>
+
+<p>These are mostly useful for projects which desire to add extended
+shader capability, such as a shader DSL, or loading in some other
+manner.</p>
+
+<h2>VAOs</h2>
+
+<p><code>kit.gl.vao</code> provides an easy way to define VAO layouts, as well as
+instantiate, bind, and draw them.  It aims to provide complete VAO
+functionality.</p>
+
+<p>To use, first one defines a VAO:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvao</span></i> NAME <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code">LAYOUT-TYPE <span class="paren3">(<span class="code">OPTS</span>)</span>
+    <span class="paren3">(<span class="code">ATTR <span class="keyword">:type</span> COUNT</span>)</span>
+    ...</span>)</span>
+  <span class="paren2">(<span class="code">LAYOUT-TYPE
+    ...</span>)</span></span>)</span></span></code></pre>
+
+<p>For example:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvao</span></i> vertex-color <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:separate</span> <span class="paren3">(<span class="code"></span>)</span>
+    <span class="paren3">(<span class="code">vertex <span class="keyword">:float</span> 3</span>)</span>
+    <span class="paren3">(<span class="code">color <span class="keyword">:float</span> 3</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>This defines a VAO with <code>VERTEX</code> and <code>COLOR</code> attributes, which are
+each 3 <code>:float</code> values.  This uses a separate VBO for each.  (The
+<code>LAYOUT-TYPE</code> will be covered below.)</p>
+
+<p>Using a VAO is just as easy:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">vao <span class="paren4">(<span class="code">make-instance 'vao <span class="keyword">:type</span> 'vertex-color</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">vao-buffer-data vao 0 <span class="paren3">(<span class="code">* 4 VERTEX-FLOAT-COUNT</span>)</span> POINTER-TO-VERTEX-FLOATS</span>)</span>
+  <span class="paren2">(<span class="code">vao-buffer-data vao 1 <span class="paren3">(<span class="code">* 4 COLOR-FLOAT-COUNT</span>)</span> POINTER-TO-COLOR-FLOATS</span>)</span>
+
+  <span class="comment">;; Establish more stuff here.. active shaders, uniforms, etc, then:
+</span>  <span class="paren2">(<span class="code">vao-draw vao <span class="keyword">:count</span> VERTEX-COUNT</span>)</span></span>)</span></span></code></pre>
+
+<p><strong>This requires a valid, active GL context,</strong> just like other GL
+functions.  <code>DEFVAO</code> does not, but everything else, <em>including the
+<code>make-instance</code></em>, does.</p>
+
+<p>Alternatively, you can use <code>VAO-BUFFER-VECTOR</code> (and <code>VAO-BUFFER-SUB-VECTOR</code>), and supply a vector of <code>:element-type 'single-float</code> or <code>:element-type 'double-float</code> instead of a pointer.  This is only available if your implementation supports <em>static-vectors</em> (most do).  This is for convenience; managing the data yourself can reduce copying and consing considerably.</p>
+
+<p>Note the numbers above require you fill in a few specific things:</p>
+
+<ul>
+<li><code>vao-buffer-*</code> (and the <code>-sub</code> variants) take the <em>total byte count</em>.  So for a <code>:float</code> attribute with 3 members, that&apos;s <code>(* 4 3 COUNT)</code>.</li>
+<li><code>vao-buffer-*</code> also takes the <em>VBO index</em> rather than an attribute name, because an attribute might not have a unique VBO.  See <a href="#Layouts" >Layouts</a> below.</li>
+<li><code>vao-draw</code> takes the <em>vertex</em> count; e.g., triangles have 3 vertices, and if you have 10 triangles, that&apos;s 30 vertices.</li>
+</ul>
+
+<p>The pointer data you must supply pre-formatted.  However, for separate
+VBOs, this is reasonably easy to accomplish with something like
+<a href="https://github.com/sionescu/static-vectors" >static-vectors</a>, or you can use the less-efficient <code>-vector</code> variants which do this for you.</p>
+
+<h3>Dictionary</h3>
+
+<ul>
+<li><code>defvao NAME OPTIONS &amp;body GROUPS</code><br> Define a VAO called <code>NAME</code>. Currently, there are no options.  See below for group definition.</li>
+<li><code>vao-buffer-data VAO VBO BYTE-COUNT POINTER &amp;optional (USAGE :dynamic-draw)</code><br> Copy data to the VBO specified.  The VBO is specified as a number.  <code>BYTE-COUNT</code> is the total number of bytes to be copied.  <code>POINTER</code> is a (foreign) pointer to the data.  <code>USAGE</code> may be any valid usage constant for <code>glBufferData</code>.</li>
+<li><code>vao-buffer-sub-data VAO VBO OFFSET BYTE-COUNT POINTER</code><br> The <code>glBufferSubData</code> variant.</li>
+<li><code>vao-buffer-vector VAO VBO BYTE-COUNT VECTOR &amp;optional (USAGE :dynamic-draw)</code><br> Copy data to the VBO specified.  The VBO is specified as a number.  <code>BYTE-COUNT</code> is the total number of bytes to be copied.  <code>POINTER</code> is a (foreign) pointer to the data.  <code>USAGE</code> may be any valid usage constant for <code>glBufferData</code>.  <code>VECTOR</code> must be a vector of specializable type for <em>static-vectors</em>.  Calling this will produce an error if <em>static-vectors</em> is not supported.</li>
+<li><code>vao-buffer-sub-vector VAO VBO OFFSET BYTE-COUNT VECTOR</code><br> The <code>glBufferSubData</code> variant.</li>
+<li><code>vao-bind VAO</code><br> Bind the VAO.  This is not necessary for calling the provided VAO functions, since the VAO is bound automatically.  However, it may be useful to ensure the VAO is bound if you wish to make GL calls manually.</li>
+<li><code>vao-unbind</code><br> Unbind the current-bound VAO.  Not done automatically.</li>
+<li><code>vao-draw VAO &amp;key primitive (first 0) count</code><br> Bind the VAO and call <code>glDrawArrays</code>.  <code>count</code> is optional only if the vertex count has been supplied to the VAO, e.g. during <code>make-instance</code>.  <code>primitive</code> defaults to triangles, but may be specified explicitly here, overriding the VAO&apos;s configuration.</li>
+</ul>
+
+<h3>Layouts</h3>
+
+<p>There are three layout types:</p>
+
+<ul>
+<li><code>:separate</code>: This uses a separate VBO for each attribute supplied.</li>
+<li><code>:interleave</code>:  This uses a single VBO for each attribute specified, and <em>interleaves</em> the attributes, e.g.: <code>Vert0 Color0 Vert1 Color1 ...</code>, where each attribute (such as &ldquo;Vert0&rdquo;) has <code>:count</code> values.</li>
+<li><code>:block</code>: This uses a single VBO for each attribute specified, arranged in <em>blocks</em>, e.g.: <code>Vert0 Vert1 Vert2 ... Color0 Color1 Color2 ...</code>.  This <em>requires</em> you specify <code>:vertex-count</code> up front to <code>make-instance</code>.  <strong>This is currently not fully implemented.</strong></li>
+</ul>
+
+<p>You may specify one or more groups to a VAO definition:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvao</span></i> NAME
+  <span class="paren2">(<span class="code"><span class="keyword">:separate</span> <span class="paren3">(<span class="code"></span>)</span> ...</span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:separate</span> <span class="paren3">(<span class="code"></span>)</span> ...</span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:interleave</span> <span class="paren3">(<span class="code"></span>)</span> ...</span>)</span>
+  ...</span>)</span></span></code></pre>
+
+<p>You must be aware of the underlying VBO layout to the extent that you
+must specify the correct index to <code>vao-buffer-data</code>.  In the future,
+you will be able to specify a valid symbolic name, though this may not
+be as efficient.</p>
+
+<p>You may also specify a <code>:divisor</code> option to the <em>group</em>, which
+corresponds to the DIVISOR parameter to <code>glVertexAttribDivisor</code>,
+allowing one attribute for multiple vertices.  Note that because this
+is <em>per-group</em>, if you wish to have separate divisors per attribute,
+they must be in separate groups.</p>

@@ -1,0 +1,783 @@
+<h1>changed-stream</h1>
+
+<p>Author: Warren Wilkinson
+Date: 2012-12-17 08:40:33 MST</p>
+
+<p>A lisp library, changed-stream lets you apply changes to a stream, without modifying the underlying stream.</p>
+
+<h1>Table of Contents</h1>
+
+<p>1 Overview
+    1.1 Features
+    1.2 Limitations
+2 Installation
+    2.1 Quick Lisp
+    2.2 Gentoo
+    2.3 Ubunto
+    2.4 Manual Installation
+    2.5 Running the Tests
+    2.6 Getting Support
+3 Implementation
+    3.1 diffcase
+        3.1.1 changed-stream class
+    3.2 file-position
+    3.3 read-char
+    3.4 peek-char
+    3.5 read-sequence
+    3.6 Test Framework
+        3.6.1 Read Patterns
+        3.6.2 Running Tests
+4 Tests
+    4.1 Deletion Tests
+    4.2 Insertion Tests
+    4.3 Replacement Tests
+    4.4 Replace+Delete Tests
+    4.5 Replace+Insert Tests
+5 License</p>
+
+<h2>1 Overview</h2>
+
+<p>Changed-stream lets you apply changes to a stream, without modifying the underlying stream.
+In this example, stream s remains unmodified except for file-position[1]. </p>
+
+<pre><code>(with-input-from-string (s &quot;0123456789&quot;)
+  (let ((d (change-stream s
+              :at 3
+              :delete 1
+              :insert &quot;xyz&quot;)))
+    (read-line d)))
+</code></pre>
+
+<p>;; &ldquo;012xyz456789&rdquo;</p>
+
+<p>&hellip;and changed-streams are composable, but be aware of the order of operations. </p>
+
+<p>(with-input-from-string
+    (s &ldquo;The Cat in the Hat&rdquo;)
+    (read-line (change-stream 
+                (change-stream s
+                   :at 2
+                   :delete 6)
+                :at 12
+                :insert &ldquo;chery&rdquo;)))
+  ;; &ldquo;Thin the Hatchery&rdquo;</p>
+
+<p>(with-input-from-string
+    (s &ldquo;The Cat in the Hat&rdquo;)
+    (read-line (change-stream 
+                (change-stream s
+                   :at 12
+                   :insert &ldquo;chery&rdquo;)
+                :at 2
+                :delete 6)))
+  ;; &ldquo;Thin tcheryhe Hat&rdquo;</p>
+
+<h1>1.1 Features</h1>
+
+<ul>
+<li>read-char</li>
+<li>peek-char</li>
+<li>file-position</li>
+<li>read-sequence has been efficiently implemented.</li>
+<li>extending and shrinking the stream (deleting or inserting near the end will shrink and grow the stream).</li>
+</ul>
+
+<h1>1.2 Limitations</h1>
+
+<ul>
+<li>The underlying stream must be at file-position 0 when the changed-stream is created. There is an assert to catch this.</li>
+<li>Thread safety is your responsibility &ndash; in particular don&apos;t change the file-position of the underlying stream, the changed-stream will give incorrect results and could cause errors.</li>
+<li>unread-char has not been implemented (but peek-char has been)</li>
+<li>Read only. There are no writing operations allowed to the stream</li>
+</ul>
+
+<h2>2 Installation</h2>
+
+<h1>2.1 Quick Lisp</h1>
+
+<p>Install <a href="http://www.quicklisp.org/beta/" >Quick Lisp</a> and then run:</p>
+
+<p>(ql:quickload &apos;changed-stream)</p>
+
+<p>If you have problems, see the <a href="#support" >support</a> section, and you may want to <a href="#runtests" >run the tests</a>.</p>
+
+<h1>2.2 Gentoo</h1>
+
+<p>As root, </p>
+
+<p>emerge changed-stream</p>
+
+<p>Once the emerge is finished, the package can be loaded using ASDF:</p>
+
+<p>(asdf:operate &apos;asdf:load-op :changed-stream)</p>
+
+<p>If you have problems, see the <a href="#support" >support</a> section, otherwise you may want to <a href="#runtests" >run the tests</a>.</p>
+
+<h1>2.3 Ubunto</h1>
+
+<p>sudo apt-get install changed-stream</p>
+
+<p>Once the installation is finished, the package is loadable using ASDF:</p>
+
+<p>(asdf:operate &apos;asdf:load-op :changed-stream)</p>
+
+<p>If you have problems, see the <a href="#support" >support</a> section, otherwise you may want to <a href="#runtests" >run the tests</a>.</p>
+
+<h1>2.4 Manual Installation</h1>
+
+<p>In summary: Untar the <a href="https://github.com/WarrenWilkinson/changed-stream/archive/master.tar.gz" >.tar</a> package and then symlink the .asd files into a place where ASDF can find them. </p>
+
+<ol>
+<li>Untar the files where you want them to be.  On windows download the <a href="https://github.com/WarrenWilkinson/changed-stream/archive/master.zip" >.zip</a> and unzip it instead, it&apos;s the same files.</li>
+<li>ASDF could be looking anywhere &ndash; it depends on your setup.  Run this in your lisp repl to get a clue
+ as to where ASDF is seeking libraries[2]:</li>
+</ol>
+
+<p>(mapcan #&apos;funcall asdf:<em>default-source-registries</em>)</p>
+
+<ol>
+<li>Symlink the .asd files to the source directory. If you use windows, <a href="http://bc.tech.coop/blog/041113.html" >these instructions on symlink alternatives apply to you</a>.</li>
+</ol>
+
+<p>Once the files are in place, the package can be loaded with ASDF by:</p>
+
+<p>(asdf:operate &apos;asdf:load-op :changed-stream)</p>
+
+<p>If you have problems, see the <a href="#support" >support</a> section.  If you don&apos;t have problems you may want to <a href="#runtests" >run the tests</a> anyway, because you can.</p>
+
+<h1>2.5 Running the Tests</h1>
+
+<p>Once the system is loaded, it can be tested with asdf. </p>
+
+<p>(asdf:operate &apos;asdf:test-op :changed-stream)</p>
+
+<p>This should display something like the following. There should
+be <em>zero failures</em>, if you have failures see the <a href="#support" >support</a> section
+of this document.</p>
+
+<p>RUNNING CHANGED-STREAM TESTS&hellip;
+  CHANGED-STREAM TEST RESULTS: 
+       Tests: 124
+     Success: 124
+    Failures: 0</p>
+
+<pre><code>[support]: #support
+</code></pre>
+
+<h1>2.6 Getting Support</h1>
+
+<p>You can find support on this libraries <a href="http://warrenwilkinson.ca/changed-stream" >website</a> and/or <a href="https://github.com/WarrenWilkinson/changed-stream" >github</a> repository. Or you can email <a href="mailto:warrenwilkinson@gmail.com" >Warren Wilkinson</a>.</p>
+
+<h2>3 Implementation</h2>
+
+<p>A changed stream has five zones:</p>
+
+<ol>
+<li>Before: The area before our changes.</li>
+<li>Replace: The range were our changes overwrite the source.</li>
+<li>Delete: The range where we are deleting (not emitting) source characters.</li>
+<li>Insert: The range where we are outputing new characters, but not consuming source characters.</li>
+<li>After: The area after our changes.</li>
+</ol>
+
+<p>We never have both delete and insert, instead we&apos;d represent that as a replace and insert or a replace and delete.</p>
+
+<h1>3.1 diffcase</h1>
+
+<p>The changed-stream class is designed to support a macro called &lsquo;diffcase&rsquo;. This macro is like a case statement,
+but supports these five parts.  Most of the stream functions use this macro.</p>
+
+<p>(defmacro diffcase ((position stream)
+                      (before &amp;rest before-case-code)
+                      (replace &amp;rest replace-case-code)
+                      (delete &amp;rest delete-case-code)
+                      (insert &amp;rest insert-case-code)
+                      (after &amp;rest after-case-code))
+    (declare (ignore before replace delete insert after))
+    (let ((pos (gensym)) (strm (gensym)))
+      `(let ((,pos ,position) (,strm ,stream))
+         (cond ((&lt; ,pos (last-unchanged-position ,strm)) ,@before-case-code)
+               ((&lt; ,pos (last-replacement-position ,strm)) ,@replace-case-code)
+               ((&lt; ,pos (last-modified-position ,strm))
+                (if (mod-is-delete-p ,strm)
+                    (progn ,@delete-case-code)
+                    (progn ,@insert-case-code)))
+               (t ,@after-case-code)))))</p>
+
+<p>3.1.1 changed-stream class 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
+
+<p>The class support the macros, and the macro cares about character positions: At what position is the
+first change?  At what position is the last replacement?  And where is the last modification!</p>
+
+<p>The class stores these precomputed values so we don&apos;t have to add our change-position to the minimum of 
+the length of the insert string vs the number of deleted characters &ndash; we know this number,
+it&apos;s &lsquo;last-replacement-position&rsquo;.</p>
+
+<p>(defclass changed-stream (fundamental-character-input-stream)
+    ((stream                    :initarg  :stream<br/>
+                                :reader stream-of)
+     (virtual-position          :initform 0
+                                :accessor virtual-position)
+     (last-unchanged-position   :initarg  :last-unchanged-position<br/>
+                                :reader last-unchanged-position)
+     (last-replacement-position :initarg  :last-replacement-position 
+                                :reader last-replacement-position)
+     (last-modified-position    :initarg  :last-modified-position<br/>
+                                :reader last-modified-position)
+     (removed-characters        :initarg  :removed-characters<br/>
+                                :reader removed-characters)
+     (insert-string             :initarg  :string<br/>
+                                :reader insert-string)))</p>
+
+<p>(defun mod-is-delete-p (stream) (&gt; (removed-characters stream) 0))</p>
+
+<p>(defun change-stream (stream &amp;key (at 0) (insert &quot;&quot;) (delete 0))
+    (assert (zerop (file-position stream)))
+    (let ((last-replace (+ at (min (length insert) delete)))
+          (last-mod (+ at (max delete (length insert)))))
+      (make-instance &apos;changed-stream
+         :stream stream
+         :last-unchanged-position at
+         :last-replacement-position last-replace
+         :last-modified-position last-mod
+         :removed-characters (- delete (length insert)) 
+         :string insert)))</p>
+
+<h1>3.2 file-position</h1>
+
+<p>When we set our own file-position, we have to compute the correct file-position to set the source stream too.
+This is easy during the before and replacement stages &ndash; it&apos;s our current position.</p>
+
+<p>If we are repositioning into the delete range, the file-position of the source moved ahead by the number of characters
+to delete.</p>
+
+<p>If we are repositioning into the insert range, the file position of the source is just after the position of the last replaced character.
+When we start reading the source again, all the replaced characters will have been skipped. </p>
+
+<p>If we are repositioning after the modification range, the file-position of the source moved ahead by the number of characters
+to delete. This takes into account the fact that these characters have been skipped and we are further in our source than
+we&apos;d be otherwise. If our modification was insert+replace, then removed-characters will be negative and will put the file-position
+backwards. Since extra characters have been emitted, we&apos;re further back in the source stream.</p>
+
+<p>(defmethod stream-file-position ((stream changed-stream) &amp;optional newval)
+    (if newval 
+        (progn 
+          (diffcase (newval stream)
+             (before  (file-position (stream-of stream) newval))
+             (replace (file-position (stream-of stream) newval))
+             (delete  (file-position (stream-of stream)
+                                     (+ newval (removed-characters stream))))
+             (insert  (file-position (stream-of stream)
+                                     (last-replacement-position stream)))
+             (after   (file-position (stream-of stream)
+                                     (+ newval (removed-characters stream)))))
+          (setf (virtual-position stream) newval))
+        (virtual-position stream)))</p>
+
+<h1>3.3 read-char</h1>
+
+<p>Real characters are characters from the source stream.  Replacement characters skip a source stream character and 
+return the next character from the insert stream (a virtual character).</p>
+
+<p>For deletes, we seek the end of the deleted characters and then emit the next.</p>
+
+<p>(defmethod stream-read-char ((stream changed-stream))
+    (diffcase ((if (mod-is-delete-p stream)
+                   (file-position (stream-of stream))
+                   (virtual-position stream)) 
+               stream)
+       (before  (real-char stream))
+       (replace (replacement-char stream))
+       (delete  (internal-seek-end-of-delete stream) (real-char stream))
+       (insert (virtual-char stream))
+       (after  (real-char stream))))</p>
+
+<h1>3.4 peek-char</h1>
+
+<p>Similar in structure [read-char], peek-char does the same operation but with peeks.  The replace region just takes
+the next virtual-char (rather than the replacement-char which would read and drop the next character from the source stream).</p>
+
+<p>(defmethod stream-peek-char ((stream changed-stream))
+      (diffcase ((if (mod-is-delete-p stream)
+                     (file-position (stream-of stream))
+                     (virtual-position stream)) stream)
+        (before  (peek-char nil (stream-of stream) nil :eof))
+        (replace (virtual-char stream t))
+        (delete  (internal-seek-end-of-delete stream) 
+                 (peek-char nil (stream-of stream) nil :eof))
+        (insert  (virtual-char stream t))
+        (after   (peek-char nil (stream-of stream) nil :eof))))</p>
+
+<pre><code>    [read-char]: #read-char
+</code></pre>
+
+<h1>3.5 read-sequence</h1>
+
+<p>Read sequence is three functions, implemented as one for simplicity. But essentially:</p>
+
+<ol>
+<li>Read the sequence before the changes by calling read-sequence on the source stream.</li>
+<li>Read the sequence during the changes by call-next-method (which will do it by calls to read-char)</li>
+<li>Read the sequence after the changes by calling read-sequence on the source stream.</li>
+</ol>
+
+<p>The complexity of this function comes from computing the correct start and end ranges for
+these three steps.</p>
+
+<p>(defmethod stream-read-sequence ((stream changed-stream) seq &amp;optional start end)
+    (let ((position (virtual-position stream)))
+      (let ((write-length (- (or end (length seq)) (or start 0))))
+        (let ((before-length (min write-length
+                              (max 0 (- (last-unchanged-position stream) position)))))
+          (read-sequence seq (stream-of stream)
+                         :start start
+                         :end (+ start before-length))
+          (incf start before-length)
+          (incf position before-length)
+          (decf write-length before-length)
+          (file-position stream position))</p>
+
+<pre><code>    (let ((during-length (min write-length 
+                          (max 0 (- (last-modified-position stream) position)))))
+      (call-next-method stream seq start (+ start during-length))
+      (incf start during-length)
+      (incf position during-length)
+      (decf write-length during-length))
+
+    (let ((after-length write-length))
+      (read-sequence seq (stream-of stream)
+                     :start start
+                     :end (+ start after-length))
+      (incf start after-length)
+      (incf position after-length)
+      (decf write-length after-length)
+      (file-position stream position)))))
+</code></pre>
+
+<h1>3.6 Test Framework</h1>
+
+<p>Tests are just functions, that are pushed onto a list when defined.  Within do-testing are functions that
+read and verify the changed-stream using some pattern of reads, peeks, file-positions and read-sequences.</p>
+
+<p>(defvar <em>all-tests</em> nil)</p>
+
+<p>(defun do-testing (at delete insert is)
+    (with-input-from-string (input &ldquo;0123456789ABCDEF&rdquo;)
+      (let ((diff (change-stream input :at at :insert insert :delete delete)))
+        (and (pattern-sequential diff is)
+             (pattern-sequential+peek diff is)
+             (pattern-file-position-forward diff is)
+             (pattern-file-position-backward diff is)
+             (pattern-file-position-backward-with-reads diff is)
+             (pattern-read-sequences diff is)))))</p>
+
+<p>(defmacro deftest (name &amp;key (at 0) (delete 0) (insert &quot;&quot;) is)
+    `(progn 
+       (defun ,name () (do-testing ,at ,delete ,insert ,is))
+       (pushnew &apos;,name <em>all-tests</em>)))</p>
+
+<p>3.6.1 Read Patterns 
+~~~~~~~~~~~~~~~~~~~~</p>
+
+<p>All the various pattern reading tests use defpattern to wrap a few common variables. It&apos;s basically a fixture.</p>
+
+<ul>
+<li>Output the pattern readers name.</li>
+<li>Set file position to 0</li>
+<li>Create a local variable called &lsquo;success&rsquo;</li>
+<li>Create a local variable called &lsquo;storage&rsquo; that can be read into.</li>
+</ul>
+
+<p>Meanwhile, the macro problem combines outputting an error message, and setting success to false into one operation.</p>
+
+<p>(defmacro defpattern (name (diff expected) &amp;rest code)
+    `(defun ,name (,diff ,expected)
+       (format t ,(concatenate &apos;string &ldquo;~% &rdquo; (string-downcase (symbol-name name))))
+       (file-position ,diff 0)
+       (let ((success t)
+             (storage (make-string (length ,expected) :initial-element #_)))
+         ,@code (format t &ldquo;~%&rdquo;) success)))</p>
+
+<p>(defmacro problem (msg &amp;rest args)
+    `(progn
+       (setf success nil)
+       (format t ,(concatenate &apos;string &ldquo;~%    * &rdquo; msg)
+               ,@args)))</p>
+
+<ul>
+<li>pattern-sequential</li>
+</ul>
+
+<p>Uses read-char to read the entire thing.  Checks to ensure that you are not allowed to read more characters than
+  should actually exist (called &lsquo;overreading&rsquo; here).</p>
+
+<pre><code>(defpattern pattern-sequential (s expected)
+  (dotimes (i (length expected))
+    (unless (eq i (file-position s)) 
+      (problem &quot;Bad file-position, got ~a instead of ~d&quot; 
+               (file-position s) i))
+    (let ((char (read-char s nil :eof)))
+      (if (eq char :eof)
+          (problem &quot;EOF at ~d&quot; i)
+          (setf (char storage i) char))))
+  (let ((char (read-char s nil :eof)))
+    (unless (eq char :eof) (problem &quot;Allowed overread of ~a&quot; char)))
+  (unless (string= storage expected)
+    (problem &quot;Wrong result (got ~s instead of ~s)&quot; storage expected)))
+</code></pre>
+
+<ul>
+<li>pattern-sequential+peek</li>
+</ul>
+
+<p>Like pattern-sequential, but peeks characters before reading to ensure that peeking doesn&apos;t mess things up.</p>
+
+<pre><code>(defpattern pattern-sequential+peek (s expected)
+  (dotimes (i (length expected))
+    (unless (eq i (file-position s)) 
+      (problem &quot;Bad file-position, got ~a instead of ~d&quot;
+               (file-position s) i))
+    (let* ((peek (peek-char nil s nil :eof))
+           (char (read-char s nil :eof)))
+      (unless (eq peek char)
+        (problem &quot;Peek return ~a, char return ~a at ~a&quot; peek char i))
+      (if (eq char :eof)
+          (problem &quot;Peek caused EOF character at ~d&quot; i)
+          (setf (char storage i) char))))
+  (let ((peek (peek-char nil s nil :eof))
+        (char (read-char s nil :eof)))
+    (unless (eq peek char)
+      (problem &quot;Peek overread ~a and char overread ~a.&quot; peek char))
+    (unless (eq char :eof) 
+      (problem &quot;Peek allowed overread of ~a&quot; char))
+    (unless (string= storage expected)
+      (problem &quot;Wrong result (got ~s instead of ~s)&quot;
+               storage expected))))
+</code></pre>
+
+<ul>
+<li>pattern-file-position-forward</li>
+</ul>
+
+<p>Like pattern-sequential, but does a file-position before each read.  This test is to ensure that file-positions, followed
+  by reads, always produce the correct result.</p>
+
+<pre><code>(defpattern pattern-file-position-forward (s expected)
+  (dotimes (i (length expected))
+    (file-position s i)
+    (let ((char (read-char s nil :eof)))
+      (if (eq char :eof)
+          (problem &quot;~%EOF at ~2d&quot; i)
+          (setf (char storage i) char))))
+
+  (unless (string= storage expected)
+    (problem &quot;Wrong result (got ~s instead of ~s)&quot;
+             storage expected)))
+</code></pre>
+
+<ul>
+<li>pattern-file-position-backward</li>
+</ul>
+
+<p>Like pattern-file-position-forward, but in reverse. We read the last character, then the last-1 character&hellip; This
+  test is because pattern-file-position-forward isn&apos;t difficult enough to be a good test of the file-position operation
+   on it&apos;s own.</p>
+
+<pre><code>(defpattern pattern-file-position-backward (s expected)
+  (loop for i from (1- (length expected)) downto 0
+        do (progn 
+             (file-position s i)
+             (let ((char (read-char s nil :eof)))
+               (if (eq char :eof)
+                   (problem &quot;EOF at ~2d&quot; i)
+                   (setf (char storage i) char)))))
+  (unless (string= storage expected)
+    (problem &quot;Wrong result (got ~s instead of ~s)&quot;
+             storage expected)))
+</code></pre>
+
+<ul>
+<li>pattern-file-position-backward-with-reads</li>
+</ul>
+
+<p>Like pattern-file-position-backward, but each file-position is followed by reading up to the end of the string again. This
+  test is to ensure that file-position produces correct results for <em>all</em> subsequent read-chars &ndash; not just the next one.</p>
+
+<pre><code>(defpattern pattern-file-position-backward-with-reads (s expected)
+  (loop for i from (1- (length expected)) downto 0
+        do (fill storage #\_)
+        do (file-position s i)
+        do (loop for j from i upto (1- (length expected))
+                   as char = (read-char s nil :eof)
+                   if (eq char :eof)
+                   do (problem &quot;EOF reading from ~2d at ~2d: ~s&quot;
+                               i j storage)
+                   do (setf (char storage j) char))
+        if (not (string= (subseq storage i) (subseq expected i)))
+        do (problem &quot;Wrong result (reading from ~2d got ~s instead of ~s)&quot;
+                    i storage expected)))
+</code></pre>
+
+<ul>
+<li>pattern-read-sequences</li>
+</ul>
+
+<p>Uses read-sequence on every valid combination of (start, end).  Ensures every read-sequence no matter
+  where it starts or where it ends produces the correct result.</p>
+
+<pre><code>(defpattern pattern-read-sequences (s expected)
+  (loop for start from 0 upto (1- (length expected))
+        do (loop for end from start upto (1- (length expected))
+                 do (file-position s start)
+                 do (fill storage #\_)
+                 do (read-sequence storage s :start start :end end)
+                 if (not (string= (subseq storage start end)
+                                  (subseq expected start end)))
+                 do (problem &quot;Sequence (~2d, ~2d) got ~a instead of ~s&quot;
+                             start end storage expected))))
+</code></pre>
+
+<p>3.6.2 Running Tests 
+~~~~~~~~~~~~~~~~~~~~</p>
+
+<p>The bulk of the test code just has to do with collecting results and making pretty output.</p>
+
+<p>(defstruct results
+    (tests 0)
+    (failures nil))
+  (defun results-failure-count (results)
+    (length (results-failures results)))
+  (defun results-successes (results)
+    (- (results-tests results)
+       (results-failure-count results)))</p>
+
+<p>(defun runtest (fun results)
+    (let* ((success t)
+           (output (with-output-to-string (<em>standard-output</em>)
+                     (setf success (funcall fun)))))
+      (make-results
+       :tests (1+ (results-tests results))
+       :failures (if success
+                     (results-failures results)
+                     (acons fun output (results-failures results))))))</p>
+
+<p>(defun present-failures (results)
+    (format t &ldquo;~%CHANGED-STREAM FAILURES:~%&rdquo;)
+    (loop for (fn . problems) in (results-failures results)
+          do (format t &ldquo;~%~a~a~%&rdquo; fn problems)))
+  (defun present-results (results)
+    (format t &ldquo;~%CHANGED-STREAM TEST RESULTS:&rdquo;)
+    (format t &ldquo;~%     Tests: ~a~%   Success: ~a~%  Failures: ~a&rdquo; 
+            (results-tests results)
+            (results-successes results)
+            (results-failure-count results))
+    (when (results-failures results)
+      (present-failures results)))</p>
+
+<p>(defun run-tests ()
+    (format t &ldquo;~%RUNNING CHANGED-STREAM TESTS&hellip;&rdquo;)
+    (present-results 
+     (reduce #&apos;(lambda (test results) (runtest test results))
+             <em>all-tests</em> :from-end t :initial-value (make-results))))</p>
+
+<h2>4 Tests</h2>
+
+<p>This package is tested by changing the string &lsquo;01234567890ABCDEF&rsquo; in a 
+known way and then verifying that the results are correct no matter
+how it&apos;s read.</p>
+
+<p>we test these reading patterns:</p>
+
+<p>Scanning: read-char the entire stream.</p>
+
+<p>Peeking: read-char the entire stream, but peek-char before reading.</p>
+
+<p>Seeking: file-position to the next character then read it, then next char, then &hellip;</p>
+
+<p>Backwards Seeking: File-position to the last character, then read it, then next-to-last, then &hellip;</p>
+
+<p>Backwards Seeking with Forward Scanning: File-position to the last character, then scan stream, then next-to-last, then &hellip;</p>
+
+<p>With read-sequence: For i from 0 to end, and j from i to end, use file-position and read-sequence to read the range i to j.</p>
+
+<h1>4.1 Deletion Tests</h1>
+
+<p><em>at</em>   <em>delete</em>       <em>is</em>                 <em>Comments</em><br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+     0          0       ~0123456789ABCDEF~   No changes returns original stream.<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+     0          1       ~123456789ABCDEF~<br/>
+     0          2       ~23456789ABCDEF~<br/>
+     0          3       ~3456789ABCDEF~<br/>
+     0          8       ~89ABCDEF~<br/>
+     0          9       ~9ABCDEF~<br/>
+     0         15       ~F~<br/>
+     0         16<br/>
+     0         17<br/>
+     0         18<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+     1          1       ~023456789ABCDEF~<br/>
+     1          2       ~03456789ABCDEF~<br/>
+     1          3       ~0456789ABCDEF~<br/>
+     1          7       ~089ABCDEF~<br/>
+     1         13       ~0EF~<br/>
+     1         14       ~0F~<br/>
+     1         15       ~0~<br/>
+     1         16       ~0~<br/>
+     1         17       ~0~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+     2          1       ~013456789ABCDEF~<br/>
+     2          2       ~01456789ABCDEF~<br/>
+     2          7       ~019ABCDEF~<br/>
+     2         13       ~01F~<br/>
+     2         14       ~01~<br/>
+     2         15       ~01~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+     8          1       ~012345679ABCDEF~<br/>
+     8          2       ~01234567ABCDEF~<br/>
+     8          7       ~01234567F~<br/>
+     8          8       ~01234567~<br/>
+     8          9       ~01234567~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+    14          1       ~0123456789ABCDF~<br/>
+    14          2       ~0123456789ABCD~<br/>
+    14          3       ~0123456789ABCD~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+    15          1       ~0123456789ABCDE~<br/>
+    15          2       ~0123456789ABCDE~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+    16          1       ~0123456789ABCDEF~<br/>
+    16          2       ~0123456789ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+    17          1       ~0123456789ABCDEF~                                        </p>
+
+<h1>4.2 Insertion Tests</h1>
+
+<p><em>at</em>       <em>insert</em>               <em>is</em>                                   <em>Comments</em><br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+     0       ~x~                    ~x0123456789ABCDEF~<br/>
+     0       ~xy~                   ~xy0123456789ABCDEF~<br/>
+     0       ~)!@#$%^&amp;<em>(abcdef~     ~)!@#$%^&amp;</em>(abcdef0123456789ABCDEF~<br/>
+     0       ~)!@#$%^&amp;<em>(abcdef+~    ~)!@#$%^&amp;</em>(abcdef+0123456789ABCDEF~<br/>
+     0       ~)!@#$%^&amp;<em>(abcdef+-~   ~)!@#$%^&amp;</em>(abcdef+-0123456789ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+     1       ~x~                    ~0x123456789ABCDEF~<br/>
+     1       ~xy~                   ~0xy123456789ABCDEF~<br/>
+     1       ~)!@#$%^&amp;<em>(abcdef~     ~0)!@#$%^&amp;</em>(abcdef123456789ABCDEF~<br/>
+     1       ~)!@#$%^&amp;<em>(abcdef+~    ~0)!@#$%^&amp;</em>(abcdef+123456789ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+     2       ~x~                    ~01x23456789ABCDEF~<br/>
+     2       ~xy~                   ~01xy23456789ABCDEF~<br/>
+     2       ~)!@#$%^&amp;<em>(abcdef~     ~01)!@#$%^&amp;</em>(abcdef23456789ABCDEF~<br/>
+     2       ~)!@#$%^&amp;<em>(abcdef+~    ~01)!@#$%^&amp;</em>(abcdef+23456789ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+     8       ~x~                    ~01234567x89ABCDEF~<br/>
+     8       ~xy~                   ~01234567xy89ABCDEF~<br/>
+     8       ~)!@#$%^&amp;<em>(abcdef~     ~01234567)!@#$%^&amp;</em>(abcdef89ABCDEF~<br/>
+     8       ~)!@#$%^&amp;<em>(abcdef+~    ~01234567)!@#$%^&amp;</em>(abcdef+89ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+    14       ~x~                    ~0123456789ABCDxEF~<br/>
+    14       ~xy~                   ~0123456789ABCDxyEF~<br/>
+    14       ~)!@#$%^&amp;<em>(abcdef~     ~0123456789ABCD)!@#$%^&amp;</em>(abcdefEF~<br/>
+    14       ~)!@#$%^&amp;<em>(abcdef+~    ~0123456789ABCD)!@#$%^&amp;</em>(abcdef+EF~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+    15       ~x~                    ~0123456789ABCDExF~<br/>
+    15       ~xy~                   ~0123456789ABCDExyF~<br/>
+    15       ~)!@#$%^&amp;<em>(abcdef~     ~0123456789ABCDE)!@#$%^&amp;</em>(abcdefF~<br/>
+    15       ~)!@#$%^&amp;<em>(abcdef+~    ~0123456789ABCDE)!@#$%^&amp;</em>(abcdef+F~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+    16       ~x~                    ~0123456789ABCDEFx~<br/>
+    16       ~xy~                   ~0123456789ABCDEFxy~<br/>
+    16       ~)!@#$%^&amp;<em>(abcdef~     ~0123456789ABCDEF)!@#$%^&amp;</em>(abcdef~<br/>
+    16       ~)!@#$%^&amp;<em>(abcdef+~    ~0123456789ABCDEF)!@#$%^&amp;</em>(abcdef+~<br/>
+ &mdash;&mdash;+&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;
+    17       ~x~                    ~0123456789ABCDEF~<br/>
+    18       ~x~                    ~0123456789ABCDEF~<br/>
+    20       ~x~                    ~0123456789ABCDEF~                                 </p>
+
+<h1>4.3 Replacement Tests</h1>
+
+<p><em>at</em>   <em>delete</em>   <em>insert</em>               <em>is</em>                   <em>Comments</em><br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+     0          1   ~)~                    ~)123456789ABCDEF~<br/>
+     0          2   ~)!~                   ~)!23456789ABCDEF~<br/>
+     0          8   ~)!@#$%^&amp;~             ~)!@#$%^&amp;89ABCDEF~<br/>
+     0         14   ~)!@#$%^&amp;<em>(abcd~       ~)!@#$%^&amp;</em>(abcdEF~<br/>
+     0         15   ~)!@#$%^&amp;<em>(abcde~      ~)!@#$%^&amp;</em>(abcdeF~<br/>
+     0         16   ~)!@#$%^&amp;<em>(abcdef~     ~)!@#$%^&amp;</em>(abcdef~<br/>
+     0         17   ~)!@#$%^&amp;<em>(abcdefg~    ~)!@#$%^&amp;</em>(abcdefg~<br/>
+     0         18   ~)!@#$%^&amp;<em>(abcdefgh~   ~)!@#$%^&amp;</em>(abcdefgh~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+     1          1   ~!~                    ~0!23456789ABCDEF~<br/>
+     1          8   ~!@#$%^&amp;<em>~             ~0!@#$%^&amp;</em>9ABCDEF~<br/>
+     1         14   ~!@#$%^&amp;<em>(abcde~       ~0!@#$%^&amp;</em>(abcdeF~<br/>
+     1         15   ~!@#$%^&amp;<em>(abcdef~      ~0!@#$%^&amp;</em>(abcdef~<br/>
+     1         16   ~!@#$%^&amp;<em>(abcdefg~     ~0!@#$%^&amp;</em>(abcdefg~<br/>
+     1         17   ~!@#$%^&amp;<em>(abcdefgh~    ~0!@#$%^&amp;</em>(abcdefgh~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+     8          1   ~<em>~                    ~01234567</em>9ABCDEF~<br/>
+     8          7   ~<em>(abcde~              ~01234567</em>(abcdeF~<br/>
+     8          8   ~<em>(abcdef~             ~01234567</em>(abcdef~<br/>
+     8          9   ~<em>(abcdefg~            ~01234567</em>(abcdefg~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+    14          1   ~e~                    ~0123456789ABCDeF~<br/>
+    14          2   ~ef~                   ~0123456789ABCDef~<br/>
+    14          3   ~efg~                  ~0123456789ABCDefg~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+    15          1   ~f~                    ~0123456789ABCDEf~<br/>
+    15          2   ~fg~                   ~0123456789ABCDEfg~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+    16          1   ~g~                    ~0123456789ABCDEFg~<br/>
+    16          2   ~gh~                   ~0123456789ABCDEFgh~               </p>
+
+<h1>4.4 Replace+Delete Tests</h1>
+
+<p><em>at</em>   <em>delete</em>   <em>insert</em>   <em>is</em>                  <em>Comments</em><br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;
+     0          2   ~)~        ~)23456789ABCDEF~<br/>
+     0          4   ~)!~       ~)!456789ABCDEF~<br/>
+     0          8   ~)!@#~     ~)!@#89ABCDEF~<br/>
+     0         15   ~)!~       ~)!F~<br/>
+     0         16   ~)!~       ~)!~<br/>
+     0         17   ~)!~       ~)!~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;
+     1          2   ~)~        ~0)3456789ABCDEF~<br/>
+     1         14   ~)~        ~0)F~<br/>
+     1         15   ~)~        ~0)~<br/>
+     1         16   ~)~        ~0)~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;
+    13          2   ~)~        ~0123456789ABC)F~<br/>
+    14          2   ~)~        ~0123456789ABCD)~<br/>
+    15          2   ~)~        ~0123456789ABCDE)~<br/>
+    16          2   ~)~        ~0123456789ABCDEF)~<br/>
+    17          2   ~)~        ~0123456789ABCDEF~                </p>
+
+<h1>4.5 Replace+Insert Tests</h1>
+
+<p><em>at</em>   <em>delete</em>   <em>insert</em>                <em>is</em>                         <em>Comments</em><br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+     0          1   ~)!~                    ~)!123456789ABCDEF~<br/>
+     0          2   ~)!@#~                  ~)!@#23456789ABCDEF~<br/>
+     0          4   ~)!@#$%^&amp;~              ~)!@#$%^&amp;456789ABCDEF~<br/>
+     0          8   ~)!@#$%^&amp;<em>(abcdef~      ~)!@#$%^&amp;</em>(abcdef89ABCDEF~<br/>
+     0         15   ~)!@#$%^&amp;<em>(abcdefxyz~   ~)!@#$%^&amp;</em>(abcdefxyzF~<br/>
+     0         16   ~)!@#$%^&amp;<em>(abcdefxyz~   ~)!@#$%^&amp;</em>(abcdefxyz~<br/>
+     0         17   ~)!@#$%^&amp;<em>(abcdefxyz~   ~)!@#$%^&amp;</em>(abcdefxyz~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+     1          1   ~)!~                    ~0)!23456789ABCDEF~<br/>
+     1          2   ~)!@#~                  ~0)!@#3456789ABCDEF~<br/>
+ &mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;
+    13          1   ~)!~                    ~0123456789ABC)!EF~<br/>
+    14          1   ~)!~                    ~0123456789ABCD)!F~<br/>
+    15          1   ~)!~                    ~0123456789ABCDE)!~<br/>
+    16          1   ~)!~                    ~0123456789ABCDEF)!~<br/>
+    17          1   ~)!~                    ~0123456789ABCDEF~                       </p>
+
+<h2>5 License</h2>
+
+<p>Changed-stream is distributed under <a href="http://opensource.org/licenses/lgpl-2.1.php" >LGPL2</a> License. </p>
+
+<p>[1] Changed-streams, like regular streams, aren&apos;t implicitly thread safe. But also ensure the underlying stream isn&apos;t being read concurrently.</p>
+
+<p>[2] you might need to (require &apos;asdf) before running this example</p>

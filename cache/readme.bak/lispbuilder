@@ -1,0 +1,76 @@
+<h1>Lispbuilder</h1>
+
+<p><em>Provides several useful cross-platform packages for Common Lisp</em></p>
+
+<h2>Quick Links</h2>
+
+<ul>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki" >Wiki</a></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/DownloadInstallationIntro" >Download &amp; Installation</a>
+
+<ul>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/WindowsInstallation" >Windows</a></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/DownloadInstallation" >OS X, Linux, and BSD</a></li>
+</ul></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/Screenshots" >Screenshots</a></li>
+<li>Documentation
+
+<ul>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/UsingLispbuilderSDL" >User Guide</a></li>
+<li><a href="https://lispbuilder.github.io/documentation" >API Reference Manual</a></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/HowTos" >How-To&apos;s</a></li>
+</ul></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/Community" >Community</a></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/License" >License</a></li>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/Contributors" >Contributors</a></li>
+</ul>
+
+<h2>Introduction</h2>
+
+<p>Lispbuilder, or Common Lisp Application Builder, is an umbrella
+project that provides cross-platform packages for building large,
+interactive applications in Common Lisp. The most notable of these is
+<a href="https://github.com/lispbuilder/lispbuilder/wiki/LispbuilderSDL" >Lispbuilder-SDL</a>,
+a wrapper for <a href="https://www.libsdl.org/" >SDL</a>, a library commonly used
+for game development. Other packages provide 3D graphics and
+animation, networking, text processing, and other miscellaneous
+functionality.</p>
+
+<h3>Game and Multimedia Development</h3>
+
+<ul>
+<li><a href="https://github.com/lispbuilder/lispbuilder/wiki/LispbuilderSDL" ><strong>lispbuilder-sdl:</strong></a> SDL game and multimedia library.
+
+<ul>
+<li>Straightforward event loop, supporting either event polling or event waiting,</li>
+<li>Many graphics drawing primitives,</li>
+<li>Bitmap and vector graphic support,</li>
+<li>Load diverse image types,</li>
+<li>Play samples and stream music including mp3 and OGG,</li>
+<li>Bitmap and True type font support.</li>
+</ul></li>
+<li><strong>lispbuilder-opengl:</strong> OpenGL 3d graphics</li>
+<li><strong>lispbuilder-openrm:</strong> OpenRM 3d scene graph</li>
+<li><strong>lispbuilder-cal3d:</strong> Cal3d character animation</li>
+</ul>
+
+<h3>Text Processing</h3>
+
+<ul>
+<li><strong>lispbuilder-regex:</strong> Regular expression support</li>
+<li><strong>lispbuilder-clawk:</strong> Awk in CL</li>
+<li><strong>lispbuilder-lexer:</strong> Lex in CL</li>
+<li><strong>lispbuilder-yacc:</strong> Yacc in CL</li>
+</ul>
+
+<h3>Networking</h3>
+
+<ul>
+<li><strong>lispbuilder-net</strong></li>
+</ul>
+
+<h3>Windows</h3>
+
+<ul>
+<li><strong>lispbuilder-windows</strong> (windows.h wrapper)</li>
+</ul>

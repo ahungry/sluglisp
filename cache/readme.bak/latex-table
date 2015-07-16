@@ -1,0 +1,25 @@
+<p>Latex-table is a simple library for writing vectors and matrices into
+LaTeX tables.  Just use labeled-vector-(horizontal|vertical) or
+labeled-matrix to write out vectors, and labeled-matrix for matrices.
+You can specify the number of significant digits (either as a single
+value for all columns, or for each column separately) and the
+horizontal/vertical lines.  For the latter, you can use position-type
+pairs, eg</p>
+
+<p>:hlines &apos;(0 2 -1 1))</p>
+
+<p>will put a double line on the left hand side of the table, and a
+single one on the right - negative numbers count from the right.</p>
+
+<p>The macro with-table puts a table environment around your table.</p>
+
+<p>This version of the package uses David Carlisle&apos;s dcolumn LaTeX
+package for alignment on the decimal dot.</p>
+
+<p>You can use raw-tabular to access the underlying function that
+actually generates all the tables, but then you have to preprocess
+your output yourself (read the docstring, or look at the examples).</p>
+
+<p>Examples are in the examples/ directory.</p>
+
+<p>Tamas Papp, tkpapp@gmail.com</p>

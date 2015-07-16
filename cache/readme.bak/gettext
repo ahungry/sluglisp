@@ -1,0 +1,206 @@
+<h1>gettext for Common Lisp</h1>
+
+<p>This is a port of the GNU gettext runtime to Common Lisp. For more
+information about GNU gettext see http://www.gnu.org/software/gettext/.</p>
+
+<h2>Highlights</h2>
+
+<ul>
+<li>Implemented in Common Lisp. No need for any C libraries.</li>
+<li>Use GNU gettext tools during development.</li>
+<li>Supports multithreaded applications with different langauge in each thread.</li>
+<li>Translations can be embedded into compiled applications.</li>
+</ul>
+
+<h2>Download and installation</h2>
+
+<p>The libarary has some dependencies, so the easiest way is to use
+Quicklisp, see http://www.quicklisp.org/</p>
+
+<p>Get the gettext sources from GitHub:</p>
+
+<pre><code>cd quicklisp/local-projects
+git clone git://github.com/copyleft/gettext.git
+ln -s gettext/gettext-example .
+</code></pre>
+
+<p>Then load it:</p>
+
+<pre><code>(ql:quickload &quot;gettext&quot;)
+</code></pre>
+
+<p>Eventually gettext will become part of quicklisp, and only the last
+step will be neccary (unless you need the latest version).</p>
+
+<h2>How to use</h2>
+
+<p>This library reimplements only the runtime part of GNU gettext in
+Common Lisp. In order to successfully use this library you need to
+install the GNU gettext tools. No GNU gettext tools or library are
+needed at runtime.</p>
+
+<p>The easiest way to get started is to look at the sample application
+located in the subdirectory gettext-example.</p>
+
+<p>Step 1: Add gettext as a dependency to your system definition
+(gettext-example.asd):</p>
+
+<pre><code>:depends-on (:gettext)
+</code></pre>
+
+<p>Step 2: Add the GETTEXT package to the use list of you applications
+package. Setup gettext in your applications package (package.lisp):</p>
+
+<pre><code>(gettext:setup-gettext #:example &quot;gettext-example&quot;)
+</code></pre>
+
+<p>The first parameter is the name of the package. The second parameter
+is the textdomain. Textdomains are namespaces for the translated
+text. For most application a single textdomain (with the same name as
+the asdf system) will suffice.</p>
+
+<p>Step 3: Load the translated messages (example.lisp):</p>
+
+<pre><code>(preload-catalogs #.(asdf:system-relative-pathname :gettext-example &quot;locale/&quot;))
+</code></pre>
+
+<p>This macro takes a single parameter, the pathname of a directory tree
+containing translation catalogs in MO format. The texts are loaded at
+compile time and become part of the compiled file, thus the the MO
+files are not need at runtime. An alternative approch is to load the
+MO files at runtime, see the section &ldquo;Loading catalogs at runtime&rdquo;.</p>
+
+<p>Step 4: Make sure the current locale is set by binding the special
+variable GETTEXT:<em>CURRENT-LOCALE</em>:</p>
+
+<pre><code>(setf *current-locale* &quot;nn&quot;)
+</code></pre>
+
+<p>Here the locale is hardcoded to &ldquo;nn&rdquo;. In a real world application it
+would be set to the current users preferred language. If the
+application is a multithreaded multiuser application (like most web
+applications), dynamically bind GETTEXT:<em>CURRENT-LOCALE</em> to the logged
+in users preferred language.</p>
+
+<p>Step 5: Mark texts for translation, e.g.:</p>
+
+<pre><code>(write-line (_ &quot;This is an example gettext program.&quot;))
+</code></pre>
+
+<p>Extract the texts for translations using the xgettext program from GNU
+gettext. This step will have to be repeated whenver the texts are
+updated in the source code. See update-translations.sh for a script
+that automates this job.</p>
+
+<p>Step 6: Translate the texts. First create a PO file for the langauge,
+using the msginit tool. Then you edit this file using e.g. Emacs with
+po-mode. The PO file can easly be updated with new texts with the help
+of the msgmerge tool. See update-translations.sh.</p>
+
+<p>Step 7: Finally convert the PO files into MO files using msgfmt. See
+update-translations.sh for details.</p>
+
+<h2>Loading catalogs at runtime</h2>
+
+<p>Replace GETTEXT:PRELOAD-CATALOGS with a SETF of the place
+GETTEXT:TEXTDOMAINDIR:</p>
+
+<pre><code>(setf (textdomaindir &quot;gettext-example&quot;)
+      (asdf:system-relative-pathname :gettext-example &quot;locale/&quot;))
+</code></pre>
+
+<p>The catalogs will be loaded as needed and cached until the
+appliciatons quits.</p>
+
+<h2>Reference</h2>
+
+<p>Special variable
+GETTEXT:<em>CURRENT-LOCALE</em></p>
+
+<p>This variable must be bound to a string denoting the current
+locale. The library does not try to decode this string any way, it
+simply uses it to look for message catalogs in the file system. It&apos;s
+recommended to use the two letter language codes defined in ISO 639-1.
+A list can be found here:
+http://www.gnu.org/software/gettext/manual/gettext.html#Language-Codes</p>
+
+<p>Macro
+GETTEXT:SETUP-GETTEXT package default-domain</p>
+
+<p>Defines gettext lookup functions in the provided package. _ and
+GETTEXT is as shortcut for GETTEXT:GETTEXT* and NGETTEXT is a shortcut
+for GETTEXT:NGETTEXT*, but with default-domain as the default
+domain. N_ is simply a shortcut for GETTEXT:GETTEXT-NOOP.</p>
+
+<p>Place
+GETTEXT:TEXTDOMAINDIR domain
+(SETF (GETTEXT:TEXTDOMAINDIR domain) directory)</p>
+
+<p>Specifies where to find translation catalogs for the given domain. The
+directory is the base directory used for lookup. The actual name of
+message catalog will be TEXTDOMAINDIR/l/LC_MESSAGES/domain.mo, where
+TEXTDOMAINDIR is the directory given setf to GETTEXT:TEXTDOMAINDIR, l
+is the current locale, LC_MESSAGES is the category and domain is the
+text domain.</p>
+
+<p>Place
+GETTEXT:TEXTDOMAIN
+(SETF (GETTEXT:TEXTDOMAIN) domain)</p>
+
+<p>Returns or sets the default text domain used by GETTEXT:GETTEXT* and
+GETTEXT:NGETTEXT*. Shortcut lookup functions defined by
+GETTEXT:SETUP-GETTEXT ignores this place.</p>
+
+<p>Function
+GETTEXT:GETTEXT* msgid &amp;optional domain category locale</p>
+
+<p>Lookup a translated using the provided msgid. Domain defaults to
+(GETTEXT:TEXTDOMAIN). Category defaults to :LC_MESSAGES, and locale
+defaults to GETTEXT:<em>CURRENT-LOCALE</em>.</p>
+
+<p>Function
+GETTEXT:NGETTEXT* msgid1 msgid2 n &amp;optional domain category locale</p>
+
+<p>Lookup a plural translated text. msgid1 is the singular form, msgid2
+is the plural form and n is the number used to decide which plural
+form to use. See GETTEXT:GETTEXT* for description of the optional
+parameters.</p>
+
+<p>Function
+GETTEXT:GETTEXT-NOOP msgid</p>
+
+<p>This function simply returns its msgid parameter untranslated. It&apos;s
+only used to mark texts that shall be translated, but where the text
+occurs in an expression that will be executed at compile time. Example:</p>
+
+<pre><code>(defparameter *greeting* (gettext-noop &quot;Hello world&quot;))
+;; In some function:
+   (write-line (gettext* *greeting*))
+</code></pre>
+
+<p>Macro
+GETTEXT:PRELOAD-CATALOGS textdomaindir</p>
+
+<p>Loads all message catalogs (in every category, in every locale and
+every domain) in the textdomaindir directory tree. This loading is
+done at macro expantion time. The effects is as if the translated text
+where part of the source code. Thus, the message catalogs are not needed
+at runtime.</p>
+
+<p>Type
+GETTEXT:LC-CATEGORY</p>
+
+<p>The allowed type of the locale parameter. One of the keyword symbols
+L:LC_ADDRESS, :LC_ALL, :LC_COLLATE, :LC_CTYPE, :LC_IDENTIFICATION,
+:LC_MEASUREMENT, :LC_MESSAGES, :LC_MONETARY, :LC_NAME, :LC_NUMERIC,
+:LC_PAPER, :LC_TELEPHONE and :LC_TIME.</p>
+
+<h2>TODO</h2>
+
+<p>The pgettext function of GNU gettext is not implemented. Implementing
+this should be fairly stright forward, but apparently the xgettext
+tool doesn&apos;t support this function when extracting texts form Lisp
+code.</p>
+
+<p>Encoding in MO files is hardcoded to UTF-8. Is this really a problem?
+Is there really a good reason for using anything else these days?</p>

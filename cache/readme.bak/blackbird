@@ -1,0 +1,24 @@
+<h1>blackbird</h1>
+
+<p>A standalone promise implementation for Common Lisp. This is the successor to
+the now-deprecated cl-async-future project.</p>
+
+<p>Its goal is to provide an abstraction around synchronous and asynchronous code
+in a way that&apos;s natural to regular lisp programming. This is ideal for both
+writing drivers that can handle both blocking and non-blocking sockets, as well
+as various threading operations that have the concept of a delayed result.</p>
+
+<h2><a href="http://orthecreedence.github.com/blackbird" >Documentation</a></h2>
+
+<p>Check out the <a href="http://orthecreedence.github.com/blackbird" >blackbird doc site</a>.</p>
+
+<h2>Tests</h2>
+
+<p>The test suite can be run by doing the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:blackbird-test</span></span>)</span>
+<span class="paren1">(<span class="code">blackbird-test:run-tests</span>)</span></span></code></pre>
+
+<h2>License</h2>
+
+<p>MIT.</p>

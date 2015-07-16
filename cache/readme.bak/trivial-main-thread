@@ -1,0 +1,40 @@
+<h2>About trivial-main-thread</h2>
+
+<p>Sometimes it is absolutely necessary to run certain tasks in the main thread of the implementation. This is particularly the case with GUI applications on OS X, where only thread 0 is allowed to issue drawing calls. This library aims to help with that.</p>
+
+<h2>Why a Wrapper</h2>
+
+<p>Why not just call <code>bt:interrupt-thread</code> and be done with it? Well, an implementation is not required to provide the user with the main thread, and may instead choose to use it for its own purposes. For example, CCL uses the thread for housekeeping and signal handling. As such, some implementations require workarounds to make this go by smoothly. That&apos;s why this library exists.</p>
+
+<h2>Basic Usage</h2>
+
+<p>Load trivial-main-thread through ASDF or Quicklisp.</p>
+
+<pre><code>(ql:quickload :trivial-main-thread)
+</code></pre>
+
+<p>Now you can simply issue calls to be sent to the main thread by using <code>call-in-main-thread</code> or <code>with-body-in-main-thread</code>.</p>
+
+<pre><code>(call-in-main-thread (lambda () (+ 1 1)))
+(with-body-in-main-thread (:blocking T)
+  (+ 1 1))
+</code></pre>
+
+<p>Upon first usage of either of these two functions, trivial-main-thread will start a new thread to resume the main thread&apos;s functionality in if necessary, and interrupt the main thread with a task runner loop. From then on, call requests can be sent to the thread. For more information on the tasks and runners system, see <a href="https://shinmera.github.io/simple-tasks" >simple-tasks</a>.</p>
+
+<p>For example, if you wanted to start a Qt application, you could do the following:</p>
+
+<pre><code>(call-in-main-thread #'qt:make-qapplication)
+(with-body-in-main-thread ()
+  (qt:with-main-window (window (make-instance 'my-window))))
+</code></pre>
+
+<p>And the application will safely run in the main thread.</p>
+
+<p>In the case where the main thread /is/ the evaluating thread, no additional threads are started, and the runner used will simply directly run tasks.</p>
+
+<h2>Also See</h2>
+
+<ul>
+<li><a href="https://shinmera.github.io/simple-tasks" >Simple-tasks</a> For remote task running.</li>
+</ul>

@@ -1,0 +1,81 @@
+<h1>Basic Binary IPC</h1>
+
+<p>The basic binary IPC system provides an interface for performing inter
+process communication using IPv4 or local streams. The interface
+follows a non-blocking pattern which allows applications to
+communicate either synchronously or asynchronously.</p>
+
+<p>The interface has been implemented for the following platforms:
+- Linux (poll and epoll)
+- OSX (poll and kqueue)
+- FreeBSD (poll and kqueue)
+- Windows 8 (Overlapped I/O)</p>
+
+<p>The complete documentation to this system can be found in
+<code>doc/basic-binary-ipc.html</code> or
+<a href="http://markcox80.github.io/basic-binary-ipc/" >online</a>.</p>
+
+<p>The only requirement for this system is <code>CFFI</code>.</p>
+
+<h2>Example</h2>
+
+<p>The file <code>examples/echo-example.lisp</code> contains an example echo server
+and echo client. The code for the server and client is shown below.</p>
+
+<p>The echo server can be started using
+<code>common-lisp
+(load &quot;examples/echo-example.lisp&quot;)
+(echo-example:run-server 12345)
+</code></p>
+
+<p>The echo client can be executed using
+<code>common-lisp
+(load &quot;examples/echo-example.lisp&quot;)
+(echo-example:send-to-server &quot;Hello World&quot; basic-binary-ipc:+ipv4-loopback+ 12345)
+</code></p>
+
+<h3>Server</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> run-server <span class="paren2">(<span class="code">port &amp;optional <span class="paren3">(<span class="code">host-address +ipv4-loopback+</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">check-type port <span class="paren3">(<span class="code">unsigned-byte 16</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">check-type host-address string</span>)</span>
+  
+  <span class="paren2">(<span class="code"><i><span class="symbol">with-socket</span></i> <span class="paren3">(<span class="code">server <span class="paren4">(<span class="code">make-ipv4-tcp-server host-address port <span class="keyword">:reuse-address</span> t</span>)</span></span>)</span>
+    <span class="paren3">(<span class="code"><i><span class="symbol">loop</span></i>
+       <span class="keyword">:with</span> buffer-size <span class="keyword">:=</span> 10000
+       <span class="keyword">:with</span> buffer <span class="keyword">:=</span> <span class="paren4">(<span class="code">make-array buffer-size <span class="keyword">:element-type</span> '<span class="paren5">(<span class="code">unsigned-byte 8</span>)</span></span>)</span>       
+       <span class="keyword">:for</span> result <span class="keyword">:=</span> <span class="paren4">(<span class="code">poll-socket server 'connection-available-p 10</span>)</span>
+       <span class="keyword">:when</span> result
+       <span class="keyword">:do</span>
+       <span class="paren4">(<span class="code"><i><span class="symbol">with-socket</span></i> <span class="paren5">(<span class="code">client <span class="paren6">(<span class="code">accept-connection server</span>)</span></span>)</span>
+         <span class="paren5">(<span class="code"><i><span class="symbol">loop</span></i>
+            <span class="keyword">:for</span> attempts <span class="keyword">:from</span> 0 <span class="keyword">:below</span> 3
+            <span class="keyword">:for</span> data-available <span class="keyword">:=</span> <span class="paren6">(<span class="code">poll-socket client 'data-available-p 10</span>)</span>
+            <span class="keyword">:when</span> data-available
+            <span class="keyword">:do</span>
+            <span class="paren6">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren1">(<span class="code"><span class="paren2">(<span class="code">bytes-read <span class="paren3">(<span class="code">read-from-stream client buffer</span>)</span></span>)</span></span>)</span>
+              <span class="paren1">(<span class="code">write-to-stream client buffer <span class="keyword">:end</span> bytes-read</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<h3>Client</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> send-to-server <span class="paren2">(<span class="code">string host-address port</span>)</span>
+  <span class="paren2">(<span class="code">check-type string string</span>)</span>
+  <span class="paren2">(<span class="code">check-type host-address string</span>)</span>
+  <span class="paren2">(<span class="code">check-type port <span class="paren3">(<span class="code">unsigned-byte 16</span>)</span></span>)</span>
+  
+  <span class="paren2">(<span class="code"><i><span class="symbol">with-socket</span></i> <span class="paren3">(<span class="code">client <span class="paren4">(<span class="code">connect-to-ipv4-tcp-server host-address port</span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">unless <span class="paren4">(<span class="code">poll-socket client 'connection-succeeded-p 10</span>)</span>
+      <span class="paren4">(<span class="code">error <span class="string">"Failed to connect to address ~A:~d"</span> host-address port</span>)</span></span>)</span>
+
+    <span class="paren3">(<span class="code">write-to-stream client <span class="paren4">(<span class="code">babel:string-to-octets string</span>)</span></span>)</span>
+    
+    <span class="paren3">(<span class="code"><i><span class="symbol">loop</span></i>
+       <span class="keyword">:for</span> attempts <span class="keyword">:from</span> 0 <span class="keyword">:below</span> 3
+       <span class="keyword">:for</span> data-available <span class="keyword">:=</span> <span class="paren4">(<span class="code">poll-socket client 'data-available-p 10</span>)</span>
+       <span class="keyword">:until</span> data-available
+       <span class="keyword">:finally</span> <span class="paren4">(<span class="code">unless data-available
+                  <span class="paren5">(<span class="code">error <span class="string">"Echo server not working."</span></span>)</span></span>)</span></span>)</span>
+    
+    <span class="paren3">(<span class="code"><i><span class="symbol">let*</span></i> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code">buffer <span class="paren6">(<span class="code">make-array 100000 <span class="keyword">:element-type</span> '<span class="paren1">(<span class="code">unsigned-byte 8</span>)</span></span>)</span></span>)</span>
+           <span class="paren5">(<span class="code">bytes-read <span class="paren6">(<span class="code">read-from-stream client buffer</span>)</span></span>)</span></span>)</span>
+      <span class="paren4">(<span class="code">babel:octets-to-string buffer <span class="keyword">:end</span> bytes-read</span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>

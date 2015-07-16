@@ -1,0 +1,43 @@
+See: http://esessoms.github.com/backports
+
+Atoms
+-----
+Synchronous changes to individual locations.
+
+make-atom
+deref
+compare-and-set!
+swap!
+get-validator
+set-validator
+atomic-setf
+atomic-adjoinf
+atomic-removef
+atomic-unionf
+
+Agents
+------
+Asynchronous changes to individual locations.
+
+make-agent
+send
+send-off
+agent-pexec
+
+Refs (Software Transactional Memory)
+------------------------------------
+Coordinated changes to multiple locations.
+
+make-ref
+ref-set
+alter
+commute
+ensure
+
+Syntax
+------
+
+->
+->>
+@
+fn

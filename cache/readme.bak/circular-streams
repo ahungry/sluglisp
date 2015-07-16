@@ -1,0 +1,68 @@
+<h1>Circular-Streams - Circularly readable streams for Common Lisp</h1>
+
+<h2>Usage</h2>
+
+<pre><code>(defparameter *stream*
+              (flex:make-in-memory-input-stream
+               #(72 101 108 108 111)))
+
+(defparameter *circular-stream*
+              (make-circular-input-stream *stream*))
+
+(read-char *circular-stream*)          ;=&gt; #\H
+(read-char *circular-stream*)          ;=&gt; #\e
+(read-char *circular-stream*)          ;=&gt; #\l
+(read-char *circular-stream*)          ;=&gt; #\l
+(read-char *circular-stream*)          ;=&gt; #\o
+(read-char *circular-stream* nil :eof) ;=&gt; :eof
+
+(let ((buf (make-array 5 :adjustable t :fill-pointer 5)))
+  (read-sequence buf *circular-stream*)
+  (flex:octets-to-string buf))
+;=&gt; &quot;Hello&quot;
+</code></pre>
+
+<h2>Description</h2>
+
+<p>Circular-Streams allows you to read streams circularly by wrapping real streams. Once you reach end-of-file of a stream, it&apos;s file position will be reset to 0 and you&apos;re able to read it again.</p>
+
+<p>Note this library can treat only octet streams which has a method <code>read-byte</code>. This might be expanded in the future.</p>
+
+<p>This library was originally written by Tomohiro Matsuyama as a part of <a href="http://clacklisp.org" >Clack</a>, Eitarow Fukamachi ported it with some improvements.</p>
+
+<h2>API Reference</h2>
+
+<h3>[Class] circular-input-stream</h3>
+
+<p>Class for circular input streams. <code>make-circular-input-stream</code> is available to create an instance.</p>
+
+<h3>[Function] make-circular-input-stream</h3>
+
+<p>Creates <code>circular-input-stream</code> and returns it. If <code>:buffer</code> is specified, the instance uses it as an internal buffer. You need this to reuse <code>circular-input-stream</code> without saving itself.</p>
+
+<h3>[Function] make-circular-stream-buffer</h3>
+
+<p>Creates a buffer array for <code>circular-input-stream</code>.</p>
+
+<h2>Author</h2>
+
+<ul>
+<li>Tomohiro Matsuyama (tomo@cx4a.org)</li>
+<li>Eitarow Fukamachi (e.arrows@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2011-2012 Tomohiro Matsuyama (tomo@cx4a.org)<br/>
+Copyright (c) 2012 Eitarow Fukamachi (e.arrows@gmail.com)</p>
+
+<h1>License</h1>
+
+<p>Licensed under the LLGPL License.</p>
+
+<h1>See Also</h1>
+
+<ul>
+<li><a href="http://www.cliki.net/Gray%20streams" >Gray streams</a></li>
+<li><a href="http://www.cliki.net/trivial-gray-streams" >trivial-gray-streams</a></li>
+</ul>

@@ -1,0 +1,8 @@
+A collection of smallish Common Lisp utilities, written or borrowed by Mike Travers (mt@alum.mit.edu).  
+Part of programming in Lisp is building up a library of idioms and language extensions.  These are
+mine, and feel free to use the package as a whole or extract parts.
+
+Original sources for the borrowed parts include Ken Haase, JP Massar, Jeff Shrager, and many others.
+
+Load:
+(load "load.lisp")

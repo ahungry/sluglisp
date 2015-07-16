@@ -1,0 +1,106 @@
+Clickr & Automatr 0.2
+=====================
+
+Clickr is a high-level binding library of the Flickr API for Common
+Lisp.  Automatr is an application for automating various tasks in
+Flickr which utilizes Clickr.  I've written about both on my blog:
+
+  http://schani.wordpress.com/2006/07/20/lisping-flickr/
+
+See below for how Clickr 0.2 differs from the description in my blog,
+which was written for version 0.1.
+
+To use Clickr or Automatr for yourself, you'll need, apart from a
+Common Lisp implementation (I've only tested it on OpenMCL), the
+following packages:
+
+* ASDF
+
+  http://www.cliki.net/asdf
+
+  Clickr itself is an ASDF package.
+
+* via ASDF the following:
+
+  http://www.cliki.net/S-XML
+  http://www.cliki.net/S-XML-RPC
+  http://www.cliki.net/trivial-sockets
+  http://www.cliki.net/Trivial-HTTP
+  http://www.cliki.net/CL-PPCRE
+  http://www.cliki.net/MD5
+
+  If you have ASDF-INSTALL, they should be downloaded automatically
+  when you load Clickr.
+
+You'll also need to get your own Flickr API key and shared secret to
+make Flickr API calls.
+
+The function "request-authorization" in "flickr.lisp" uses this line
+to open a URL in a browser:
+
+    (run-program "open" (list url))
+
+If you're using OpenMCL on a Mac this'll probably work for you.  If
+you're not, change it to whatever will make your system open that URL.
+
+
+Differences between Clickr 0.1 and 0.2
+--------------------------------------
+
+While Clickr 0.1 used a global variable to store your API key and
+shared secret, Clickr 0.2 lets you provide this data when you fetch a
+"root" object from Flickr.  You'll still have problems if you want to
+use more than one API key in a Clickr session, but the interface is
+cleaner now and more extensible for future improvements.
+
+What you'll need to do is get an "API info".  You can either create
+one yourself by calling MAKE-FLICKR-API-INFO, or you can let
+REQUEST-AUTHORIZATION create one for you.
+
+You can then use that API info object to, for example, fetch a user
+via USER-WITH-NAME.  The user object you'll get knows which API info
+was used to fetch it, so you won't have to specify it again if you
+want to get the user's photos, for example.
+
+
+Automatr
+--------
+
+If you want to use Automatr you'll have to edit the rules in
+"automatr.lisp".  They should really be in a separate file, but I was
+too lazy to make it so.  Most of the rules probably won't work for you
+because you're not a member of the groups in question, and some won't
+work for sure because you can't add photos to my sets.  I suggest you
+delete all the rules and write one or two simple ones for yourself, so
+that you get a feel for how it works.  It'll also speed Automatr up.
+
+I use "load-flickr.lisp" to load the whole package (you'll have to
+insert you Flickr data there).  To make Automatr do its thing, do
+
+  (defparameter *my-actions* (login-and-make-actions *me*))
+
+After that you should have a file "actions.html" which contains a list
+of all the actions Automatr wants to carry out.  To actually carry
+them out, do
+
+  (apply-actions *my-actions*)
+
+
+License
+-------
+
+Clickr and Automatr are free software distributed under the terms of
+the GNU General Public License.  The file `COPYING' contains the text
+of the license.
+
+
+
+
+If you have comments, bug-fixes or improvements to Clickr or Automatr,
+please don't hesitate to email me!
+
+Have fun!
+
+-- 
+Mark Probst
+mark.probst@gmail.com

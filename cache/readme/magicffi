@@ -1,0 +1,98 @@
+MAGICFFI
+========
+
+MAGICFFI is a CFFI interface to libmagic(3), the file type
+determination library using ``magic'' numbers.
+
+Homepage is http://common-lisp.net/project/magicffi.
+
+Download
+--------
+
+To check out the git repository, run:
+
+----------------------------------------------------------------------
+$ git clone git://github.com/dochang/magicffi.git
+----------------------------------------------------------------------
+
+To browse code online, go to:
+
+http://github.com/dochang/magicffi
+
+You can also download the repo's snapshot.
+
+Zipball::
+
+http://github.com/dochang/magicffi/zipball/master
+
+Tarball::
+
+http://github.com/dochang/magicffi/tarball/master
+
+Installation
+------------
+
+MAGICFFI depends on the following lisp libraries:
+
+- CFFI
+- CL-PPCRE (used by the internal flags generator)
+
+The following system packages are also required:
+
+- libmagic-dev
+- libc6-dev
+- gcc
+
+You have to install them on your system before loading magicffi.
+
+Tutorial
+--------
+
+----------------------------------------------------------------------
+> (asdf:oos 'asdf:load-op :magicffi)
+> (use-package :magicffi)
+> (with-open-magic (magic '(:mime-type :symlink))
+    (magic-load magic)
+    (magic-file magic #P"magicffi.asd"))
+"text/plain"
+----------------------------------------------------------------------
+
+Documentation
+-------------
+
+All external symbols of the package `MAGICFFI` are listed in
+`package.lisp`.  Check out their docstrings for help.
+
+Magic Flags
+~~~~~~~~~~~
+
+You can use either constants or keyword list as magic flags.  I.e.,
+
+----------------------------------------------------------------------
+(magic-open (logxor +magic-mime-type+ +magic-symlink+))
+----------------------------------------------------------------------
+
+is equivalent to
+
+----------------------------------------------------------------------
+(magic-open '(:mime-type :symlink))
+----------------------------------------------------------------------
+
+The constant name and keyword name of a flag are based on its C name.
+See the following table for the pattern:
+
+.Magic flags naming convension
+|==========================================
+|C name       |Lisp constant  |Lisp keyword
+|`MAGIC_NONE` |`+MAGIC-NONE+` |`:NONE`
+|==========================================
+
+All constant names are exported.
+
+Support and mailing lists
+-------------------------
+
+If you have questions, bug reports, feature requests and patches, send
+your email to the magicffi-devel mailing list.  Please visit:
+
+http://common-lisp.net/cgi-bin/mailman/listinfo/magicffi-devel

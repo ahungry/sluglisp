@@ -1,0 +1,10 @@
+This is a snapshot branch for users who wish to fetch the Fluid
+backend separately from CLSQL.  It does not include unit tests.
+
+If you are interested in hacking this, please branch from Git branch
+`fluid-pools' in git://repo.or.cz/clsql/s11.git .  See more
+information about this branch at
+
+http://repo.or.cz/w/clsql/s11.git?a=shortlog;h=refs/heads/fluid-pools
+
+Please do not submit Darcs patches.

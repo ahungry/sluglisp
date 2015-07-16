@@ -1,0 +1,170 @@
+<h1>S-HTTP-SERVER</h1>
+
+<h2>A Minimal Standalone Common Lisp HTTP Server</h2>
+
+<p><code>S-HTTP-SERVER</code> is a minimal standalone HTTP Server. 
+This simple package is used as a building block in a number of other open source projects.</p>
+
+<h3>Contents</h3>
+
+<ul>
+<li><a href="#features" >Features</a></li>
+<li><a href="#status" >Status</a></li>
+<li><a href="#news" >News</a></li>
+<li><a href="#platforms" >Platforms</a></li>
+<li><a href="#downloading" >Downloading</a></li>
+<li><a href="#installation" >Installation</a></li>
+<li><a href="#usage" >Usage</a></li>
+<li><a href="#api" >API Reference</a></li>
+<li><a href="#mailinglist" >Mailinglist</a></li>
+<li><a href="#changelog" >Changelog</a></li>
+<li><a href="#tod" >TODO</a></li>
+<li><a href="#faq" >FAQ</a></li>
+<li><a href="#bugs" >Bugs</a></li>
+<li><a href="#authors" >Authors</a></li>
+<li><a href="#maintainers" >Maintainers</a></li>
+<li><a href="#license" >License</a></li>
+<li><a href="#history" >History</a></li>
+<li><a href="#references" >References</a></li>
+</ul>
+
+<h3>Features</h3>
+
+<p><code>S-HTTP-SERVER</code> can:</p>
+
+<ul>
+<li>handle HTTP requests and generate HTTP responses</li>
+<li>be configured with plugins or handlers</li>
+<li>has a builtin status handler</li>
+<li>comes with a static resource handler, favicon handler and redirect
+handler</li>
+<li>allows you to write and install your own handlers</li>
+<li>support HTTPS on LispWorks</li>
+</ul>
+
+<h3>Status</h3>
+
+<p><code>S-HTTP-SERVER</code> is considered stable code.</p>
+
+<h3>News</h3>
+
+<ul>
+<li><em>April 2006</em> - added HTTPS support, serveral handlers and
+optimalizations.</li>
+<li><em>December 2005</em> - <code>S-HTTP-SERVER</code> was featured in my first <a href="http://homepage.mac.com/svc/LispMovies/index.html" >Lisp
+Movie: Episode 1: HTTP Client and
+Server</a> [dead link].
+Jean-François Brouillet has written an excellent <a href="http://lisp.jfb-city.co.uk/tutorials/svc/s-http-server.html" >tutorial on using
+S-HTTP-SERVER</a>,
+complete with screenshots and code examples.</li>
+<li><em>November 2005</em> - Created as a new project.</li>
+</ul>
+
+<h3>Platforms</h3>
+
+<p><code>S-HTTP-SERVER</code> is written in ANSI standard Common Lisp and should be
+portable across any CL implementation.</p>
+
+<h3>Installation</h3>
+
+<p>The <code>S-HTTP-SERVER</code> package is loaded using
+<a href="http://www.cliki.net/asdf" >ASDF</a>. There is an excellent <a href="http://constantly.at/lisp/asdf/" >tutorial on
+ASDF</a> to get you started.</p>
+
+<pre><code>CL-USER 1 &gt; (asdf:oos 'asdf:load-op :`S-HTTP-SERVER`)
+</code></pre>
+
+<h3>Usage</h3>
+
+<p>Basically, you create an <code>S-HTTP-SERVER</code> object and start it. Out of the
+box only the status/debug page
+<a href="http://localhost:1701/s-http-server" >http://localhost:1701/s-http-server</a>
+is served. By registering new context handlers you can configure the
+server further. The static-resource-handler hosts static documents from
+a root directory in the file system. It is possible to write your own
+handlers, look at the code of static-resource-handler and
+<code>S-HTTP-SERVER</code>-handler for guidance.</p>
+
+<pre><code>CL-USER 1 &gt; (in-package :`S-HTTP-SERVER`)
+#&lt;The `S-HTTP-SERVER` package, 90/128 internal, 31/64 external&gt;
+
+`S-HTTP-SERVER` 2 &gt; (defvar *server* (make-`S-HTTP-SERVER`))
+*SERVER*
+
+`S-HTTP-SERVER` 3 &gt; (start-server *server*)
+;; `S-HTTP-SERVER`: Started a new server on port 1701
+#&lt;`S-HTTP-SERVER` &quot;`S-HTTP-SERVER`&quot; port 1701 running 10C5F6EB&gt;
+
+`S-HTTP-SERVER` 4 &gt; (register-context-handler *server* &quot;/my-site&quot; 'static-resource-handler :arguments '(&quot;/var/www/&quot;))
+((STATIC-RESOURCE-HANDLER &quot;/my-site&quot; &quot;/var/www/&quot;) (`S-HTTP-SERVER`-HANDLER &quot;/`S-HTTP-SERVER`&quot; :BUILTIN))
+
+`S-HTTP-SERVER` 5 &gt; (stop-server *server*)
+;; `S-HTTP-SERVER`: Stopped server
+#&lt;`S-HTTP-SERVER` &quot;`S-HTTP-SERVER`&quot; port 1701 not running 10C5F6EB&gt;
+</code></pre>
+
+<p>Jean-François Brouillet has written an excellent <a href="http://lisp.jfb-city.co.uk/tutorials/svc/s-http-server.html" >tutorial on using
+S-HTTP-SERVER</a>, complete with screenshots and code examples.</p>
+
+<h3>API Reference</h3>
+
+<p>There is automatically generated <a href="API.html" >API Reference</a> documentation
+available for the <code>S-HTTP-SERVER</code> package.</p>
+
+<h3>Mailinglist</h3>
+
+<p>The <a href="http://common-lisp.net/cgi-bin/mailman/listinfo/kpax-devel" >KPAX mailing
+list</a> is
+used for this project.</p>
+
+<h3>Changelog</h3>
+
+<p>Release Notes:</p>
+
+<ul>
+<li>release 1: moved <code>S-HTTP-SERVER</code> into a seperate project under a new
+structure</li>
+</ul>
+
+<h3>TODO</h3>
+
+<p>There is currently no TODO list.</p>
+
+<h3>FAQ</h3>
+
+<p>Nothing appropriate.</p>
+
+<h3>Bugs</h3>
+
+<p>There are no known bugs.</p>
+
+<h3>Authors</h3>
+
+<p><code>S-HTTP-SERVER</code> was written by Sven Van
+Caekenberghe.</p>
+
+<h3>Maintainers</h3>
+
+<p><code>S-HTTP-SERVER</code> is being maintained by Sven Van
+Caekenberghe.</p>
+
+<h3>License</h3>
+
+<p>You are granted the rights to distribute and use this software as
+governed by the terms of the Lisp Lesser General Public License
+(<a href="http://opensource.franz.com/preamble.html" >http://opensource.franz.com/preamble.html</a>),
+also known as the LLGPL.</p>
+
+<h3>History</h3>
+
+<p>This is a new project.</p>
+
+<h3>References</h3>
+
+<p>The reference for the HTTP protocol is <a href="http://www.w3.org/Protocols/rfc2616/rfc2616.html" >RFC
+2616</a>. Also worth reading
+is <a href="http://en.wikipedia.org/wiki/Http" >the Wikipedia article about
+HTTP</a>.</p>
+
+<p>Copyright © 2005, 2006 Sven Van Caekenberghe, Beta Nine BVBA. All Right
+Reserved.</p>

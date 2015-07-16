@@ -1,0 +1,75 @@
+<h1>asdf-project-helper</h1>
+
+<p>A project maintenance helper utilities with ASDF</p>
+
+<h2>APIs:</h2>
+
+<h3><em>[Function]</em> <code>CONVERT-FROM-DOCUMENT-FILE</code>:</h3>
+
+<p>Read a document file (included in source tree of your project) into a string.</p>
+
+<p>e.g. <code>(convert-from-document-file &quot;readme.txt&quot; :systemname)</code></p>
+
+<p>You can specify file type with <code>:type</code> keyword to convert file format.</p>
+
+<p>Supported file types are <code>:plain-text</code> (this is default) and <code>:markdown</code>.</p>
+
+<p>e.g. <code>(convert-from-document-file &quot;readme.md&quot; :systemname :type :markdown)</code></p>
+
+<p><em>Note:</em> <code>:markdown</code> is not supported on GNU CLISP environment because of troubles of CL-MARKDOWN package.</p>
+
+<h3><em>[Macro]</em> <code>UPDATE-LONG-DESCRIPTION</code>:</h3>
+
+<p>Wrapper of <code>convert-from-document-file</code> to update <code>long-description</code> field of a given system.</p>
+
+<p>The rendered <code>long-description</code> will be cached into a file, &ldquo;long-description.cache&rdquo;.</p>
+
+<p>e.g.</p>
+
+<pre><code>(update-long-description &quot;readme.txt&quot; :systemname)
+</code></pre>
+
+<h2>use case:</h2>
+
+<p>For example, making a Common Lisp project &ldquo;<code>foo</code>&rdquo; with ASDF.</p>
+
+<p>file tree is as below;</p>
+
+<pre><code>    foo -+- foo.asd
+         +- foo.lisp
+         +- README.txt
+</code></pre>
+
+<ul>
+<li><code>foo.asd</code> is a project file with ASDF.</li>
+<li><code>foo.lisp</code> is a source code file of Common Lisp.</li>
+<li><code>README.txt</code> is a long long description of the project.</li>
+</ul>
+
+<p>If <em>you</em> want to include the contents of <code>README.txt</code> into the &ldquo;<code>long-description</code>&rdquo; field of the system <code>foo</code>, you can write a project file as below;</p>
+
+<pre><code>(defsystem foo
+  :name &quot;foo&quot;
+  :description &quot;short description&quot;
+  ;; Use :defsystem-depends-on instead of :depends-on.
+  :defsystem-depends-on (:asdf-project-helper)
+  :components ((:file &quot;foo&quot;)) )
+
+(defmethod perform :after ((o load-op)
+                           (c (eql (find-system :foo))) )
+  (declare (ignore o c))
+  ;; aph is a nickname of asdf-project-helper package
+  (aph:update-long-description &quot;README.txt&quot; :foo) )      
+</code></pre>
+
+<p>And also, if you want to include the contents of <code>README.txt</code> into the documentation part of a main portion of the project (such as &ldquo;function <code>foo</code>&rdquo;), you can write a source code as below;</p>
+
+<pre><code>(defun foo (...)
+  (declare ...)
+  #.(aph:convert-from-document-file &quot;README.txt&quot; :foo)
+  ... )
+</code></pre>
+
+<h2>License:</h2>
+
+<p>This project is under MIT license.</p>

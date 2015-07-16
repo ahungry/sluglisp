@@ -1,0 +1,77 @@
+<h1>cl-6502 - A Readable CPU Emulator</h1>
+
+<p>cl-6502 is a Common Lisp emulator, assembler and disassembler for the
+<a href="http://en.wikipedia.org/wiki/MOS_Technology_6502" >MOS 6502 processor</a>.
+In case that sounds weird to you, the MOS 6502 is famous for its use in&hellip;</p>
+
+<ul>
+<li>the <a href="http://en.wikipedia.org/wiki/Apple_II_series" >Apple II</a>,</li>
+<li>the <a href="http://en.wikipedia.org/wiki/Nintendo_Entertainment_System" >original NES</a>,</li>
+<li>the <a href="http://en.wikipedia.org/wiki/Commodore_64" >Commodore 64</a>,</li>
+<li>the <a href="http://en.wikipedia.org/wiki/BBC_Micro" >BBC Micro</a>,</li>
+<li>and <a href="http://media.ccc.de/browse/congress/2010/27c3-4159-en-reverse_engineering_mos_6502.html" >Michael Steil&apos;s phenomenal talk</a> at 27C3.</li>
+</ul>
+
+<p>I gave a talk on cl-6502 called &lsquo;On Programmer Archaeology&rsquo;. You can watch it <a href="http://vimeo.com/47364930" >on Vimeo</a> or grab <a href="http://redlinernotes.com/docs/talks/opa.html" >the slides</a>. A few notes on why I&apos;m writing it are <a href="http://blog.redlinernotes.com/posts/On-Interactive-Retrocomputing.html" >here</a> and minor notes on the design are <a href="http://blog.redlinernotes.com/posts/An-Emulator-Design-Pattern.html" >here</a>.</p>
+
+<h2>Reading</h2>
+
+<p>Inspired by Luke Gorrie&apos;s call for <a href="http://blog.lukego.com/blog/2012/10/24/readable-programs/" >Readable Programs</a>, there is a readable <a href="http://redlinernotes.com/docs/cl-6502.pdf" >PDF book</a> of the source. You can also produce it from the git repo with: <code>cd repo/src &amp;&amp; make book</code>. You&apos;ll need make, pandoc, and some latex packages (texlive-luatex, texlive-xetex, and texlive-latex-extra on debian) installed to build it yourself.</p>
+
+<h2>Install</h2>
+
+<p>You are strongly encouraged to use this library via <a href="http://quicklisp.org/" >Quicklisp</a>. Simply start your lisp and run: <code>(ql:quickload 'cl-6502)</code>.</p>
+
+<h2>Getting Started</h2>
+
+<ul>
+<li>Check out the docs for the <a href="http://redlinernotes.com/docs/cl-6502.html" ><em>cl-6502</em></a> package or have a look on <a href="http://quickdocs.org/cl-6502" >quickdocs</a>.</li>
+<li>Play around at the REPL!</li>
+<li>Use it to create your own wacky code artifacts.</li>
+<li>There is also a lower-level <em>6502</em> package if you really want to get your hands dirty. NOTE: The 6502 package shadows <code>BIT</code> and <code>AND</code> so you likely don&apos;t want to <code>:use</code> it in your own packages.</li>
+</ul>
+
+<p>In particular, <a href="http://redlinernotes.com/docs/cl-6502.html#asm_func" >asm</a>, <a href="http://redlinernotes.com/docs/cl-6502.html#disasm_func" >disasm</a>, <a href="http://redlinernotes.com/docs/cl-6502.html#execute_func" >execute</a>, <a href="http://redlinernotes.com/docs/cl-6502.html#step-cpu_func" >step-cpu</a>, and <a href="http://redlinernotes.com/docs/cl-6502.html#reset_func" >reset</a> are likely of interest.</p>
+
+<h3>A simple example:</h3>
+
+<ol>
+<li>Load cl-6502 and switch to the <code>cl-6502</code> package.</li>
+<li>Write some 6502 code and run it through <code>asm</code> (e.g. <code>(asm &quot;brk&quot;)</code>) to get a bytevector to execute.</li>
+<li>Load it into memory with <code>(setf (get-range 0) *my-bytevector*)</code>.</li>
+<li>Set the program counter to 0 with <code>(setf (6502:cpu-pc *cpu*) 0)</code>.</li>
+<li>Run it with <code>(run *cpu*)</code> or manually step through it with <code>(step-cpu *cpu* (get-byte (cpu-pc *cpu*)))</code>.</li>
+<li><code>(reset)</code> the CPU as necessary and keep hacking! :)</li>
+</ol>
+
+<h3>Supported Assembler Syntax</h3>
+
+<p>There are sexp-based and string-based assemblers, both invoked via <code>asm</code>. The string-based assembler expects statements to be separated by newlines. The sexp-based assembler expects each statement to be in its own list. Disassembling to both formats is supported via <code>disasm</code> and <code>disasm-to-list</code>. Semicolons are treated as &ldquo;comment to end-of-line&rdquo; in the string assembler.</p>
+
+<pre><code>| Addressing Mode | SEXP-based format | String format  |
+|-----------------|-------------------|----------------|
+|   Implied       |  (:brk)           | "brk"          |
+|   Immediate     |  (:lda :#$00)     | "lda #$00"     |
+|   Accumulator   |  (:rol :a)        | "rol a"        |
+|   Zero-page     |  (:lda :$03)      | "lda $03"      |
+|   Zero-page, X  |  (:lda :$03.x)    | "lda $03, x"   |
+|   Zero-page, Y  |  (:ldx :$03.y)    | "ldx $03, y"   |
+|   Absolute      |  (:sbc :$0001)    | "sbc $0001"    |
+|   Absolute, X   |  (:lda :$1234.x)  | "lda $1234, x" |
+|   Absolute, Y   |  (:lda :$1234.y)  | "lda $1234, y" |
+|   Indirect      |  (:jmp :@1234)    | "jmp ($1234)   |
+|   Indirect, X   |  (:lda :@12.x)    | "lda ($12), x" |
+|   Indirect, Y   |  (:lda :@34.y)    | "lda ($34), y" |
+|   Relative      |  (:bne :&fd)      | "bne &fd"      |</code></pre>
+
+<h2>Hacking</h2>
+
+<ul>
+<li>Using Quicklisp: For local development, git clone this repository into the <code>local-projects</code> subdirectory of quicklisp.</li>
+</ul>
+
+<p>To run the tests, after you&apos;ve loaded <em>cl-6502</em> just run <code>(asdf:oos 'asdf:test-op 'cl-6502)</code>. You may need to <code>(ql:quickload 'cl-6502-tests)</code> to ensure that the fiveam dependency is satisfied first.</p>
+
+<h2>License</h2>
+
+<p>The code is under a BSD license except for docs/6502.txt and tests/6502_functional_test.a65 which are only present by &lsquo;mere aggregation&rsquo; and not strictly part of my sources.</p>

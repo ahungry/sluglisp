@@ -1,0 +1,19 @@
+<pre><code>                          LOCAL-TIME
+</code></pre>
+
+<p>See the &ldquo;COPYING&rdquo; file for information about legal issues of copying
+and using this library.</p>
+
+<p>See the &ldquo;INSTALL&rdquo; file for information about building and installing
+this library.</p>
+
+<p>The LOCAL-TIME library is a Common Lisp library for the manipulation
+of dates and times.  It is based almost entirely upon Erik Naggum&apos;s
+paper &ldquo;The Long Painful History of Time&rdquo;.</p>
+
+<p>Related projects of interest:
+ * https://github.com/enaeher/local-time-duration
+ * http://common-lisp.net/projects/cl-l10n/</p>
+
+<p>See the manual/ directory for more information and/or the website at
+http://common-lisp.net/project/local-time/</p>

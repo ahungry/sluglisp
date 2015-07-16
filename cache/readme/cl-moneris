@@ -1,0 +1,30 @@
+This is a Common Lisp library providing access to the Moneris payment
+processing (http://www.moneris.com/) HTTPS POST API.
+
+The basic use pattern is to create a merchant-token with your store's
+information (API token, store ID, and the access URI you received from
+Moneris), then call the 'process' function with the merchant-token and
+a transaction (you can create transactions with the 'purchase,'
+'correction,' and 'refund' functions provided - see their
+documentation strings for details). 'process' returns multiple values:
+
+txn-id           - transaction ID
+code             - numeric response code
+code-description - response code description
+message          - message returned in response
+response-xml     - parsed XML of response
+response-string  - raw XML response string
+
+response-xml contains all the information you need to generate a
+client receipt/invoice; consult the Moneris API documentation
+(https://www.eselectplus.ca/en/downloadable-content) to learn about
+its format and fields.
+
+The file test/moneris-test.lisp provides examples using the Moneris
+API test server.
+
+cl-moneris was originally authored by Wade Humeniuk. It was converted
+and released by Vladimir Sedach <vsedach@gmail.com>
+
+cl-moneris is available under the ISC (BSD) license, except for the
+unit tests, which are released into the public domain.

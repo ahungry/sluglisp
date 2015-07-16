@@ -1,0 +1,16 @@
+<h1>avatar-api</h1>
+
+<p><a href="https://travis-ci.org/eudoxia0/avatar-api" ><img src="https://travis-ci.org/eudoxia0/avatar-api.svg?branch=master" alt="Build Status" /></a></p>
+
+<p>avatar-api is a library for getting avatars from Gravatar, Google+ and others.</p>
+
+<h1>Usage</h1>
+
+<pre><code><span class="code">cl-user&gt; <span class="paren1">(<span class="code">avatar-api:gravatar <span class="string">"jdoe@initech.com"</span></span>)</span>
+"http://www.gravatar.com/avatar/6aef61d98ad63bd1aaa89345eb150df2"</span></code></pre>
+
+<h1>License</h1>
+
+<p>Copyright (c) 2014 Fernando Borretti</p>
+
+<p>Licensed under the MIT License.</p>

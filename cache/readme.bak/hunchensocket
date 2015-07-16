@@ -1,0 +1,92 @@
+<h1>Hunchensocket - WebSockets for Hunchentoot</h1>
+
+<p>Hunchensocket is a Common Lisp implementation of <a href="http://en.wikipedia.org/wiki/WebSocket" >WebSocket</a>s realized
+as an extension to <a href="http://weitz.de/" >Edi Weitz&apos;</a> excellent <a href="http://weitz.de/hunchentoot/" >Hunchentoot</a> web
+server. Hunchensocket implements a compliant <a href="https://tools.ietf.org/html/rfc6455" >RFC6455</a> server. </p>
+
+<p>Note that Alexander Kahl, the original author, has desactivated his 
+<a href="https://github.com/e-user/hunchensocket" >old version</a> that only supports the drafts of the protocol.</p>
+
+<h2>Installation</h2>
+
+<p>Hunchensocket is in <a href="http://www.quicklisp.org/" >Quicklisp</a>, so if you have that
+setup just do <code>(ql:quickload :hunchensocket)</code>.</p>
+
+<p>Quicklisp is also good to use the trunk alongside with other 
+dependencies, perhaps to test a new feature or a bugfix:</p>
+
+<pre><code>$ cd ~/Source/Lisp/
+$ git clone https://github.com/capitaomorte/hunchensocket.git</code></pre>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">push <span class="string">"~/Source/Lisp"</span> <span class="special">ql:*local-project-directories*</span></span>)</span>
+<span class="paren1">(<span class="code">ql:quickload <span class="keyword">:hunchensocket</span></span>)</span> <span class="comment">;; use local hunchensocket and pull
+</span>                              <span class="comment">;; dependencies from quicklisp</span></span></code></pre>
+
+<h2>A chat server in 30 lines</h2>
+
+<p>First define classes for rooms and users. Make these subclasses of
+<code>websocket-resource</code> and <code>websocket-client</code>.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defpackage</span></i> <span class="keyword">:my-chat</span> <span class="paren2">(<span class="code"><span class="keyword">:use</span> <span class="keyword">:cl</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">in-package <span class="keyword">:my-chat</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> chat-room <span class="paren2">(<span class="code">hunchensocket:websocket-resource</span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:name</span> <span class="keyword">:initform</span> <span class="paren4">(<span class="code">error <span class="string">"Name this room!"</span></span>)</span> <span class="keyword">:reader</span> name</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:default-initargs</span> <span class="keyword">:client-class</span> 'user</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code">hunchensocket:websocket-client</span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:user-agent</span> <span class="keyword">:reader</span> name <span class="keyword">:initform</span> <span class="paren4">(<span class="code">error <span class="string">"Name this user!"</span></span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>Define a list of rooms. Notice that
+<code>hunchensocket:*websocket-dispatch-table*</code> works just like
+<code>hunchentoot:*dispatch-table*</code>, but for websocket specific resources.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*chat-rooms*</span> <span class="paren2">(<span class="code">list <span class="paren3">(<span class="code">make-instance 'chat-room <span class="keyword">:name</span> <span class="string">"/bongo"</span></span>)</span>
+                           <span class="paren3">(<span class="code">make-instance 'chat-room <span class="keyword">:name</span> <span class="string">"/fury"</span></span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> find-room <span class="paren2">(<span class="code">request</span>)</span>
+  <span class="paren2">(<span class="code">find <span class="paren3">(<span class="code">hunchentoot:script-name request</span>)</span> <span class="special">*chat-rooms*</span> <span class="keyword">:test</span> #'string= <span class="keyword">:key</span> #'name</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">pushnew 'find-room <span class="special">hunchensocket:*websocket-dispatch-table*</span></span>)</span></span></code></pre>
+
+<p>OK, now a helper function and the dynamics of a chat room.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> broadcast <span class="paren2">(<span class="code">room message &amp;rest args</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">loop</span></i> for peer in <span class="paren3">(<span class="code">hunchensocket:clients room</span>)</span>
+        do <span class="paren3">(<span class="code">hunchensocket:send-text-message peer <span class="paren4">(<span class="code">apply #'format nil message args</span>)</span></span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> hunchensocket:client-connected <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">room chat-room</span>)</span> user</span>)</span>
+  <span class="paren2">(<span class="code">broadcast room <span class="string">"~a has joined ~a"</span> <span class="paren3">(<span class="code">name user</span>)</span> <span class="paren3">(<span class="code">name room</span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> hunchensocket:client-disconnected <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">room chat-room</span>)</span> user</span>)</span>
+  <span class="paren2">(<span class="code">broadcast room <span class="string">"~a has left ~a"</span> <span class="paren3">(<span class="code">name user</span>)</span> <span class="paren3">(<span class="code">name room</span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> hunchensocket:text-message-received <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">room chat-room</span>)</span> user message</span>)</span>
+  <span class="paren2">(<span class="code">broadcast room <span class="string">"~a says ~a"</span> <span class="paren3">(<span class="code">name user</span>)</span> message</span>)</span></span>)</span>  </span></code></pre>
+
+<p>Finally, start the server. <code>hunchensocket:websocket-acceptor</code> works
+just like <code>hunchentoot:acceptor</code>, and you can probably also use
+<code>hunchensocket:websocket-ssl-acceptor</code>.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*server*</span> <span class="paren2">(<span class="code">make-instance 'hunchensocket:websocket-acceptor <span class="keyword">:port</span> 12345</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">hunchentoot:start <span class="special">*server*</span></span>)</span></span></code></pre>
+
+<p>Now open two browser windows on http://www.websocket.org/echo.html,
+enter <code>ws://localhost:12345/bongo</code> as the host and play around chatting with
+yourself.</p>
+
+<h2>License</h2>
+
+<p>See <a href="https://github.com/capitaomorte/hunchensocket/blob/master/COPYING" >COPYING</a> for license details.</p>
+
+<h2>Design</h2>
+
+<p>Main sources of inspiration:</p>
+
+<ul>
+<li>Original implementation by Alexander Kahl, which cleverly hijacks
+  the Hunchentoot connection after the HTTP response and keeps the
+  connection alive, just like in a Head request.</li>
+<li><a href="https://github.com/3b/clws" >clws</a>&apos;s API because it explicitly defines websocket &ldquo;resources&rdquo;</li>
+<li><a href="http://weitz.de/hunchentoot/" >Hunchentoot&apos;s</a>&apos;s API because it uses CLOS</li>
+</ul>

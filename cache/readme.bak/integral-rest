@@ -1,0 +1,131 @@
+<h1>Integral-Rest - REST APIs for Integral DAO Table.</h1>
+
+<p><a href="https://travis-ci.org/Rudolph-Miller/integral-rest" ><img src="https://travis-ci.org/Rudolph-Miller/integral-rest.svg" alt="Build Status" /></a></p>
+
+<h2>Usage</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:initarg</span> <span class="keyword">:id</span>
+       <span class="keyword">:primary-key</span> t</span>)</span>
+   <span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">set-rest-app</span>)</span>
+
+<span class="paren1">(<span class="code">clack:clackup <span class="special">*rest-app*</span></span>)</span></span></code></pre>
+
+<h2>Installation</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:integral-rest</span></span>)</span></span></code></pre>
+
+<h2>API</h2>
+
+<h3>set-rest-app</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:initarg</span> <span class="keyword">:id</span>
+       <span class="keyword">:primary-key</span> t
+       <span class="keyword">:accessor</span> user-id</span>)</span>
+   <span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:name</span>
+         <span class="keyword">:accessor</span> user-name</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> integral:&lt;dao-table-class&gt;</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">set-rest-app</span>)</span>
+<span class="comment">;; This sets REST API app to *rest-app*.
+</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*my-rest-app*</span> <span class="paren2">(<span class="code">set-rest-app</span>)</span></span>)</span>
+<span class="comment">;; (set-rest-app) also returns REST API app.
+</span>
+<span class="paren1">(<span class="code">set-rest-app <span class="paren2">(<span class="code">list <span class="paren3">(<span class="code">find-class 'user</span>)</span></span>)</span></span>)</span>
+<span class="comment">;; (set-rest-app) can take list of class. (optional)</span></span></code></pre>
+
+<ul>
+<li>sets REST API app to <em>rest-app</em>.</li>
+<li>returns REST API app.</li>
+<li>REST API app has these routing rules below.</li>
+<li><code>&quot;/api/users&quot; :GET</code></li>
+<li><code>&quot;/api/users&quot; :POST</code></li>
+<li><code>&quot;/api/users/:id&quot; :GET</code></li>
+<li><code>&quot;/api/users/:id&quot; :PUT</code></li>
+<li><code>&quot;/api/users/:id&quot; :DELETE</code></li>
+</ul>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:initarg</span> <span class="keyword">:id</span>
+       <span class="keyword">:primary-key</span> t
+       <span class="keyword">:accessor</span> user-id</span>)</span>
+   <span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:name</span>
+         <span class="keyword">:accessor</span> user-name</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> integral:&lt;dao-table-class&gt;</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">set-rest-app</span>)</span>
+
+<span class="paren1">(<span class="code">clack:clackup <span class="special">*rest-app*</span></span>)</span>
+<span class="comment">;; =&gt; Listening on localhost:5000.
+</span>
+<span class="paren1">(<span class="code">create-dao 'user <span class="keyword">:name</span> <span class="string">"Rudolph"</span></span>)</span>
+<span class="comment">;; =&gt; #&lt;USER id: 1&gt;
+</span>
+<span class="paren1">(<span class="code">dex:get <span class="string">"http://localhost:5000/api/users"</span></span>)</span>
+<span class="comment">;; =&gt; "[{\"id\":1,\"name\":\"Rudolph\"}]"
+</span>
+<span class="paren1">(<span class="code">dex:get <span class="string">"http://localhost:5000/api/users/1"</span></span>)</span>
+<span class="comment">;; =&gt; "{\"id\":1,\"name\":\"Rudolph\"}"
+</span>
+<span class="paren1">(<span class="code">dex:post <span class="string">"http://localhost:5000/api/users"</span> <span class="keyword">:contest</span> '<span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="string">"name"</span> . <span class="string">"Miller"</span></span>)</span></span>)</span></span>)</span>
+<span class="comment">;; =&gt; "{\"id\":2,\"name\":\"Miller\"}"
+</span>
+<span class="paren1">(<span class="code">find-dao 'user 2</span>)</span>
+<span class="comment">;; =&gt; #&lt;USER id: 2 name: "Miller"&gt;
+</span>
+<span class="paren1">(<span class="code">dex:put <span class="string">"http://localhost:5000/api/users/2"</span> <span class="keyword">:contest</span> '<span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="string">"name"</span> . <span class="string">"Tom"</span></span>)</span></span>)</span></span>)</span>
+<span class="comment">;; =&gt; "{\"id\":2,\"name\":\"Tom\"}"
+</span>
+<span class="paren1">(<span class="code">find-dao 'user 2</span>)</span>
+<span class="comment">;; =&gt; #&lt;USER id: 2 name: "Tom"&gt;
+</span>
+<span class="paren1">(<span class="code">dex:delete <span class="string">"http://localhost:5000/api/users/2"</span></span>)</span>
+<span class="comment">;; =&gt; "{\"id\":2,\"name\":\"Tom\"}"
+</span>
+<span class="paren1">(<span class="code">find-dao 'user 2</span>)</span>
+<span class="comment">;; =&gt; NIL</span></span></code></pre>
+
+<h3>routing-rules</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:initarg</span> <span class="keyword">:id</span>
+       <span class="keyword">:primary-key</span> t
+       <span class="keyword">:accessor</span> user-id</span>)</span>
+   <span class="paren3">(<span class="code">name <span class="keyword">:initarg</span> <span class="keyword">:name</span>
+         <span class="keyword">:accessor</span> user-name</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> integral:&lt;dao-table-class&gt;</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">set-rest-app</span>)</span>
+
+<span class="paren1">(<span class="code">routing-rules <span class="special">*rest-app*</span></span>)</span>
+<span class="comment">;; =&gt; '(("/api/users" :GET) ("/api/users" :POST) ("/api/users/:id" :GET)
+</span><span class="comment">;;      ("/api/users/:id" :PUT) ("/api/users/:id" :DELETE))</span></span></code></pre>
+
+<ul>
+<li>returns list of routing rules an instance of ningle:<app> has.</li>
+</ul>
+
+<h2>Author</h2>
+
+<ul>
+<li>Rudolph-Miller</li>
+</ul>
+
+<h2>See Also</h2>
+
+<ul>
+<li><a href="https://github.com/fukamachi/integral" >Integral</a></li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2015 Rudolph-Miller</p>
+
+<h2>License</h2>
+
+<p>Licensed under the MIT License.</p>

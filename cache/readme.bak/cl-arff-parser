@@ -1,0 +1,7 @@
+<h1>cl-arff-parser</h1>
+
+<p>A simple and easy to use arff (Attribute-Relation File Format) parser for common lisp. </p>
+
+<p>For more information on arff take a look at: http://www.cs.waikato.ac.nz/ml/weka/arff.html</p>
+
+<p>It is compatible with all major lisps (SBCL, CCL, Lispworks, &hellip;)</p>

@@ -1,0 +1,287 @@
+<h2>hash-set</h2>
+
+<p>hash-set is an implementation of the hash-set data structure. It has
+constant time lookup, insertion and deletion.</p>
+
+<p>All tests are known to run successfully on SBCL, CCL, ECL, ABCL and CLISP.</p>
+
+<p>Basic usage:</p>
+
+<ol>
+<li>Please install <a href="http://www.quicklisp.org/" >Quicklisp</a> first.</li>
+<li><code>(ql:quickload 'hash-set)</code></li>
+</ol>
+
+<h3>Function reference</h3>
+
+<p>Note: <code>*!hash-set!*</code> means the hash-set is destructively
+modified. Functions that are destructive have an &lsquo;n&rsquo; in front of their
+name like CL&apos;s <code>reverse</code> and <code>nreverse</code>. So, the destructive
+version of <code>hs-insert</code> is <code>hs-ninsert</code>.</p>
+
+<h5>make-hash-set : <code>() -&gt; hash-set</code></h5>
+
+<p>Creates a new hash-set.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">hash-set <span class="paren4">(<span class="code">make-hash-set</span>)</span></span>)</span></span>)</span>
+  <span class="comment">;; Operations on hash-set
+</span>  </span>)</span></span></code></pre>
+
+<h5>list-to-hs : <code>list -&gt; hash-set</code></h5>
+
+<p>Creates a hash-set containing all the elements of a list.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">list-to-hs <span class="paren2">(<span class="code">alexandria:iota 10</span>)</span></span>)</span>
+#&lt;HASH-SET of count: 10 {1008832EF3}&gt;</span></code></pre>
+
+<h5>hs-to-list : <code>hash-set -&gt; list</code></h5>
+
+<p>Creates a list containing all the elements of the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">list-to-hs <span class="paren3">(<span class="code">alexandria:iota 10</span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">0 1 2 3 4 5 6 7 8 9</span>)</span></span></code></pre>
+
+<h5>hs-count : <code>hash-set -&gt; integer</code></h5>
+
+<p>Return the number of elements in the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-count <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">4 5 6 7</span>)</span></span>)</span></span>)</span>
+4</span></code></pre>
+
+<h5>hs-emptyp : <code>hash-set -&gt; bool</code></h5>
+
+<p>Predicate that tests whether the hash-set is empty or not.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-emptyp <span class="paren2">(<span class="code">make-hash-set</span>)</span></span>)</span>
+T</span></code></pre>
+
+<h5>hs-equal : <code>hash-set hash-set -&gt; bool</code></h5>
+
+<p>Compares two hash-sets for equality.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-equal <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">7 8 9</span>)</span></span>)</span>
+                    <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">7 8 9</span>)</span></span>)</span></span>)</span>
+T</span></code></pre>
+
+<h5>hs-copy : <code>hash-set -&gt; hash-set</code></h5>
+
+<p>Returns a copy of the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">hash-set <span class="paren4">(<span class="code">list-to-hs '<span class="paren5">(<span class="code">1 2 3 4</span>)</span></span>)</span></span>)</span></span>)</span>
+            <span class="paren2">(<span class="code">hs-equal hash-set
+                      <span class="paren3">(<span class="code">hs-copy hash-set</span>)</span></span>)</span></span>)</span>
+T</span></code></pre>
+
+<h5>hs-memberp : <code>hash-set elt -&gt; bool</code></h5>
+
+<p>Predicate that tests the existence of an element in the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET-TEST&gt; <span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">hash-set <span class="paren4">(<span class="code">list-to-hs '<span class="paren5">(<span class="code">1 2 3 4</span>)</span></span>)</span></span>)</span></span>)</span>
+                 <span class="paren2">(<span class="code">hs-memberp hash-set 4</span>)</span></span>)</span>
+T
+HASH-SET-TEST&gt; <span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">hash-set <span class="paren4">(<span class="code">list-to-hs '<span class="paren5">(<span class="code">1 2 3 4</span>)</span></span>)</span></span>)</span></span>)</span>
+                 <span class="paren2">(<span class="code">hs-memberp hash-set 8</span>)</span></span>)</span>
+NIL</span></code></pre>
+
+<h5>dohashset</h5>
+
+<p>Do something with each element of the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">dohashset <span class="paren2">(<span class="code">elt <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 10</span>)</span></span>)</span></span>)</span>
+            <span class="paren2">(<span class="code">princ elt</span>)</span></span>)</span>
+0123456789
+NIL</span></code></pre>
+
+<h5>hs-map : <code>function hash-set -&gt; hash-set</code></h5>
+
+<p>Maps a function over a hash-set and returns a hash-set containing all
+the mapped values.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-map <span class="paren3">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren4">(<span class="code">x</span>)</span> <span class="paren4">(<span class="code">* x x</span>)</span></span>)</span>
+                              <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 10</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">0 1 4 9 16 25 36 49 64 81</span>)</span></span></code></pre>
+
+<h5>hs-filter : <code>function hash-set -&gt; hash-set</code></h5>
+
+<p>Filters out elements from a hash-set that test true with <code>function</code>.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-filter #'oddp
+                                 <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 10</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">1 3 5 7 9</span>)</span></span></code></pre>
+
+<h4>Insertion/Deletion</h4>
+
+<h5>hs-insert : <code>hash-set elt -&gt; hash-set</code></h5>
+
+<p>Returns a new hash-set which contains the element <code>elt</code> in
+addition to all the elements of the hash-set given as the argument.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-insert <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">4 5 6</span>)</span></span>)</span> 123</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">4 5 6 123</span>)</span></span></code></pre>
+
+<h5>hs-ninsert : <code>hash-set elt -&gt; *!hash-set!*</code></h5>
+
+<p>Inserts elt into the hash-set and returns the modified hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">hash-set <span class="paren4">(<span class="code">list-to-hs '<span class="paren5">(<span class="code">1 2 3 4</span>)</span></span>)</span></span>)</span></span>)</span>
+            <span class="paren2">(<span class="code">hs-ninsert hash-set 1984</span>)</span>
+            <span class="paren2">(<span class="code">hs-to-list hash-set</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">1 2 3 4 1984</span>)</span></span></code></pre>
+
+<h5>hs-remove : <code>hash-set elt -&gt; hash-set</code></h5>
+
+<p>Returns a copy of the hash-set, but with the <code>elt</code> removed from
+it.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-remove <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">4 5 6 7</span>)</span></span>)</span> 5</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">4 6 7</span>)</span></span></code></pre>
+
+<h5>hs-nremove : <code>hash-set elt -&gt; *!hash-set!*</code></h5>
+
+<p>Removes the element <code>elt</code> from the hash-set.</p>
+
+<h5>hs-remove-if : <code>predicate hash-set -&gt; hash-set</code></h5>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-remove-if #'evenp
+                                    <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 10</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">1 3 5 7 9</span>)</span></span></code></pre>
+
+<p>The elements testing true with the predicate are removed from a copy
+of the hash-set.</p>
+
+<h5>hs-nremove-if : <code>predicate hash-set -&gt; *!hash-set!*</code></h5>
+
+<p>The elements testing true with the predicate are removed from the
+hash-set.</p>
+
+<h5>hs-remove-if-not : <code>predicate hash-set -&gt; hash-set</code></h5>
+
+<p>The elements testing false with the predicate are removed from a copy
+of the hash-set.</p>
+
+<h5>hs-nremove-if-not : <code>predicate hash-set -&gt; *!hash-set!*</code></h5>
+
+<p>The elements testing false with the predicate are removed from the
+hash-set.</p>
+
+<h4>Set operations</h4>
+
+<h5>hs-any : <code>predicate hash-set -&gt; bool</code></h5>
+
+<p>A function that returns true if any elements of the hash-set test true
+with the predicate.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-any #'oddp <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">2 4 6 8 9</span>)</span></span>)</span></span>)</span>
+T</span></code></pre>
+
+<h5>hs-all : <code>predicate hash-set -&gt; bool</code></h5>
+
+<p>A function that returns true if all elements of the hash-set test true
+with the predicate.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-all #'evenp <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">2 4 6 8 9</span>)</span></span>)</span></span>)</span>
+NIL</span></code></pre>
+
+<h5>hs-union : <code>hash-set hash-set -&gt; hash-set</code></h5>
+
+<p>Returns a hash-set that is the union of two hash-sets.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-union <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">1 2 3</span>)</span></span>)</span>
+                                <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">4 5 6</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">1 2 3 4 5 6</span>)</span></span></code></pre>
+
+<h5>hs-nunion : <code>hash-set-a hash-set-b -&gt; *!hash-set-a!*</code></h5>
+
+<p>Returns a modified <code>hash-set-a</code> with all of <code>hash-set-b</code>s
+elements added to it.</p>
+
+<h5>hs-intersection : <code>hash-set hash-set -&gt; hash-set</code></h5>
+
+<p>Returns a hash-set that is the intersection of two hash-sets.</p>
+
+<h5>hs-nintersection : <code>hash-set-a hash-set-b -&gt; *!hash-set-a!*</code></h5>
+
+<p>Returns a modified <code>hash-set-a</code> which contains the elements of the
+intersection of <code>hash-set-a</code> and <code>hash-set-b</code>.</p>
+
+<h5>hs-difference : <code>hash-set-a hash-set-b -&gt; hash-set</code></h5>
+
+<p>Returns a hash-set that is the set-difference of <code>hash-set-a</code> and <code>hash-set-b</code>.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-intersection <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">1 2 3 4</span>)</span></span>)</span>
+                                       <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">3 4 5 6</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">3 4</span>)</span></span></code></pre>
+
+<h5>hs-ndifference : <code>hash-set-a hash-set-b -&gt; *!hash-set-a!*</code></h5>
+
+<p>Returns a modified <code>hash-set-a</code> that contains the elements of the
+set-difference of <code>hash-set-a</code> and <code>hash-set-b</code>.</p>
+
+<h5>hs-symmetric-difference : <code>hash-set-a hash-set-b -&gt; hash-set</code></h5>
+
+<p>Returns a hash-set with the common elements removed.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-symmetric-difference <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">1 2 3 4</span>)</span></span>)</span>
+                                               <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">3 4 5 6</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">1 2 5 6</span>)</span></span></code></pre>
+
+<h5>hs-subsetp : <code>hash-set-a hash-set-b -&gt; bool</code></h5>
+
+<p>Returns <code>t</code> if <code>hash-set-a</code> is a subset of <code>hash-set-b</code>.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-subsetp <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">1 2</span>)</span></span>)</span> <span class="paren2">(<span class="code">list-to-hs '<span class="paren3">(<span class="code">1 2 3</span>)</span></span>)</span></span>)</span>
+T</span></code></pre>
+
+<h5>hs-proper-subsetp : <code>hash-set-a hash-set-b -&gt; bool</code></h5>
+
+<p>Returns <code>t</code> if <code>hash-set-a</code> is a proper-subset of <code>hash-set-b</code>.</p>
+
+<h5>hs-supersetp : <code>hash-set-a hash-set-b -&gt; bool</code></h5>
+
+<p>Returns <code>t</code> if <code>hash-set-a</code> is a superset of <code>hash-set-b</code>.</p>
+
+<h5>hs-proper-supersetp : <code>hash-set-a hash-set-b -&gt; bool</code></h5>
+
+<p>Returns <code>t</code> if <code>hash-set-a</code> is a proper-superset of <code>hash-set-b</code>.</p>
+
+<h5>hs-powerset : <code>hash-set -&gt; hash-set</code></h5>
+
+<p>Returns the powerset of the hash-set.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-powerset <span class="paren3">(<span class="code">list-to-hs '<span class="paren4">(<span class="code">1 2 3</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code">NIL <span class="paren2">(<span class="code">1</span>)</span> <span class="paren2">(<span class="code">2</span>)</span> <span class="paren2">(<span class="code">1 2</span>)</span> <span class="paren2">(<span class="code">3</span>)</span> <span class="paren2">(<span class="code">1 3</span>)</span> <span class="paren2">(<span class="code">2 3</span>)</span> <span class="paren2">(<span class="code">1 2 3</span>)</span></span>)</span></span></code></pre>
+
+<h5>hs-cartesian-product : <code>hash-set-a hash-set-b -&gt; hash-set</code></h5>
+
+<p>Returns the hash-set containing the elements of the cartesian product
+of <code>hash-set-a</code> and <code>hash-set-b</code>.</p>
+
+<pre><code><span class="code">HASH-SET&gt; <span class="paren1">(<span class="code">hs-to-list <span class="paren2">(<span class="code">hs-cartesian-product <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 3 <span class="keyword">:start</span> 1</span>)</span></span>)</span> 
+                                            <span class="paren3">(<span class="code">list-to-hs <span class="paren4">(<span class="code">alexandria:iota 3 <span class="keyword">:start</span> 10</span>)</span></span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><span class="paren2">(<span class="code">1 10</span>)</span> <span class="paren2">(<span class="code">1 11</span>)</span> <span class="paren2">(<span class="code">1 12</span>)</span> <span class="paren2">(<span class="code">2 10</span>)</span> <span class="paren2">(<span class="code">2 11</span>)</span> <span class="paren2">(<span class="code">2 12</span>)</span> <span class="paren2">(<span class="code">3 10</span>)</span> <span class="paren2">(<span class="code">3 11</span>)</span> <span class="paren2">(<span class="code">3 12</span>)</span></span>)</span></span></code></pre>
+
+<p>For even more usage examples please see <code>test.lisp</code>.</p>
+
+<h3>Running the tests</h3>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">ql:quickload 'hash-set</span>)</span>
+To load "hash-set":
+  Load 1 ASDF system:
+    hash-set
+<span class="comment">; Loading "hash-set"
+</span>..
+<span class="paren1">(<span class="code">HASH-SET</span>)</span>
+CL-USER&gt; <span class="paren1">(<span class="code">in-package <span class="keyword">:hash-set-test</span></span>)</span>
+#&lt;PACKAGE "HASH-SET-TEST"&gt;
+HASH-SET-TEST&gt; <span class="paren1">(<span class="code">run!</span>)</span>
+
+Running test suite ALL-TESTS
+...</span></code></pre>
+
+<h3>Credits</h3>
+
+<p>Engineering guidance taken from Robert Smith&apos;s
+<a href="https://bitbucket.org/tarballs_are_good/map-set" >map-set</a> and Takaya
+Ochiai&apos;s <a href="https://github.com/tkych/cl-intset" >cl-intset</a> libraries.</p>
+
+<p>The people at #lisp for their help and guidance.</p>

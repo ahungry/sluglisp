@@ -1,0 +1,10 @@
+It's not quite libidn for Common Lisp, but it's getting there.
+
+Includes:
+
+RFC-3454: Preparation of Internationalized Strings
+see http://www.ietf.org/rfc/rfc3454.txt
+
+XEP-0106: JID Escaping
+see http://xmpp.org/extensions/xep-0106.html
+see http://tools.ietf.org/rfc/rfc3920.txt

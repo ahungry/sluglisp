@@ -1,0 +1,37 @@
+<h1>Marching-Cubes</h1>
+
+<p>A marching cubes algorithm implementation in Common Lisp based on Paul Bourke&apos;s (http://paulbourke.net/geometry/polygonise/)</p>
+
+<h2>API</h2>
+
+<h3>[Function] marching-cubes</h3>
+
+<pre><code>MARCHING-CUBES density-function min-position max-position delta isolevel =&gt; triangles
+</code></pre>
+
+<p>Extracts a surface from density field represented with <code>density-function</code> and returns <code>triangles</code> which is a list of triangles. <code>density-function</code> is a function that takes three arguments representing the position of a point and returns density as a scalar at the point. <code>min-position</code> and <code>max-position</code> are <code>vec3</code> values and  specify the minimun point and the maximun point of a grid to be processed. <code>delta</code> is a scalar that specifies the size of a cell in a grid to be processed. <code>isolevel</code> is a scalar that specifies the threshold of mesh construction.</p>
+
+<h3>[Function] marching-cubes-smooth</h3>
+
+<pre><code>MARCHING-CUBES-SMOOTH density-function normal-function min-position max-position delta isolevel =&gt; smooth-triangles
+</code></pre>
+
+<p>Same as <code>marching-cubes</code> except that <code>marching-cubes-smooth</code> returns a list of smooth triangles which have normal vectors at each vertex. <code>normal-function</code> is a function that takes three arguments representing the position of a point and returns a normal vector at the point. Other arguments are same as <code>marching-cubes</code>&apos;s. </p>
+
+<h2>Example</h2>
+
+<p>See example/ directory.</p>
+
+<h2>Author</h2>
+
+<ul>
+<li>Masayuki Takagi (kamonama@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2012 Masayuki Takagi (kamonama@gmail.com)</p>
+
+<h2>License</h2>
+
+<p>Licensed under the LLGPL License.</p>

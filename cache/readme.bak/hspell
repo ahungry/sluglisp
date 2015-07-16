@@ -1,0 +1,19 @@
+<h1>hspell</h1>
+
+<p>Common Lisp bindings for <a href="http://hspell.ivrix.org.il/" >hspell</a>.</p>
+
+<h1>Example</h1>
+
+<pre><code><span class="code">HSPELL&gt; <span class="paren1">(<span class="code">correct-spelling-p <span class="string">"עפשרות"</span></span>)</span>
+NIL
+1
+HSPELL&gt; <span class="paren1">(<span class="code">correct-spelling <span class="string">"עפשרות"</span></span>)</span>
+<span class="paren1">(<span class="code"><span class="string">"הפשרות"</span> <span class="string">"אפשרות"</span></span>)</span>
+HSPELL&gt; <span class="paren1">(<span class="code">word-splits <span class="string">"כלב"</span></span>)</span>
+<span class="paren1">(<span class="code"><span class="paren2">(<span class="code"><span class="string">"כלב"</span> 0 <span class="paren3">(<span class="code"><span class="keyword">:VERB</span> <span class="keyword">:NONDEF</span> <span class="keyword">:IMPER</span> <span class="keyword">:MISC</span></span>)</span></span>)</span> <span class="paren2">(<span class="code"><span class="string">"לב"</span> 1 <span class="paren3">(<span class="code"><span class="keyword">:L</span> <span class="keyword">:NONDEF</span> <span class="keyword">:MISC</span></span>)</span></span>)</span></span>)</span>
+HSPELL&gt; <span class="paren1">(<span class="code">canonic-gimatria-p <span class="string">"תרס</span><span class="string">\"</span><span class="string">ו"</span></span>)</span>
+666</span></code></pre>
+
+<h1>License</h1>
+
+<p>MIT</p>

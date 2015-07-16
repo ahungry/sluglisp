@@ -1,0 +1,28 @@
+<p>Lisp GFlags is a Common Lisp implementation of gflags, Google&apos;s command line
+flag parsing library.  The library implements functionality similar to that of
+Google&apos;s C++ and Python gflags libraries, which live here:</p>
+
+<pre><code>http://code.google.com/p/google-gflags/
+http://code.google.com/p/python-gflags/
+</code></pre>
+
+<p>The code allows you to define command line flags using the DEFINE-FLAG macro.
+For instance, the following form defines a boolean flag called <em>DEBUG-FLAG</em>
+that is set based on the presence of &ldquo;&ndash;debug&rdquo; in the application&apos;s command
+line.</p>
+
+<pre><code>(define-flag *debug-flag*
+  :default-value nil
+  :selector &quot;debug&quot;
+  :type boolean
+  :help &quot;Turn on debugging mode?&quot;
+  :documentation &quot;Is debugging mode turned on?&quot;)
+</code></pre>
+
+<p>If the command line contains &ldquo;&ndash;debug&rdquo; or &ldquo;&ndash;debug=true&rdquo;, then <em>DEBUG-FLAG</em> is
+set to T.  Otherwise, it defaults to NIL.</p>
+
+<p>The function PARSE-COMMAND-LINE is used to parse the command line and initialize
+flags.  It returns the original command line with all recognized flags removed.</p>
+
+<p>The file flag_test.lisp contains many examples.</p>

@@ -1,0 +1,54 @@
+evol - entrenched virtues of lisp / love reversed
+=================================================
+evol aims to be a compatible and full-fledged replacement for the 
+GNU Autotools[1] stack targeted at coping with the Autotools' shortcomings while
+not repeating the mistakes made and still being made at comparable build tool
+projects.
+
+evol is completely written in Common Lisp and licensed under the
+GPLv3+[2]. Please see the file COPYING in the top-level directory of the
+distribution tarball or see the link at [2] if you didn't receive a copy along
+with this file.
+
+Since distribution in binary form requires static linking of Common Lisp
+libraries, distribution *must* include the file CREDITS also found in mentioned
+top-level directory to respect copyright of the respective holders.
+
+
+Alpha-Stage Warning
+===================
+evol is still a moving target, i.e. subject to change in terms of its top-level
+API so please don't use it for any production work yet.
+However you are very welcome to test and contribute!
+
+
+Installation
+============
+Please see file INSTALL.
+
+
+Links and References
+====================
+Homepage:           http://www.cliki.net/evol
+Hacking (stable):   http://github.com/e-user/evol
+Hacking (unstable): http://github.com/e-user/evol/tree/unstable
+
+[1] http://www.gnu.org/software/hello/manual/automake/Autotools-Introduction.html
+[2] http://www.gnu.org/licenses/gpl-3.0-standalone.html
+
+
+--------------------------------------------------------------------------------
+Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+This file is part of evol.
+evol is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+evol is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

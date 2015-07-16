@@ -1,0 +1,47 @@
+<h1>LET-OVER-LAMBDA</h1>
+
+<p><a href="https://gitter.im/thephoeron/let-over-lambda?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge" ><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Join the chat at https://gitter.im/thephoeron/let-over-lambda" /></a></p>
+
+<p><a href="https://travis-ci.org/thephoeron/let-over-lambda" ><img src="https://travis-ci.org/thephoeron/let-over-lambda.svg?branch=master" alt="Build Status" /></a>
+<a href="https://coveralls.io/r/thephoeron/let-over-lambda" ><img src="https://coveralls.io/repos/thephoeron/let-over-lambda/badge.svg?branch=master" alt="Coverage Status" /></a>
+<a href="https://quicklisp.org/" ><img src="https://img.shields.io/badge/quicklisp-available-brightgreen.svg" alt="Available in Quicklisp" /></a>
+<a href="./LICENSE" ><img src="https://img.shields.io/badge/license-BSD%20Simplified-blue.svg" alt="BSD Simplified License" /></a></p>
+
+<p>Doug Hoyte&apos;s &ldquo;Production&rdquo; version of macros from Let Over Lambda, including community updates; available from Quicklisp.</p>
+
+<p>Read more about the book and code at: http://letoverlambda.com</p>
+
+<h2>News &amp; Updates</h2>
+
+<h5>3/19/2015</h5>
+
+<p>Add symbols for anaphoric macro internals, <code>IT</code>, <code>THIS</code>, and <code>SELF</code> to package exports for better end-user experience.  Will be available in April 2015 release of Quicklisp.</p>
+
+<h5>8/14/2014</h5>
+
+<p>Issue with incompatible change to backquote syntax in SBCL 1.2.2 resolved; tested against and builds on SBCL 1.2.0-1 and 1.2.2.  Will be available in the August release of Quicklisp.</p>
+
+<h5>12/18/2013</h5>
+
+<p>Now available in the December 2013 distribution of Quicklisp</p>
+
+<h2>Usage</h2>
+
+<p>Make sure you have the latest Quicklisp distribution, then include it as a dependency in your system definition, or from the REPL evaluate <code>(ql:quickload &quot;let-over-lambda&quot;)</code>.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="string">"let-over-lambda"</span></span>)</span>
+<span class="paren1">(<span class="code">lol:flatten '<span class="paren2">(<span class="code"><span class="paren3">(<span class="code">A . B</span>)</span> <span class="paren3">(<span class="code">C . D</span>)</span> <span class="paren3">(<span class="code">E . <span class="paren4">(<span class="code">F G H <span class="paren5">(<span class="code">I . J</span>)</span> . K</span>)</span></span>)</span></span>)</span></span>)</span>
+=&gt; <span class="paren1">(<span class="code">A B C D E F G H I J K</span>)</span></span></code></pre>
+
+<p>LET-OVER-LAMBDA now uses the <code>named-readtables</code> library instead of modifying the global readtable. To use LOL reader macros in your Lisp source files, you will have to add both <code>let-over-lambda</code> and <code>named-readtables</code> to your project dependencies, and the following line after your call to <code>in-package</code>, in every source file you wish to use LOL syntax:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">named-readtables:in-readtable lol:lol-syntax</span>)</span></span></code></pre>
+
+<h2>Contributors</h2>
+
+<ul>
+<li><a href="https://github.com/hoytech" >Doug Hoyte</a></li>
+<li><a href="https://github.com/thephoeron" >&ldquo;the Phoeron&rdquo; Colin J.E. Lupton</a></li>
+<li><a href="https://github.com/gajon" >Jorge Gajon</a></li>
+<li><a href="https://github.com/EuAndreh/" >André Miranda</a></li>
+</ul>

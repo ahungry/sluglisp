@@ -1,0 +1,138 @@
+<h1>Xecto: 80% of xectors</h1>
+
+<p>This is a library for regular array parallelism in CL.  It&apos;s also an
+&ldquo;80%&rdquo; library: the goal isn&apos;t to extract all the performance there is,
+but to allow programmers to easily express computations with a decent
+overhead compared to hand-written loops, in common cases.  Uncommon
+cases should either be handled specially, or rewritten to better fit
+Xecto&apos;s simplistic (and simple) approach.</p>
+
+<p>Overview:</p>
+
+<ul>
+<li>Structured data</li>
+<li>Typed arrays</li>
+<li>Views (later)</li>
+<li>Reshaping</li>
+<li>Bulk operations</li>
+<li>Copy on write</li>
+<li>Parallelism</li>
+<li>SIMD</li>
+<li>Thread-level</li>
+</ul>
+
+<h2>Structured data</h2>
+
+<p><em>Very lazily sketched out; this looks more like an interface design
+issue</em></p>
+
+<p>Xecto provides homogeneously, but dynamically-typed bulk structured
+data.  Arrays of structures are actually always structures of
+specialised, homogeneous arrays.</p>
+
+<p>[more stuff, when it&apos;s better thought out]</p>
+
+<p>Think data frames: it&apos;s not just a bunch of vectors, there&apos;s a level
+of semantic typing.</p>
+
+<p>Upgrading rules??</p>
+
+<h2>Typed arrays</h2>
+
+<p><em>Prototyped; just more of the same</em></p>
+
+<p>Arrays in Xecto are typed: currently, we only have arrays of double
+floats, but we&apos;ll also have arrays of single floats, machine integers,
+etc.  What&apos;s the stance on T arrays? No clue.</p>
+
+<p>Arrays can be of arbitrary rank and size; plans include allocating
+them from the foreign heap (or directly via <code>mmap</code>).</p>
+
+<h2>Reshaping</h2>
+
+<p><em>Prototyped</em></p>
+
+<p>As with many similar libraries, each array is represented as a flat
+data vector and shape information; shape information includes the
+dimensions, and an affine transformation from the coordinates to an
+index in the data vector.</p>
+
+<p>Data vectors are immutable, but reference counted to help with
+copy-on-write.  However, arrays themselves are mutable: the copying
+(if any) is transparent, and references to data vectors are updated as
+needed.</p>
+
+<p>This means that operations like slicing or transposition are nearly
+free and do not directly entail copying or allocation.</p>
+
+<h2>Bulk operations</h2>
+
+<p><em>Half prototyped</em></p>
+
+<p>Usual stuff: map, reduce, scan.</p>
+
+<p>Some amount of recycling rule: single element is replicated as needed,
+but nothing more.</p>
+
+<p>Reduce and scan work on the first dimension of the single input; the
+reduced/scanned function is then applied, map-like on the remaining
+dimensions.</p>
+
+<h2>Copy on write</h2>
+
+<p><em>Not yet, but it&apos;s a SMOP</em></p>
+
+<p>Mention ! variants (foo-into).  Expresses partial writing, but also
+storage reuse.</p>
+
+<p><code>mmap</code> and <code>tmpfs</code> for TLB-level copying.</p>
+
+<h2>Parallelism</h2>
+
+<p>The library is &ldquo;just&rdquo; a minimally smart interpreter; the upside is
+that the primitives are chosen so they execute efficiently.</p>
+
+<p>Rather than working with scalars, the primitives compute on strided
+spans of vectors (for inputs and outputs), much like level 1 BLAS
+operations.  This allows for SIMD-level parallelism</p>
+
+<p>This also means that each operation boils down to a large number of
+specialized primitive calls; that&apos;s where thread-level parallelism
+comes in.</p>
+
+<h3>SIMD</h3>
+
+<p><em>Hard part done</em></p>
+
+<p>Each map operation boils down to a perfect nest of for-loops.  The
+nesting is reordered for locality: we attempt to get monotonous
+address sequences as much as possible, especially in the result
+vector.  Loops are also merged when possible to increase trip counts
+and reduce nesting depth.  Finally, we attempt to ensure a trip count
+in the innermost loop, to better exploit the primitives.</p>
+
+<p>Primitives are pre-compiled and specialised for some key trip count
+and stride values.  That&apos;s how we get SIMD.</p>
+
+<p>Execution then proceeds by first finding the primitive corresponding
+to the operation and the inner loop&apos;s stride and trip count, and
+interprets the remainder of the loop nest.</p>
+
+<h3>TLP</h3>
+
+<p><em>Half-designed</em></p>
+
+<p>As shown earlier, each operation is executed as a perfect loop nest
+that gives rise to a number of primitive operations.  The key to
+exploiting threads is that operations are implemented as futures
+(with a thread pool and task stealing).</p>
+
+<p>Each outer loop is executed a couple times to yield a small number of
+tasks.  Tasks then note dependencies, which gives us pipelining.</p>
+
+<p>&rarr; Note: probably want early dealloc.</p>
+
+<p>Futures are triggered via a stack and task stealing, so we get
+locality for free.</p>
+
+<p>NUMA awareness via hashing on middle bits of written addresses.</p>

@@ -1,0 +1,17 @@
+Rpc4cl is an implementation of XML-RPC for CL using ,according to its
+author, best of breed common lisp libraries to do most of the work.
+
+These dependencies are as of version 0.3.0: drakma, cxml, cl-ppcre,
+parse-number, babel, trivial-timeout
+
+To run the tests you need hunchentoot in addition to the dependencies
+for rpc4cl and a ruby installation. No good idea to only use rpc4cl to
+test rpc4cl, right? Then just run rpc4cl:start-test-server and locate
+and run client.rb from ./test/.
+
+The test suite will also serve as an instructive example of how to
+make use of rpc4cl.
+
+This version of rpc4cl uses in addition to the already mentioned
+dependencies: rfc3339-timestamp for parsing xml-rpc date-time strings
+into a rfc3339:timestamp object.

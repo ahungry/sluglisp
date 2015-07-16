@@ -1,0 +1,47 @@
+<p>NET.HEXAPODIA.HASHTABLES</p>
+
+<p>Generic hash table implementation. This implementation is in the
+public domain.</p>
+
+<p>Written by Ingvar Mattsson <a href="m&#x61;&#105;l&#x74;&#111;:&#x69;&#110;g&#x76;&#97;r&#x40;&#104;e&#x78;&#97;p&#x6F;&#100;i&#x61;&#46;n&#x65;&#116;">m&#x61;&#105;l&#x74;&#111;:&#x69;&#110;g&#x76;&#97;r&#x40;&#104;e&#x78;&#97;p&#x6F;&#100;i&#x61;&#46;n&#x65;&#116;</a>.</p>
+
+<p>This package defines four generic functions and two normal functions.
+The non-generic function MAKE-GENERIC-HASH-TABLE is used for
+hash table creation.
+    (make-generic-hashtable (:test &apos;eql) (:size 17))
+    If this function is fed the <em>symbols</em> EQ EQL EQUAL or EQUALP as test
+    it will create a generic hash table with that as an equality test
+    and SXHASH as the hash function. NOTE: Using EQ or EQL as the test
+    designator is risky and should be avoided. In general, for the
+    built-in test designators, use the function instead of the
+    symbol. This will give you a built-in hash table.</p>
+
+<pre><code>If this function is fed the *functions* EQ EQL EQUAL or EQUALP
+it will create a normal (built-in) hash table with that as a test
+function.
+
+(register-test-designator &lt;nickname&gt; &lt;hash fn&gt; &lt;equal fn&gt;)
+Register a new generic hash function with &lt;nickname&gt; as the
+relevant :test parameter.
+</code></pre>
+
+<p>The generic functions are:
+    (hashref <key> <table> &amp;optnonal (default nil))
+    This function does essentially the same thing as GETHASH.</p>
+
+<pre><code>((setf hashref) &lt;value&gt; &lt;key&gt; &lt;table&gt; &amp;optional ignore)
+For (setf (hashref ...) ...)
+
+(map-generic-hash &lt;fn&gt; &lt;table&gt;)
+As MAPHASH
+
+(hashrem &lt;key&gt; &lt;table&gt;)
+As REMHASH
+</code></pre>
+
+<p>These functions dispatch somewhat differently depending on if they&apos;re
+fed a generic hash table or a built-in hash table.</p>
+
+<p>For benchmarking, just load &ldquo;benchtests.lisp&rdquo;, this will loop through
+the number 0 to 1000 (and 100000) and feed them into a hash table, then
+generating a report of <em>STANDARD-OUTPUT</em>.</p>

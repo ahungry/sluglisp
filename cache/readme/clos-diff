@@ -1,0 +1,24 @@
+clos-diff is a GPL licensed library which will be able to create and
+apply diffs of CLOS objects in a compact representation that will not
+use too much bandwidth or disk space. The library also preforms the
+diffs recursively, so that (theoretically) infinite layers of objects
+can be diffed. The only dependency is closer-mop.
+
+The API is simple, and documented below:
+
+function: clos-diff:diff (old new &key (test #'equalp))
+  This function will create a diff that represents the modification
+  that need to be applied to object old to create the object new. The
+  test parameter will control the test used for equality. As a special
+  case is the old parameter is nil, a diff from an object with no
+  bound slots will be created.
+
+function: clos-diff:apply-diff (diff &optional object)
+  This function will apply the diff given in the parameter diff to the
+  object contained in object. If object is nil, a fresh object of the
+  appropriate type (with all slots unbound) will be created, and the
+  diff will be applied to that (See the documentation for diff for
+  more information).
+
+This project is hosted on github. Submit bug reports there. Also, you
+may contact the author at krzysdrewniak AT gmail DOT com .

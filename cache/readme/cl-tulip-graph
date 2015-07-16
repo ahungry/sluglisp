@@ -1,0 +1,87 @@
+		      Cl-Tulip-Graph: a graph generator
+
+Cl-Tulip-Graph is a graph description generator written in Common
+Lisp. The package accepts various Lisp objects as nodes and produces
+graph descriptions in .tlp format, which can be later visualized in
+Tulip (see http://www.tulip-software.org/). Tulip clusters and
+properties are supported.
+
+The package is formerly known as bouquet.
+
+Cl-Tulip-Graph is written by Eugene Zaikonnikov, and is distributed
+under the terms of LLGPL (see LICENSE file for details).
+
+
+			   Building Cl-Tulip-Graph
+
+Distribution tarball contains .asd system definition file, and several
+.lisp source files. To compile and load Cl-Tulip-Graph, launch your
+ASDF-enabled Lisp and perfrom (asdf:oos 'asdf:load-op :cl-tulip-graph)
+in the REPL.
+
+To test the package, try (cl-tulip-graph:test).
+
+Cl-Tulip-Graph was tested with SBCL 1.0.55, but is expected to run
+with other mostly-ANSI-conforming Lisps.
+
+
+			    Using Cl-Tulip-Graph
+
+Below is a short description of package API. To familiarise with Tulip
+concepts, see http://www.tulip-software.org.
+
+Cl-Tulip-Graph maintains current graph instance in graph cache which
+is manipulated via set of interface functions. The interface functions
+implicitly use the graph instance currently registered in the graph
+cache: for most cases, it is more convenient and succinct.
+
+The interface functions (exported from CL-TULIP-GRAPH package) are:
+
+(NEW-GRAPH): Instantiates a new graph and stores it in the graph
+cache. Also, default "Label" property is created for node labels.
+
+(CURRENT-GRAPH): Returns the current graph instance.
+
+(NODE <object>): Returns graph node instance associated with the
+'object', or NIL if none found.
+
+(REGISTER-NODE <object>): Creates node instance and associates it with
+the 'object'.
+
+(REGISTER-NODE-UNLESS-EXISTS <object>): Registers object as node
+unless it is already registered.
+
+(EDGE <from> <to>): Looks up for a directed edge from object 'from' to
+object 'to'. If successful, the edge instance is returned, otherwise
+NIL.
+
+(REGISTER-EDGE <from> <to>): Registers a directed edge from *node
+instance* 'from' to node instance 'to'.
+
+(MAKE-CLUSTER <name> &optional <nodes> <edges> &key <subclusters>):
+Instantiates a cluster 'name' with optional nodes and edges; the
+cluster can also contain subclusters (also cluster instances).
+
+(CLUSTER <name>): Looks up cluster instance by name string.
+
+(ADD-TO-CLUSTER <cluster> <entry>): Adds a node or edge instance to
+cluster instance. 
+
+(MAKE-PROPERTY <name> <cluster> <type> &optional <nodes-default>
+<edges-default>): Instantiates a property 'name' (string) associated
+with cluster number 'cluster' (implicit top-level cluster is 0) of
+type 'type'. Optional defaults for edges and nodes can be provided.
+
+(PROPERTY <name>): Looks up property instance by namestring.
+
+(SET-PROPERTY <property> <entry> <value>): Associates 'entry' (an edge
+or node instance) with its 'value' for the 'property' (a property
+instance).
+
+(LABEL <entry> <value>): set entry's text label to 'value' (a string
+or a symbol; if latter, the label is assigned it's
+symbol-name). Manipulates the default "Labels" property.
+
+(RENDER-GRAPH &optional <stream>): Prints current graph in .tlp format
+to 'stream'; if none provided, *standard-output* is used.
+

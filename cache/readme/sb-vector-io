@@ -1,0 +1,8 @@
+Writing and reading raw vector data in SBCL.
+
+Works with vectors -- both non-simple and simple, if the element type
+of the vector is such that it conforms to "normal" way of representing
+such data on the platform. Endianness is unspecified, floating points
+use the IEEE format.
+
+NOTE: The package nickname VECTOR-IO is deprecated, and will be deleted.

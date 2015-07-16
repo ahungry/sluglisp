@@ -1,0 +1,142 @@
+<h1>cl-azure</h1>
+
+<p>Access Microsoft Windows Azure cloud services from Common Lisp.</p>
+
+<h2>Introduction</h2>
+
+<p>Windows Azure is Microsoft&apos;s cloud hosting platform. This project is
+an incomplete, proof-of-concept implementation of a Common Lisp
+library for accessing the various features including:</p>
+
+<p>Blobs, tables and queues;
+Access Control Service (ACS);
+Service Bus brokered messsaging;
+Media Services.</p>
+
+<h2>Instructions</h2>
+
+<p>Use Quicklisp to load cl-azure</p>
+
+<pre><code>&gt; (ql:quickload &quot;cl-azure&quot;)
+</code></pre>
+
+<p>You then need to specify your account details. One way to do this is
+to create a LISP file, say myaccount.lisp like this.</p>
+
+<pre><code> (in-package #:cl-azure)
+
+ (setf *storage-account* (list :account-name &quot;YOUR_ACCOUNT_NAME&quot;
+            :account-key &quot;YOUR_ACCOUNT_KEY&quot;
+            :table-storage-url 
+            &quot;http://YOUR_ACCOUNT_NAME.table.core.windows.net&quot;
+            :blob-storage-url 
+            &quot;http://YOUR_ACCOUNT_NAME.blob.core.windows.net&quot;
+            :queue-storage-url 
+            &quot;http://YOUR_ACCOUNT_NAME.queue.core.windows.net&quot;))
+</code></pre>
+
+<p>From there you&apos;re ready to explore</p>
+
+<pre><code> WA&gt; (list-containers)
+ (&quot;$root&quot; &quot;azurerunme&quot; &quot;azurerunme-files&quot; &quot;certs&quot; &quot;drives&quot; &quot;dump&quot; &quot;old&quot;
+  &quot;oldpackages&quot; &quot;packages&quot; &quot;printer&quot; &quot;public&quot; &quot;test&quot; &quot;wad-control-container&quot;)
+
+ WA&gt; (list-blobs &quot;packages&quot;)
+ (&quot;AzureRunMe.cspkg&quot; &quot;AzureRunMe.cspkg.sun&quot; &quot;AzureRunMe.cspkg.xxxx&quot;
+ &quot;AzureRunMe.cspkg.yyy&quot; &quot;PsTools.zip&quot; &quot;RobBlackwell.cscfg&quot; &quot;adplus.zip&quot;
+ &quot;apache-tomcat-6.0.28-windows-x64.zip&quot; &quot;apache-tomcat-7.0.12-windows-x64.zip&quot;
+ &quot;clisp-2.49.zip&quot; &quot;dictionarybk&quot; &quot;examples.zip&quot; &quot;jboss-as-web-7.0.0.Final.zip&quot;
+ &quot;jdk1.6.0_21.zip&quot; &quot;jdk1.6.0_24.zip&quot; &quot;robblackwell.bat&quot; &quot;runme.zip&quot;
+ &quot;telnetd.zip&quot;)
+
+ WA&gt; (list-queues)
+ (&quot;foo&quot; &quot;wibble&quot; &quot;worker-queue&quot;)
+</code></pre>
+
+<h2>Management API</h2>
+
+<p>If you want to use the Windows Azure Management API, then you&apos;ll need
+a pfx certificate.</p>
+
+<p>You&apos;ll need to convert it to PEM format like this:</p>
+
+<pre><code>   % openssl pkcs12 -in your.pfx -out your.pfx.pem
+</code></pre>
+
+<p>Then you can set it up like this:</p>
+
+<pre><code> (setf *subscription-id* &quot;YOUR_SUBSCRIPTION_ID&quot;)
+
+ (setf *management-certificate* (list
+            :certificate &quot;/Users/foo/YOUR.pfx.pem&quot;
+            :key &quot;/users/foo/YOUR.pfx.pem&quot;
+            :pass-phrase &quot;YOUR_PASSWORD&quot;))
+</code></pre>
+
+<p>Then you can use it like this:</p>
+
+<pre><code> WA&gt; (list-hosted-services)
+ (&quot;azurerunme&quot; &quot;catalina&quot; &quot;claptrap&quot;)   
+</code></pre>
+
+<h2>Service Bus</h2>
+
+<p>Experimental support for Service Bus Brokered Messaging. N.B. It seems
+like the relay features are still proprietary and therefore .NET / WCF
+only.</p>
+
+<pre><code> WA &gt; (setf *servicebus-credentials* (make-servicebus-credentials &quot;namespace&quot; &quot;owner&quot; &quot;key&quot;))
+ ...
+ WA &gt; (setf (getf *servicebus-credentials* :token) (get-token)) 
+ ....
+ WA&gt; (servicebus-send-message &quot;test&quot; &quot;hello world&quot;)
+ T
+ WA&gt; (servicebus-read-and-delete-queue-message &quot;test&quot; )
+ &quot;hello world&quot;
+</code></pre>
+
+<h2>Media Services</h2>
+
+<p>Experimental support for Media Services.</p>
+
+<pre><code>CL-USER&gt; (ql:quickload &quot;cl-azure&quot;)
+...
+CL-USER&gt; (setf cl-azure::*media-account* 
+         (cl-azure:make-media-account &quot;MY ACCOUNT&quot;
+               &quot;MY_KEY))
+...
+    CL-USER&gt; (cl-azure:get-media-processors)
+...
+    CL-USER&gt; (cl-azure:get-media-assets)
+...
+    CL-USER&gt; (cl-azure:get-media-jobs)
+...
+</code></pre>
+
+<h2>Why?</h2>
+
+<p>This code was the result of some Christmas holiday hacking (2010/2011)
+inspired by the <a href="http://landoflisp.com/" >Land of Lisp</a> book, the
+recent availability of <a href="http://www.quicklisp.org/" >Quicklisp</a> and Zach
+Beane&apos;s open source code for Amazon Web Services.</p>
+
+<p>I hope it demonstrates that <a href="http://www.microsoft.com/windowsazure/" >Windows
+Azure</a> is an open, cross
+platform cloud storage system that isn&apos;t tied to Windows or .NET.</p>
+
+<p>It certainly shows that Common Lisp is still suitable for modern
+application development.</p>
+
+<p>It&apos;s helped me to understand the Windows Azure API mechanisms, but
+more than that, it turns out to be a useful debugging and
+experimentation tool.</p>
+
+<p>I always get a buzz out of standing up in front of a bunch of C#
+developers and demo&apos;ing it ;-)</p>
+
+<p>Any comments, feedback, constructive criticism or code contributions
+welcome!</p>
+
+<p>Rob Blackwell</p>
+
+<p>January 2012</p>

@@ -1,0 +1,12 @@
+kl-verify is a common lisp library to generate a simple verify code image.
+
+It's licensed by MIT.
+
+Usage
+
+(kl-verify:generate-verify-code stream 75 20 4 'exp)
+
+This will generate a simple expression picture to the stream, and return the 
+expression result as a string. 
+
+Author: Kevin Lynx <kevinlynx@gmail.com>

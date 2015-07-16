@@ -1,0 +1,15 @@
+-*- outline -*-
+
+* Tests
+ Some of the socket tests require an echo server, the default being
+one on the Internet. If you can't use that, set
+iolib-tests:*echo-address* and iolib-test:*echo-port* appropriately to
+point the echo tests somewhere else.
+
+* Generating documentation
+ To generate the documentation, use this patched version of
+texinfo-docstrings: http://gitorious.org/iolib/texinfo-docstrings
+Then make sure that IOLib's .asd files and texinfo-docstrings.asd can
+be loaded and run GNU make inside doc/ ; you'll then find the
+generated docs under manual/. This procedure has only been tested
+with SBCL.

@@ -1,0 +1,68 @@
+<h1>lowlight</h1>
+
+<p>A simple syntax highlighter in Common Lisp based on a lexer and a parser.</p>
+
+<p><em>Version 1.0 approaching!</em></p>
+
+<h2>Features</h2>
+
+<ul>
+<li>higlighting code in html spans</li>
+<li>themable with css</li>
+<li>string and file highlighting</li>
+<li>highlight code in markdown blocks</li>
+<li>simple and flexible highlighting engine</li>
+<li>based on a lexer (<a href="https://github.com/e-user/graylex" >graylex</a>) and a parser (<a href="http://www.pps.univ-paris-diderot.fr/~jch%20/software/cl-yacc/" >cl-yacc</a>)</li>
+</ul>
+
+<h3>Supported languages</h3>
+
+<ul>
+<li>Common Lisp</li>
+</ul>
+
+<p>I will probably support more languages in the future,
+but you can also define your own language styles.
+Also, patches to get your language style included are welcome.</p>
+
+<h2>Installation</h2>
+
+<p>Lowlight is already available in Quicklisp, but at the time of writing this
+you will find an old version there.
+If you want the latest version lowlight, please download the source and
+load it via ASDF (or as a local Quicklisp project), or make sure.
+You know, that the Quicklisp version has been updated to the current version,
+if it defines a package <code>lowlight.1</code>.</p>
+
+<h2>Usage</h2>
+
+<p>All lowlight functions and macros live in the package <code>lowlight</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">in-package <span class="keyword">#:lowlight</span></span>)</span></span></code></pre>
+
+<p>To highlight a string use <code>light</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">light <span class="keyword">:common-lisp</span> <span class="string">":bla"</span></span>)</span> <span class="comment">;=&gt; "&lt;span class=\"keyword\"&gt;:bla&lt;/span&gt;"</span></span></code></pre>
+
+<p>If you want to highlight a whole file, use <code>light-file</code>:
+<code>common-lisp
+(light-file :common-lisp &quot;~/lowlight.lisp&quot; :css &quot;github-colors.css&quot;)
+</code></p>
+
+<h2>Known Bugs an Limitations</h2>
+
+<h3>Lexing problems</h3>
+
+<p>As lowlight uses <a href="https://github.com/e-user/graylex" >graylex</a> for lexing,
+it currently suffers from a bug related do the buffer size graylex uses.
+If you experience Problems with the lexer not correctly recognizing tokens
+that cross the 1024 or 2048 character border, try to increase the buffer size
+<code>lowlight:*lexer-buffer-size*</code>.</p>
+
+<h3>Parsing problems</h3>
+
+<p>The grammars that are created by <code>define-cfg-style</code> are ambiguous by design,
+so conflict warnings will be ignored by default. If you run into problems, please
+consider using <code>define-simple-style</code> or tell me, how to create unambiguous grammars
+in <code>define-cfg-style</code>. Maybe I will provide a third macro to explicitly specify a
+complete cfg, so you can make sure it&apos;s unambiguous yourself (if anyone actually needs this).</p>

@@ -1,0 +1,17 @@
+restas.file-publisher is a restas module which can publish static files to http
+client. See restas module(<http://restas.lisper.ru/en/manual/modules.html>) for
+details.
+
+It's licensed by MIT.
+
+Usage
+
+(restas:mount-submodule
+  publisher (#:restas.file-publisher route)
+  (restas.file-publisher:*directory* '("image/" "data/"))
+  (restas.file-publisher:*files* '("image/jpg/" "image/other/*/" "data/*/*/")))
+
+This will create a resta route to serve all these directories files.
+
+Author: Kevin Lynx <kevinlynx@gmail.com>
+

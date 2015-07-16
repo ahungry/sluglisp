@@ -1,0 +1,12 @@
+DBUS - A D-BUS client library for Common Lisp
+
+Prerequisites:
+  Alexandria
+  Babel
+  CL-XmlSpam
+  Flexi-Streams
+  IOLib
+  Ironclad
+  Split-Sequence
+  Trivial-Garbage
+  IEEE-Floats

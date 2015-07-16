@@ -1,0 +1,66 @@
+PROBLEM=========================================================================
+Thread creation is an 'heavy' process.
+Too many thrads hurts performance.
+
+SOLUTION========================================================================
+thread-pool is a simple library that allows users for asynchronous computation
+using only a fixed number of threads optimizing overall performance.
+
+SAMPLE USAGE===================================================================
+
+CL-USER> (require :thread-pool)
+
+CL-USER> (let ((out *standard-output*))
+	   (defun make-lazy-fib (n)
+	     (labels ((fib (n) (if (> n 2)
+                               (+ (fib (- n 1)) (fib (- n 2)))
+			       1)))
+	       (lambda ()
+		 (format out "~%fib ~a = ~a~%" n (fib n))))))
+
+CL-USER> (defvar *pool* (thread-pool:make-thread-pool 3))
+*POOL*
+
+CL-USER> (thread-pool:start-pool *pool*)
+(#<SB-THREAD:THREAD "Anonymous thread" RUNNING {1002B88871}>
+ #<SB-THREAD:THREAD "Anonymous thread" RUNNING {1002B88A71}>
+ #<SB-THREAD:THREAD "Anonymous thread" RUNNING {1002B88C71}>)
+
+CL-USER> (let ((out *standard-output*))
+	   (defun make-lazy-fib (n)
+	     (flet ((fib (n) (if (> n 2)
+				 (+ (fib (- n 1)) (fib (- n 2)))
+				 1)))
+	       (lambda ()
+		 (format out "~%fib ~a = ~a~%" n (fib n))))))
+MAKE-LAZY-FIB
+CL-USER> (progn (thread-pool:add-to-pool *pool* (make-lazy-fib 15))
+		(thread-pool:add-to-pool *pool* (make-lazy-fib 20))
+		(thread-pool:add-to-pool *pool* (make-lazy-fib 5))
+		(thread-pool:add-to-pool *pool* (make-lazy-fib 17))
+		(thread-pool:add-to-pool *pool* (make-lazy-fib 10))
+		(thread-pool:add-to-pool *pool* (make-lazy-fib 6)))
+
+(#<CLOSURE (LAMBDA #) {10058664E9}>) 
+(#<CLOSURE (LAMBDA #) {10058664E9}> #<CLOSURE (LAMBDA #) {1005867419}>) 
+(#<CLOSURE (LAMBDA #) {10058664E9}> #<CLOSURE (LAMBDA #) {1005867419}>
+ #<CLOSURE (LAMBDA #) {10058709C9}>) 
+
+fib 15 = 610
+(#<CLOSURE (LAMBDA #) {1005867419}> #<CLOSURE (LAMBDA #) {10058709C9}>
+ #<CLOSURE (LAMBDA #) {1005872699}>) 
+(#<CLOSURE (LAMBDA #) {10058709C9}> #<CLOSURE (LAMBDA #) {1005872699}>
+ #<CLOSURE (LAMBDA #) {1005874369}>) 
+(#<CLOSURE (LAMBDA #) {10058709C9}> #<CLOSURE (LAMBDA #) {1005872699}>
+ #<CLOSURE (LAMBDA #) {1005874369}> #<CLOSURE (LAMBDA #) {1005876039}>) 
+
+fib 5 = 5
+
+fib 20 = 6765
+
+fib 17 = 1597
+
+fib 10 = 55
+
+fib 6 = 8
+1

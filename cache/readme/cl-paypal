@@ -1,0 +1,2 @@
+A paypal express checkout API in Common Lisp. 
+Please refer cl-paypal-test.lisp for usage.

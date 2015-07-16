@@ -1,0 +1,70 @@
+<h1>Carrier</h1>
+
+<p>Carrier is a lightweight, async HTTP client built on top of <a href="/orthecreedence/cl-async" >cl-async</a>
+and <a href="/fukamachi/fast-http" >fast-http</a>.</p>
+
+<p>Its goal is to allow easy and efficient streaming of data over HTTP. It is the
+lightweight cousin to <a href="/orthecreedence/drakma-async" >drakma-async</a>.</p>
+
+<h2>Documentation</h2>
+
+<h3>request (function)</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> request <span class="paren2">(<span class="code">url &amp;key <span class="paren3">(<span class="code">method <span class="keyword">:get</span></span>)</span> headers body return-body header-callback body-callback finish-callback <span class="paren3">(<span class="code">redirect 5</span>)</span> redirect-non-get timeout</span>)</span></span>)</span>
+  =&gt; promise</span></code></pre>
+
+<p>Perform an HTTP request. Returns a promise (to be used with
+<a href="/orthecreedence/cl-async-future" >cl-async-future</a>) that is finished when the
+response has fully downloaded.</p>
+
+<ul>
+<li><code>url</code> - the URL we&apos;re requesting.</li>
+<li><code>method</code> - a keyword method (<code>:get</code>, <code>:post</code>, etc). Defaults to <code>:get</code>.</li>
+<li><code>headers</code> - a hash table or plist of headers to set with the request. Note
+that the &ldquo;Host&rdquo; header is set automatically (if not proveded) and if the <code>body</code>
+argument is passed, then &ldquo;Content-Length&rdquo; is set as well.</li>
+<li><code>body</code> - A string or byte array to send as the HTTP body. If present, will set
+the &ldquo;Content-Length&rdquo; header automatically in the request.</li>
+<li><code>store-body</code> - If T, will store the entire HTTP response body and finish the
+returned promise with it once complete. If this is left <code>nil</code>, then the first
+value of the finished promise will be <code>nil</code>.</li>
+<li><code>header-callback</code> - A function that is called once the headers from the
+<em>response</em> are fully parsed. The only argument is a hash table of headers.
+<code>lisp
+(lambda (headers) (gethash &quot;content-type&quot; headers))
+</code></li>
+<li><code>body-callback</code> - A function that is called once for each chunk of the HTTP
+response body. The function takes three arguments: a byte array, an index
+indicating the start of the chunk in the passed byte array, and an index
+indicating the end of the chunk in the passed byte array. For instance:
+<code>lisp
+(lambda (chunk start end)
+  ;; here's how you'd get the actual bytes. note that most stream functions
+  ;; take :start and :end functions, so we don't actually have to do a subseq
+  ;; to send the chunk where we need it to go
+  (subseq chunk start end))
+</code></li>
+<li><code>finish-callback</code> - A function of no arguments that is called once the
+response is completely finished downloading. This gets called just before the
+returned promise is finished.
+<code>lisp
+(lambda () ...)
+</code></li>
+<li><code>redirect</code> - Either nil or an integer value telling Carrier how many redirects
+(if any) to follow before completing. Default is <code>5</code>.</li>
+<li><code>redirect-non-get</code> - This argument determines whether or not we redirect when
+performing a request other than a <code>:get</code> or <code>:head</code>. If <code>t</code>, we just redirect
+blindly until either we hit our destination <em>or</em> the max number of redirects
+(set by the <code>:redirect</code> arg) is reached. However, <code>:redirect-non-get</code> can also
+be a function of two arguments (the redirecting URL given in the <code>Location</code>
+header and the response headers hash table).
+<code>lisp
+(lambda (redirecting-url headers) ...)
+</code></li>
+<li><code>timeout</code> - How many seconds to wait for the socket to start reading. If <code>nil</code>
+(the default), uses the OS default.</li>
+</ul>
+
+<h2>License</h2>
+
+<p>MIT!!</p>

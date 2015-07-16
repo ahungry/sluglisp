@@ -1,0 +1,365 @@
+<h1>Integral</h1>
+
+<p><a href="https://travis-ci.org/fukamachi/integral" ><img src="https://travis-ci.org/fukamachi/integral.svg?branch=master" alt="Build Status" /></a></p>
+
+<p>Integral is an object relational mapper for Common Lisp based on <a href="https://github.com/fukamachi/cl-dbi" >CL-DBI</a> and <a href="https://github.com/fukamachi/sxql" >SxQL</a>.</p>
+
+<h2>Warning</h2>
+
+<p>This software is still ALPHA quality. The APIs will be likely to change.</p>
+
+<p>Should work well with MySQL/SQLite3 on SBCL/Clozure CL.</p>
+
+<h2>Usage</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> tweet <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:type</span> integer
+       <span class="keyword">:primary-key</span> t
+       <span class="keyword">:auto-increment</span> t
+       <span class="keyword">:reader</span> tweet-id</span>)</span>
+   <span class="paren3">(<span class="code">status <span class="keyword">:type</span> text
+           <span class="keyword">:initarg</span> <span class="keyword">:status</span>
+           <span class="keyword">:accessor</span> tweet-status</span>)</span>
+   <span class="paren3">(<span class="code">user <span class="keyword">:type</span> <span class="paren4">(<span class="code">varchar 32</span>)</span>
+         <span class="keyword">:initarg</span> <span class="keyword">:user</span>
+         <span class="keyword">:accessor</span> tweet-user</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">connect-toplevel <span class="keyword">:mysql</span>
+                  <span class="keyword">:database-name</span> <span class="string">"myapp"</span>
+                  <span class="keyword">:username</span> <span class="string">"nitro_idiot"</span>
+                  <span class="keyword">:password</span> <span class="string">"xxxxxxxx"</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">tw <span class="paren4">(<span class="code">make-instance 'tweet
+                         <span class="keyword">:status</span> <span class="string">"Good morning, world."</span>
+                         <span class="keyword">:user</span> <span class="string">"nitro_idiot"</span></span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">save-dao tw</span>)</span></span>)</span>
+
+<span class="comment">;; Same as the above
+</span><span class="paren1">(<span class="code">create-dao 'tweet
+            <span class="keyword">:status</span> <span class="string">"Good morning, world."</span>
+            <span class="keyword">:user</span> <span class="string">"nitro_idiot"</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">tw <span class="paren4">(<span class="code">find-dao 'tweet 3</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">with-slot</span></i> <span class="paren3">(<span class="code">status user</span>)</span> tw
+    <span class="paren3">(<span class="code">format t <span class="string">"~A said ~A"</span> user status</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">tweet-status tw</span>)</span> <span class="string">"Good evening, world."</span></span>)</span>
+  <span class="paren2">(<span class="code">save-dao tw</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">tw <span class="paren4">(<span class="code">find-dao 'tweet 3</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">delete-dao tw</span>)</span></span>)</span></span></code></pre>
+
+<h2>Quickstart</h2>
+
+<h3>Installation</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:integral</span></span>)</span></span></code></pre>
+
+<h3>Connecting to database</h3>
+
+<p><code>connect-toplevel</code> is a function to establish a connection to a database.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:connect-toplevel</span>)</span>
+
+<span class="paren1">(<span class="code">connect-toplevel <span class="keyword">:mysql</span>
+                  <span class="keyword">:database-name</span> <span class="string">"testdb"</span>
+                  <span class="keyword">:username</span> <span class="string">"nitro_idiot"</span>
+                  <span class="keyword">:password</span> <span class="string">"password"</span></span>)</span></span></code></pre>
+
+<p>Integral is intended to work with MySQL, PostgreSQL and SQLite3. Replace <code>:mysql</code> the above by your favorite RDBMS engine name.</p>
+
+<h3>Defining a database table</h3>
+
+<p>In Integral, database tables are defined as CLOS classes. A table definition looks like this.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:&lt;dao-table-class&gt;</span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:col-type</span> text
+         <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span></span>)</span></span></code></pre>
+
+<p>This <code>user</code> class means a &ldquo;user&rdquo; table in a database with a single &ldquo;TEXT&rdquo; column, &ldquo;name&rdquo;.</p>
+
+<p><code>table-definition</code> is a function to generate a <code>CREATE TABLE</code> SQL for it.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import '<span class="paren2">(<span class="code">integral:table-definition integral:execute-sql</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">table-definition 'user</span>)</span>
+<span class="comment">;=&gt; "CREATE TABLE `user` (`%oid` SERIAL NOT NULL AUTO_INCREMENT PRIMARY KEY, `name` TEXT)"
+</span><span class="comment">;   NIL
+</span>
+<span class="paren1">(<span class="code">execute-sql <span class="paren2">(<span class="code">table-definition 'user</span>)</span></span>)</span>
+
+<span class="comment">;; Same as the above except ignoring CREATE TABLE if it already exists.
+</span><span class="paren1">(<span class="code">ensure-table-exists 'user</span>)</span></span></code></pre>
+
+<h3>Adding records</h3>
+
+<p>Table classes can be called with <code>make-instance</code> like Common Lisp standard-class.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">make-instance 'user <span class="keyword">:name</span> <span class="string">"Eitaro Fukamachi"</span></span>)</span>
+<span class="comment">;=&gt; #&lt;USER %oid: &lt;unbound&gt;&gt;</span></span></code></pre>
+
+<p>The instance won&apos;t be recorded in a database. Call <code>save-dao</code> it to add the record to a database.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:save-dao</span>)</span>
+
+<span class="paren1">(<span class="code">save-dao <span class="paren2">(<span class="code">make-instance 'user <span class="keyword">:name</span> <span class="string">"Eitaro Fukamachi"</span></span>)</span></span>)</span>
+<span class="comment">;=&gt; #&lt;USER %oid: 1&gt;
+</span>
+<span class="paren1">(<span class="code">save-dao <span class="paren2">(<span class="code">make-instance 'user <span class="keyword">:name</span> <span class="string">"Tomohiro Matsuyama"</span></span>)</span></span>)</span>
+<span class="comment">;=&gt; #&lt;USER %oid: 2&gt;</span></span></code></pre>
+
+<h3>Retrieving records</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:select-dao</span>)</span>
+
+<span class="paren1">(<span class="code">select-dao 'user</span>)</span>
+<span class="comment">;=&gt; (#&lt;USER %oid: 1&gt; #&lt;USER %oid: 2&gt;)
+</span>
+<span class="paren1">(<span class="code">mapcar <span class="paren2">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren3">(<span class="code">row</span>)</span>
+          <span class="paren3">(<span class="code">slot-value row 'name</span>)</span></span>)</span>
+        <span class="paren2">(<span class="code">select-dao 'user</span>)</span></span>)</span>
+<span class="comment">;=&gt; ("Eitaro Fukamachi" "Tomohiro Matsuyama")</span></span></code></pre>
+
+<p><code>select-dao</code> takes SxQL clauses. You can specify WHERE, ORDER BY or LIMIT with it.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import '<span class="paren2">(<span class="code">sxql:where sxql:limit</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">select-dao 'user
+  <span class="paren2">(<span class="code">where <span class="paren3">(<span class="code"><span class="keyword">:=</span> <span class="keyword">:name</span> <span class="string">"Eitaro Fukamachi"</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">limit 1</span>)</span></span>)</span>
+<span class="comment">;=&gt; (#&lt;USER %oid: 1&gt;)</span></span></code></pre>
+
+<p>You can also use <code>find-dao</code> for retrieving a single row.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:find-dao</span>)</span>
+
+<span class="paren1">(<span class="code">find-dao 'user 1</span>)</span>
+<span class="comment">;=&gt; #&lt;USER %oid: 1&gt;</span></span></code></pre>
+
+<h3>Updating records</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">user <span class="paren4">(<span class="code">find-dao 'user 1</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">slot-value user 'name</span>)</span> <span class="string">"深町英太郎"</span></span>)</span>
+  <span class="paren2">(<span class="code">save-dao user</span>)</span></span>)</span></span></code></pre>
+
+<h3>Deleting records</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:delete-dao</span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">user <span class="paren4">(<span class="code">find-dao 'user 1</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">slot-value user 'name</span>)</span> <span class="string">"深町英太郎"</span></span>)</span>
+  <span class="paren2">(<span class="code">delete-dao user</span>)</span></span>)</span></span></code></pre>
+
+<h3>Migration</h3>
+
+<p>I introduced Integral generates a table schema from a CLOS class definition. But how can we do when we want to change the table schema after creating it.</p>
+
+<p>Integral has a function to apply the change of the class definition to a table schema. It is generally known as &ldquo;Migration&rdquo;.</p>
+
+<p>For example, if you want to record a &ldquo;profile&rdquo; of users to &ldquo;user&rdquo; table, add a slot for it.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:col-type</span> text
+         <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span>
+   <span class="paren3">(<span class="code">profile <span class="keyword">:col-type</span> text
+            <span class="keyword">:initarg</span> <span class="keyword">:profile</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span></span>)</span></span></code></pre>
+
+<p>Then call <code>migrate-table</code>.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:migrate-table</span>)</span>
+
+<span class="paren1">(<span class="code">migrate-table 'user</span>)</span>
+<span class="comment">;-&gt; ALTER TABLE `user` ADD COLUMN `profile` TEXT AFTER `name`;
+</span><span class="comment">;=&gt; NIL</span></span></code></pre>
+
+<p>All changes of indexes and column types are also followed.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">id <span class="keyword">:col-type</span> serial
+       <span class="keyword">:primary-key</span> t</span>)</span>
+   <span class="paren3">(<span class="code">name <span class="keyword">:col-type</span> <span class="paren4">(<span class="code">varchar 64</span>)</span>
+         <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span>
+   <span class="paren3">(<span class="code">profile <span class="keyword">:col-type</span> text
+            <span class="keyword">:initarg</span> <span class="keyword">:profile</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span></span>)</span>
+<span class="comment">;-&gt; ALTER TABLE `user` DROP COLUMN `%oid`;
+</span><span class="comment">;   ALTER TABLE `user` MODIFY COLUMN `name` VARCHAR(64);
+</span><span class="comment">;   ALTER TABLE `user` ADD COLUMN `id` SERIAL NOT NULL PRIMARY KEY FIRST;
+</span><span class="comment">;=&gt; NIL</span></span></code></pre>
+
+<h3>Mystique: Auto-migration</h3>
+
+<p>In development, class redefinitions are done many times. It&apos;s boring to execute <code>migrate-table</code> for each single time, isn&apos;t it?</p>
+
+<p>Integral has <strong>auto-migration</strong> feature for executing <code>migrate-table</code> after redefinitions automatically.</p>
+
+<p>Set <code>*auto-migration-mode*</code> T to use the mode.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">setf <span class="special">integral:*auto-migration-mode*</span> t</span>)</span></span></code></pre>
+
+<h3>Another Way: define a class from an existing table</h3>
+
+<p>If you&apos;d like to administrate a database directly by writing raw SQLs, or wanna use Integral for an existing database, you can generate slot definitions from it.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> tweet <span class="paren2">(<span class="code"></span>)</span> <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> &lt;dao-table-class&gt;</span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:generate-slots</span> t</span>)</span></span>)</span></span></code></pre>
+
+<p><code>:generate-slots</code> option means slot definitions follow database schema. Note you must establish a database connection before the first <code>make-instance</code>.</p>
+
+<h3>inflate/deflate</h3>
+
+<p><code>inflate</code> and <code>deflate</code> is a feature to convert data between a database and Common Lisp.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:type</span> string
+         <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span>
+   <span class="paren3">(<span class="code">created-at <span class="keyword">:type</span> timestamp
+               <span class="keyword">:col-type</span> integer
+               <span class="keyword">:initarg</span> <span class="keyword">:created-at</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> integral:&lt;dao-table-class&gt;</span>)</span></span>)</span>
+<span class="comment">;=&gt; #&lt;INTEGRAL.TABLE:&lt;DAO-TABLE-CLASS&gt; USER&gt;
+</span>
+<span class="paren1">(<span class="code">find-dao 'user 1</span>)</span>
+<span class="comment">;=&gt; #&lt;USER #x302001D9452D&gt;
+</span>
+<span class="paren1">(<span class="code">slot-value * 'created-at</span>)</span>
+<span class="comment">;=&gt; 3599088727
+</span>
+<span class="comment">;; Define inflate/deflate methods
+</span><span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> integral:inflate <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">object user</span>)</span> <span class="paren3">(<span class="code">slot-name <span class="paren4">(<span class="code">eql 'created-at</span>)</span></span>)</span> value</span>)</span>
+  <span class="paren2">(<span class="code">local-time:universal-to-timestamp value</span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> <i><span class="symbol">integral:deflate</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">object user</span>)</span> <span class="paren3">(<span class="code">slot-name <span class="paren4">(<span class="code">eql 'created-at</span>)</span></span>)</span> value</span>)</span>
+  <span class="paren2">(<span class="code">local-time:timestamp-to-universal value</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">slot-value <span class="paren2">(<span class="code">find-dao 'user 1</span>)</span> 'created-at</span>)</span>
+<span class="comment">;=&gt; @2014-01-19T11:52:07.000000+09:00</span></span></code></pre>
+
+<p>You can also set <code>inflate</code> and <code>deflate</code> functions via <code>:inflate</code> or <code>:deflate</code> keywords in <code>defclass</code>.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defclass</span></i> user <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">name <span class="keyword">:type</span> string
+         <span class="keyword">:initarg</span> <span class="keyword">:name</span></span>)</span>
+   <span class="paren3">(<span class="code">created-at <span class="keyword">:type</span> timestamp
+               <span class="keyword">:col-type</span> integer
+               <span class="keyword">:initarg</span> <span class="keyword">:created-at</span>
+               <span class="keyword">:inflate</span> #'local-time:universal-to-timestamp
+               <span class="keyword">:deflate</span> #'local-time:timestamp-to-universal</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:metaclass</span> integral:&lt;dao-table-class&gt;</span>)</span></span>)</span></span></code></pre>
+
+<h3>Relations</h3>
+
+<p>Although Integral doesn&apos;t have a specific feature for relations like <code>:has-a</code> and <code>:has-many</code>, it can be done with normal methods.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> user-config <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">user user</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">find-dao 'user-config <span class="paren3">(<span class="code">user-id user</span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defmethod</span></i> user-entries <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">user user</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">select-dao 'entry <span class="paren3">(<span class="code">where <span class="paren4">(<span class="code"><span class="keyword">:=</span> <span class="keyword">:user_id</span> <span class="paren5">(<span class="code">user-id user</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<h3>Wanna write a raw SQL?</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">import 'integral:retrieve-by-sql</span>)</span>
+
+<span class="paren1">(<span class="code">retrieve-by-sql <span class="string">"SELECT * FROM user"</span></span>)</span>
+<span class="comment">;=&gt; ((:%oid 1 :name "深町英太郎"
+</span><span class="comment">;     :profile "I love Common Lisp and beer")
+</span><span class="comment">;    (:%oid 2 :name "Tomohiro Matsuyama"
+</span><span class="comment">;     :profile NIL))</span></span></code></pre>
+
+<p><code>retrieve-by-sql</code> takes <code>:as</code> keyword argument to specify a class of the result record.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">retrieve-sql <span class="string">"SELECT * FROM user"</span> <span class="keyword">:as</span> 'user</span>)</span>
+<span class="comment">;=&gt; (#&lt;USER %oid: 1&gt; #&lt;USER %oid: 2&gt;)</span></span></code></pre>
+
+<h2>Symbols</h2>
+
+<h3>Connections</h3>
+
+<ul>
+<li>connect-toplevel (driver-name &amp;rest args &amp;key database-name &amp;allow-other-keys)</li>
+<li>disconnect-toplevel ()</li>
+</ul>
+
+<h3>Classes</h3>
+
+<ul>
+<li>&lt;dao-class&gt;</li>
+<li>&lt;dao-table-class&gt;</li>
+<li>table-name (class)</li>
+<li>table-definition (class &amp;key (yield t) if-not-exists)</li>
+<li>inflate (object slot-name value)</li>
+<li>deflate (object slot-name value)</li>
+<li>migrate-table (class)</li>
+<li>ensure-table-exists (class)</li>
+<li>recreate-table (class)</li>
+<li>*auto-migration-mode*</li>
+</ul>
+
+<h3>SQL</h3>
+
+<ul>
+<li>select-dao ((class &lt;dao-table-class&gt;) &amp;rest expressions)</li>
+<li>insert-dao ((obj &lt;dao-class&gt;))</li>
+<li>create-dao ((class &lt;dao-table-class&gt;) &amp;rest initargs)</li>
+<li>update-dao ((obj &lt;dao-class&gt;))</li>
+<li>delete-dao ((obj &lt;dao-class&gt;))</li>
+<li>execute-sql ((sql string) &amp;optional binds)</li>
+<li>retrieve-by-sql ((sql string) &amp;key binds as)</li>
+<li>save-dao ((obj &lt;dao-class&gt;))</li>
+<li>where</li>
+<li>order-by</li>
+<li>group-by</li>
+<li>limit</li>
+</ul>
+
+<h3>Data types</h3>
+
+<ul>
+<li>serial</li>
+<li>tinyint</li>
+<li>smallint</li>
+<li>mediumint</li>
+<li>bigint</li>
+<li>text</li>
+<li>varchar</li>
+<li>enum</li>
+<li>datetime</li>
+<li>date</li>
+<li>timestamp</li>
+</ul>
+
+<h3>Errors</h3>
+
+<ul>
+<li>&lt;integral-error&gt;</li>
+<li>&lt;connection-not-established-error&gt;</li>
+<li>&lt;unknown-primary-key-error&gt;</li>
+<li>&lt;type-missing-error&gt;</li>
+<li>&lt;migration-error&gt;</li>
+</ul>
+
+<h2>See Also</h2>
+
+<ul>
+<li><a href="http://8arrow.org/cl-dbi/" >CL-DBI</a> - Database independent interface library.</li>
+<li><a href="http://8arrow.org/sxql/" >SxQL</a> - SQL builder library.</li>
+</ul>
+
+<h2>Author</h2>
+
+<ul>
+<li>Eitaro Fukamachi (e.arrows@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2014 Eitaro Fukamachi (e.arrows@gmail.com)</p>
+
+<h1>License</h1>
+
+<p>Licensed under the BSD 3-Clause License.</p>

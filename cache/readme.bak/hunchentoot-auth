@@ -1,0 +1,42 @@
+<p>hunchentoot-auth</p>
+
+<p>This package is for implementing user authentication with passwords
+for the hunchentoot Common Lisp web server.</p>
+
+<p>The core unit of hunchentoot-auth is the realm. Currently a realm is
+just a persistent &ldquo;bag&rdquo; for holding users and their associated (hashed)
+passwords, along with the beginnings of support for groups. </p>
+
+<p>In the initial incarnation, realms use the cl-store module for storing
+the users and groups information for the realm. This is clearly not
+the most efficient approach, but works well enough for a small number
+of users.</p>
+
+<p>To create a realm, one can use a lisp expression such as:</p>
+
+<p>(defparamter *test-realm-directory &ldquo;/tmp/myrealm/&rdquo;)</p>
+
+<p>(ensure-directories-exist <em>test-realm-directory</em>)</p>
+
+<p>(defparameter <em>test-realm</em>
+    (make-instance &apos;ht-auth:realm
+                   :user-storage-path
+                   (merge-pathnames &ldquo;users.store&rdquo;
+                                    <em>test-realm-directory</em>)
+                   :group-storage-path
+                   (merge-pathnames &ldquo;groups.store&rdquo;
+                                    <em>test-realm-directory</em>)))</p>
+
+<p>Then to add users to the realm, one would use the following code:</p>
+
+<p>(ht-auth:add-user <em>test-realm</em> &ldquo;alice&rdquo; &ldquo;secret1&rdquo;)</p>
+
+<p>This would add the user &ldquo;alice&rdquo; to the realm with the password
+&ldquo;secret1&rdquo;. Note that the password is not directly stored in the
+persistent storage, but rather the password is appended to a random
+(per-user) salt (which is stored in the persistent database) and this
+salted uesr name is then hashed using the MD5 hashing algorithm. The
+hash of the salted password is stored in the database. To subsequently
+verify if a given password matches that of the user, the (per-user)
+salt is prepened to the candidate password, this string is then hashed
+and compared to the hash stored in the realm.</p>

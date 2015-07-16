@@ -1,0 +1,29 @@
+INTRODUCTION
+============
+
+Conium is a portability library for debugger- and compiler-related
+tasks in Common Lisp.
+
+It is fork of SWANK-BACKEND and differs from swank in the following
+regards:
+
+  - The swank frontend has been removed, leaving a Lisp library rather
+    than a socket server.
+
+  - Conium always uses ASDF instead of a manual load script.
+
+  - Code related to threads has been removed.  (Use bordeaux-threads instead.)
+
+  - Code related to the MOP has been removed.  (Use closer-mop instead.)
+
+  - Code related to gray streams has been removed.  (Use
+    trivial-gray-streams instead.)
+
+  - Code related sockets has been removed.  (Use usocket, iolib, or
+    in Hemlock's case, the connection API instead.)
+
+  - The package SWANK-BACKEND has been renamed to CONIUM.
+
+
+It is currently being maintained by David Lichteblau and retains its
+original public domain status.

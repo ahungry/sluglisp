@@ -1,0 +1,241 @@
+<h1>Local Package Aliases</h1>
+
+<p>Allows to define inside of a package aliases to refer other packages.
+Provides a reader macro <code>$</code> to use the aliases (active only in packages having
+alias mapping, and does not affect other code).
+Portable.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:local-package-aliases</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defpackage</span></i> com.my-company.some-library
+  <span class="paren2">(<span class="code"><span class="keyword">:use</span> cl</span>)</span>
+  <span class="paren2">(<span class="code"><span class="keyword">:export</span> <span class="keyword">#:func</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">in-package <span class="keyword">#:com.my-company.some-library</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> func <span class="paren2">(<span class="code"></span>)</span> <span class="string">"hello"</span></span>)</span>
+
+
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defpackage</span></i> some-application <span class="paren2">(<span class="code"><span class="keyword">:use</span> cl</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">in-package <span class="keyword">#:some-application</span></span>)</span>
+<span class="paren1">(<span class="code">local-package-aliases:set <span class="keyword">#:com.my-company.some-library</span> <span class="keyword">#:lib</span>
+                           <span class="keyword">#:some.other.library</span> <span class="keyword">#:olib</span></span>)</span>
+
+<span class="paren1">(<span class="code">read-from-string <span class="string">"$lib:func"</span></span>)</span>
+<span class="comment">;; =&gt; COM.MY-COMPANY.SOME-LIBRARY:FUNC
+</span>
+<span class="paren1">(<span class="code">$lib:func</span>)</span>
+<span class="comment">;; =&gt; "hello"
+</span>
+<span class="comment">;; The aliases are not global, they are scoped only to the package
+</span><span class="comment">;; where they are defined:
+</span>
+<span class="paren1">(<span class="code">in-package <span class="keyword">#:cl-user</span></span>)</span>
+<span class="paren1">(<span class="code">read-from-string <span class="string">"$lib:func"</span></span>)</span>
+<span class="comment">;; =&gt; ERROR There is no package named "$LIB" .
+</span>
+<span class="comment">;; The $ reader macro is non-terminating,
+</span><span class="comment">;; therefore it is only activated when $
+</span><span class="comment">;; is on the beginning of a token.
+</span><span class="comment">;; $ in the middle of a token has no special
+</span><span class="comment">;; effect.
+</span><span class="paren1">(<span class="code">in-package <span class="keyword">#:some-application</span></span>)</span>
+
+<span class="paren1">(<span class="code">read-from-string <span class="string">"just-a-$-symbol"</span></span>)</span>
+<span class="comment">;; =&gt; JUST-A-$-SYMBOL
+</span>
+<span class="comment">;; The $ designates alias reference only if the
+</span><span class="comment">;; current package has alias mapping defined. If there
+</span><span class="comment">;; is no alias mapping in the current package, then
+</span><span class="comment">;; $ is interpreted as usually:
+</span>
+<span class="paren1">(<span class="code">local-package-aliases:set</span>)</span> <span class="comment">;; installs empty aliases mapping
+</span><span class="paren1">(<span class="code">read-from-string <span class="string">"$-a-sybmol"</span></span>)</span>
+<span class="comment">;; =&gt; $-A-SYMBOL
+</span>
+<span class="paren1">(<span class="code">in-package <span class="keyword">#:cl-user</span></span>)</span>
+<span class="paren1">(<span class="code">read-from-string <span class="string">"$-a-sybmol"</span></span>)</span>
+<span class="comment">;; =&gt; $-A-SYMBOL
+</span>
+<span class="comment">;; Therefore it is safe to enable $ macro
+</span><span class="comment">;; globally, for example from Lisp init file,
+</span><span class="comment">;; without affecting the code using $ for other
+</span><span class="comment">;; purposes.</span></span></code></pre>
+
+<p>To enable the <code>$</code> macro in your lisp session (may be put into
+the lisp initialization file):
+<code>common-lisp
+(local-package-aliases:set-aliasing-reader *readtable*)
+</code></p>
+
+<p>Another macro character than <code>$</code> may be used. 
+See the docstring for <code>local-package-aliases:set-aliasing-reader</code>
+for parameters description.</p>
+
+<p>To return to the standard syntax:
+<code>common-lisp
+(set-syntax-from-char #\$ #\$ *readtable* (copy-readtable nil))
+</code></p>
+
+<p>To make the <code>$</code> macro enabled when your ASDF system
+is compiled by other people, use the <code>:acound-compile</code> argument:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">asdf:defsystem</span></i> <span class="keyword">#:some-application</span>
+  <span class="keyword">:depends-on</span> <span class="paren2">(<span class="code"><span class="keyword">#:local-package-aliases</span>
+               <span class="keyword">#:com.my-company.some-library</span></span>)</span>
+  <span class="keyword">:around-compile</span> <span class="string">"local-package-aliases:call-with-aliasing-readtable"</span>
+  <span class="keyword">:components</span> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="keyword">:file</span> <span class="string">"some-application"</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<h2>SLIME support</h2>
+
+<p>SLIME assumes standard readtable when meets tokens like <code>pkg:symb</code>
+and doesn&apos;t undersdand our aliases.</p>
+
+<p>In result SLIME symbol completion, slime-edit-definition, function
+arguments hints do not work out of box for aliased tokens like <code>$lib:func</code>.</p>
+
+<p>The solution we found is to hook into swank, and wrap evaluation
+of every SLIME request with temporary adding the aliases defined
+in the current package as nicknames for their corresponding packages.
+So, during dynamic extent of every slime request, the aliases become
+real package nicknames and SLIME can handle them as usually.</p>
+
+<p>It must be noted that this solution is not entierly transarent:
+when working from SLIME not only reader understands the aliases,
+but also <code>(find-package :$lib)</code> will find the package.
+But of course during normal run-time only reader knows about
+the aliases.</p>
+
+<p>Functions <code>hook-into-swank</code> and <code>unhook-from-swank</code> enable/disable
+this SLIME support.</p>
+
+<p>To have the SIME support enabled automatically add the following
+to your <em>~/.swank.lisp</em>:
+<code>common-lisp
+(when (find-package :local-package-aliases)
+  (funcall (read-from-string &quot;local-package-aliases:hook-into-swank&quot;)))
+</code>
+Or this in ~/.emacs:
+<code>common-lisp
+(add-hook 'slime-connected-hook
+          (lambda ()
+            (slime-eval '(cl:when (cl:find-package :local-package-aliases)
+                            (cl:funcall (cl:read-from-string &quot;local-package-aliases:hook-into-swank&quot;))))))
+</code></p>
+
+<h1>Other Package Aliasing Approaches</h1>
+
+<p>Here is some information, solutions and ideas I encountered recently
+related to package aliases.</p>
+
+<p>The solutions vary in:
+ - whether the aliases only honored by reader, or they also
+   affect functions like <code>cl:find-package</code>, <code>cl:find-symbol</code>
+ - is the solution a portable Common Lisp or it relies on patches
+   or language extensions
+ - whether the aliases are scoped to a package, or somehow else
+ - whether the solution is specific about aliasing scheme,
+   or it&apos;s a lower-level tool allowing to build various
+   aliasing approaches.</p>
+
+<h2>cl-package-aliases - http://www.cliki.net/cl-package-aliases</h2>
+
+<p>Provides patches for 5 lisp implementations to introduce
+aliases. Aliases are scoped to package and visible both
+for reader and for standard functions like <code>cl:find-symbol</code>.</p>
+
+<h2>package-renaming - http://common-lisp.net/gitweb?p=users/frideau/package-renaming.git;a=tree</h2>
+
+<p>Tools based on <code>cl:rename-package</code> to temporary give packages
+desired short names/nicknames. Portable. To make the renaming
+local it is expected to be used with the ASDF&apos;s <code>:acound-compile</code> argument.</p>
+
+<h2>CL language extensions</h2>
+
+<p>There were discussions to develop a CL language extension
+and propose it to CL vendors. The extension might be
+a hook called by CL to resolve package prefix. I.e. when
+CL encounteres a token like <code>pkg:symbol</code> it calls the hook
+with &ldquo;pkg&rdquo; string and the hook should return a package object
+or maybe just a string designating real package name.
+Such hook may be called <code>*package-prefix-resolver*</code>.</p>
+
+<p>Alternatively the hook may be passed the full token &ldquo;pkg:symbol&rdquo;
+and be responsible to resolve both package name and symbol.
+Such hook may be named <code>*parse-token-hook*</code>.</p>
+
+<p>There were considerations whether these hooks should be called only
+form reader or by <code>cl:find-sybmol</code> and other functions.
+Sketch for a CDR: http://paste.lisp.org/display/133561
+Discussions on the #lisp irc channel: 
+http://ccl.clozure.com/irc-logs/lisp/2012-11/lisp-2012.11.05.txt
+http://ccl.clozure.com/irc-logs/lisp/2013-01/lisp-2013.01.06.txt</p>
+
+<p>One more possible language extension would be to allow to
+fully substitute the lisp reader. In this case there might
+be are public library implementing fully compliant CL reader.
+Lisp implementation will delegate functions like <code>cl:read</code>,
+<code>cl:read-delimeted-list</code>, <code>cl:set-syntax-from-char</code>
+and others to the pluggable reader. The reader by default
+honors <code>cl:*readtable*</code>, <code>cl:*package*</code> and other variables,
+but also allows any custom hooks we need, such as described
+above <code>parse-token-hook</code> and/or <code>package-prefix-resolver</code>.
+It must be noted that interface between CL and such a pluggable
+reader will consist of many functions. Also, the reader should
+come with it&apos;s own implementations for all the reader macros,
+because standard reader macros are not implemented in terms
+of public <code>cl:*</code> functions, but use private, not-exported
+functions of the CL reader, such as <code>reat-token</code>.</p>
+
+<p>If speak about pluggable reader, it&apos;s necessary to mention
+the reader-interception project:
+http://common-lisp.net/cgi-bin/gitweb.cgi?p=users/frideau/reader-interception.git;a=tree;js=1</p>
+
+<p>It&apos;s a portable solution allowing to plug-in your own reader.
+It relies on the trick to look at the first character of input,
+configure this character temporary as a reader macro, and
+then this reader macro may read the full input stream according
+to any rules.</p>
+
+<h2>Conclusion</h2>
+
+<p>The local-package-aliases approach with reader macro seems
+to be a decent approach, especially as the syntax change
+only affects packages with explicitly configured aliasing
+maps.</p>
+
+<p>It is comparable by convenience with package-renaming.</p>
+
+<p>Advantage of local-package-aliases is that it may be enabled
+once and forewer in the Lisp initialization file, while
+packag-renaming will require you to manually rename packages
+every time you switch projects or subsystems during or at the beginning
+of Lisp session.</p>
+
+<p>In my opinion a form of package aliasing deserves to be
+introduced as a CL extension into all implementations.</p>
+
+<p>The language extension may be specific, targeting only package
+aliases (like cl-package-aliases project proposes).
+It will encourage consistent coding practice accross
+all the CL programs.</p>
+
+<p>To simplify adoption of the extension by the CL implementations,
+I believe it would be enought to have aliasing only in reader.
+Calls to <code>cl:find-package</code> are rare, we can pass
+full package names to it. On the other hand, if <code>cl:find-package</code>
+is unaware of aliases, it may complicate support by SLIME.</p>
+
+<p>As for more low-level language extenstions, like pluggable
+reader or various hooks, I would welcome them too,
+just to make Lisp more programmable and allow programmers
+to solve their needs simpler.</p>
+
+<h2>Author</h2>
+
+<p>Anton Vodonosov, avodonosov@yandex.ru</p>
+
+<h2>License</h2>
+
+<p>MIT</p>

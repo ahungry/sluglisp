@@ -1,0 +1,45 @@
+cl-autorepo is a simple lisp library to ease inclusion of
+non-Quicklisp libraries from repositories.
+
+For example, to load my File System DataBase library:
+
+  (ql:quickload "cl-autorepo")
+  (cl-autorepo:add-system "fsdb" "https://github.com/billstclair/fsdb" :git)
+  (ql:quickload "fsdb")
+
+You can add ADD-SYSTEM calls to your library system definition (.asd)
+files, to auto-download systems that aren't yet in Quicklisp.
+
+Downloaded systems are kept in ~/.local/share/common-lisp/source/,
+which is one of the places ASDF looks for systems by default.
+
+There is currently no support for updating libraries. You can easily
+do that yourself with "git pull", "svn update", etc.
+
+I've included support for git, svn, darcs, and hg. You can add another
+respository type with a simple DOWNLOAD-REPO method. Send it to me,
+and I'll add it.
+
+One way to autoload cl-autorepo itself, before it becomes part of
+Quicklisp, is the code below:
+
+(load "~/quicklisp/setup")              ;may be in your init file
+
+(unless (or (find-package :cl-autorepo)
+            (ignore-errors (ql:quickload "cl-autorepo")))
+  (let* ((dir "~/.local/share/common-lisp/source/")
+         (autorepo-asd (merge-pathnames "cl-autorepo/cl-autorepo.asd" dir))
+         (url "https://github.com/billstclair/cl-autorepo"))
+    (asdf:run-shell-command "mkdir -p ~a;cd ~a;git clone ~a" dir dir url)
+    (load autorepo-asd)
+    (ql:quickload "cl-autorepo")))
+
+For an example of using cl-autorepo in a real system, see:
+
+  https://github.com/billstclair/truledger/blob/master/truledger.asd
+
+Tested in ccl 1.7-r14927M and SBCL 1.0.49.0.debian
+
+Bill St. Clair
+bill@billstclair.com
+11 August, 2011

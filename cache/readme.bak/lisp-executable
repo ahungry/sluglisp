@@ -1,0 +1,53 @@
+<h1>Lisp Executable</h1>
+
+<p>The LISP-EXECUTABLE system provides a language for defining and
+creating programs that can be used from the Unix shell instead of the
+Lisp read-eval-print-loop (REPL).</p>
+
+<p>The documentation for this project is contained in lisp-executable.org
+or <a href="http://markcox80.github.io/lisp-executable" >online</a>.</p>
+
+<h2>Quick Introduction</h2>
+
+<p>The files <code>lisp-executable-example.asd</code> and <code>example/main.lisp</code>
+provide a quick illustration of how to use this system.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">asdf:load-system <span class="string">"lisp-executable-example"</span></span>)</span>
+<span class="paren1">(<span class="code">asdf:oos 'lisp-executable:create-executables-op <span class="string">"lisp-executable-example"</span></span>)</span></span></code></pre>
+
+<p>The above code will generate two executables,
+<code>example/example-program</code> and <code>example/control-c-tester</code>.</p>
+
+<h3>Example Program</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">define-program</span></i> example-program <span class="paren2">(<span class="code">&amp;options help</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">cond</span></i>
+    <span class="paren3">(<span class="code">help
+     <span class="paren4">(<span class="code">format t <span class="string">"Help has arrived."</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">t
+     <span class="paren4">(<span class="code">format t <span class="string">"You are doomed."</span></span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">terpri</span>)</span></span>)</span></span></code></pre>
+
+<h3>Control C Tester</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">define-program</span></i> control-c-tester <span class="paren2">(<span class="code">&amp;options help <span class="paren3">(<span class="code">sleep sleep-time</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">declare <span class="paren3">(<span class="code">conversion-function <span class="paren4">(<span class="code">real 0</span>)</span> sleep</span>)</span>
+           <span class="paren3">(<span class="code">type <span class="paren4">(<span class="code">or null <span class="paren5">(<span class="code">real 0</span>)</span></span>)</span> sleep-time</span>)</span></span>)</span>
+
+  <span class="paren2">(<span class="code">unless sleep
+    <span class="paren3">(<span class="code">setf sleep-time 20.0</span>)</span></span>)</span>
+
+  <span class="paren2">(<span class="code"><i><span class="symbol">cond</span></i>
+    <span class="paren3">(<span class="code">help
+     <span class="paren4">(<span class="code">format t <span class="string">"Usage: [options]
+
+Sleep for an amount of time.
+
+Options:
+  --help                      This helpful message.
+  --sleep &lt;positive real&gt;     How long to sleep for. Default is 20 seconds.
+"</span></span>)</span>
+     0</span>)</span>
+    <span class="paren3">(<span class="code">t
+     <span class="paren4">(<span class="code">sleep sleep-time</span>)</span>
+     0</span>)</span></span>)</span></span>)</span></span></code></pre>

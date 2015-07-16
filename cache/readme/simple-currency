@@ -1,0 +1,116 @@
+This is a simple library for converting between currencies
+using the foreign exchange information posted daily by the ECB. You
+can find more information on the time of updates etc at:
+
+http://www.ecb.int/stats/exchange/eurofxref/html/index.en.html
+
+The library is so simple that it is easier for a user to just read the
+documentation strings and the function definitions themselves, so
+please look at simple-currency.lisp if you want more detailed
+documentation.
+
+Installation:
+
+This package uses DRAKMA, XMLS, SIMPLE-DATE, SPLIT-SEQUENCE, and
+CL-STORE but if you use quicklisp (http://www.quicklisp.org/beta/),
+they will be automatically installed for you.  Put this package
+somewhere quicklisp can find it, by default under
+~/quicklisp/local-projects/.  Then do the following 2 things:
+
+(ql:quickload :simple-currency)
+(CIES:UPDATE-CURRENCIES-HASH) ;;downloads currency info from ecb
+
+If it does not return NIL, you are ready to go
+
+Usage example:
+
+(CIES:CONVERT 100 :USD :GBP)
+
+==> 
+861350/13373
+#<SIMPLE-DATE:INTERVAL P1D>
+
+If you want it to look like a money amount, you can do
+
+(CIES:DISPLAY-CURRENCY (CIES:CONVERT 100 :USD :GBP) :GBP)
+
+==>
+"GBP 64.41"
+
+Likewise with checking the interval for unacceptably old quotations -
+see documentation for simple-date.
+
+NB: Remember that floats "contaminate" so if you do (CIES:CONVERT
+100.25 :eur :usd).  You will get a float back: display-currency calls
+a function which expects a rational, so that will signal an error.
+
+Convenience facilities:
+
+There is a macro (CIES:WITH-CURRENCY :xyz <conversion-form>) which can
+replace references to (convert <number> <target currency>) in
+conversion-form with (DISPLAY-CURRENCY (CONVERT <number> <from> <to>)
+<from>).  I haven't thought very hard about this macro, so it might
+hold unintended surprises.
+
+There is a simple database of currency information which can be
+accessed with CIES:LOOKUP-CURRENCY, so for example, if you are in the
+SIMPLE-CURRENCY package or have USED it:
+
+(ccy-ddigits (lookup-currency :jpy))
+==>
+"0"
+
+Another example:
+
+(map 'list (lambda (acode)
+                   (let ((cd (lookup-currency acode)))
+                     (list acode (ccy-country cd) (ccy-name cd))))
+           (available-currencies))
+
+==>
+(("EUR"
+  ("Vatican City State (HOLY SEE)" "SPAIN" "SLOVENIA" "SLOVAKIA" "SAN MARINO"
+   "SAINT PIERRE AND MIQUELON" "SAINT MARTIN (FRENCH PART)" "SAINT BARTHELEMY"
+   "REUNION" "PORTUGAL" "NETHERLANDS" "MONTENEGRO" "MONACO" "MAYOTTE"
+   "MARTINIQUE" "MALTA" "LUXEMBOURG" "ITALY" "IRELAND"
+   "HOLY SEE (VATICAN CITY STATE)" "GUADELOUPE" "GREECE" "GERMANY"
+   "FRENCH SOUTHERN TERRITORIES" "FRENCH GUIANA" "FRANCE" "FINLAND"
+   "EUROPEAN UNION" "ESTONIA" "CYPRUS" "BELGIUM" "AUSTRIA" "ANDORRA"
+   "AALAND ISLANDS")
+  "Euro")
+ ("ZAR" ("SOUTH AFRICA" "NAMIBIA" "LESOTHO") "Rand")
+ ("THB" ("THAILAND") "Baht") ("SGD" ("SINGAPORE") "Singapore Dollar")
+ ("PHP" ("PHILIPPINES") "Philippine Peso")
+ ("NZD" ("TOKELAU" "PITCAIRN" "NIUE" "NEW ZEALAND" "COOK ISLANDS")
+  "New Zealand Dollar")
+ ("MYR" ("MALAYSIA") "Malaysian Ringgit") ("MXN" ("MEXICO") "Mexican Peso")
+ ("KRW" ("KOREA, REPUBLIC OF") "Won") ("INR" ("INDIA" "BHUTAN") "Indian Rupee")
+ ("ILS" ("ISRAEL") "New Israeli Sheqel") ("IDR" ("INDONESIA") "Rupiah")
+ ("HKD" ("HONG KONG") "Hong Kong Dollar") ("CNY" ("CHINA") "Yuan Renminbi")
+ ("CAD" ("CANADA") "Canadian Dollar") ("BRL" ("BRAZIL") "Brazilian Real")
+ ("AUD"
+  ("TUVALU" "NORFOLK ISLAND" "NAURU" "KIRIBATI"
+   "HEARD ISLAND AND McDONALD ISLANDS" "COCOS (KEELING) ISLANDS"
+   "CHRISTMAS ISLAND" "AUSTRALIA")
+  "Australian Dollar")
+ ("TRY" ("TURKEY") "Turkish Lira")
+ ("RUB" ("RUSSIAN FEDERATION") "Russian Ruble")
+ ("HRK" ("CROATIA") "Croatian Kuna")
+ ("NOK" ("SVALBARD AND JAN MAYEN" "NORWAY" "BOUVET ISLAND") "Norwegian Krone")
+ ("CHF" ("SWITZERLAND" "LIECHTENSTEIN") "Swiss Franc")
+ ("SEK" ("SWEDEN") "Swedish Krona") ("RON" ("ROMANIA") "New Romanian Leu")
+ ("PLN" ("POLAND") "Zloty") ("LVL" ("LATVIA") "Latvian Lats")
+ ("LTL" ("LITHUANIA") "Lithuanian Litas") ("HUF" ("HUNGARY") "Forint")
+ ("GBP" ("UNITED KINGDOM" "JERSEY" "ISLE OF MAN" "GUERNSEY") "Pound Sterling")
+ ("DKK" ("GREENLAND" "FAROE ISLANDS" "DENMARK") "Danish Krone")
+ ("CZK" ("CZECH REPUBLIC") "Czech Koruna") ("BGN" ("BULGARIA") "Bulgarian Lev")
+ ("JPY" ("JAPAN") "Yen")
+ ("USD"
+  ("VIRGIN ISLANDS (US)" "VIRGIN ISLANDS (BRITISH)"
+   "UNITED STATES MINOR OUTLYING ISLANDS" "UNITED STATES"
+   "TURKS AND CAICOS ISLANDS" "TIMOR-LESTE" "PUERTO RICO" "PANAMA" "PALAU"
+   "NORTHERN MARIANA ISLANDS" "MICRONESIA, FEDERATED STATES OF"
+   "MARSHALL ISLANDS" "HAITI" "GUAM" "EL SALVADOR" "ECUADOR"
+   "BRITISH INDIAN OCEAN TERRITORY" "BONAIRE, SINT EUSTATIUS AND SABA"
+   "AMERICAN SAMOA")
+  "US Dollar"))

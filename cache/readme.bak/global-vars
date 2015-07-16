@@ -1,0 +1,91 @@
+<h1>global-vars</h1>
+
+<p>Define efficient global variables in Common Lisp.</p>
+
+<h2>Synopsis</h2>
+
+<pre><code>;; Similar to defparameter with regard to redefinitions
+(define-global-parameter -x- 3)
+
+;; Similar to defvar with regard to redefinitions
+(define-global-var -y- 4)
+
+;; ...
+
+(setf -x- 5)
+(setf -y- 6)
+</code></pre>
+
+<h2>Description</h2>
+
+<p>In Common Lisp, a special variable that is never dynamically bound
+typically serves as a stand-in for a global variable. The
+<code>global-vars</code> library provides true global variables that are
+implemented by some compilers. An attempt to rebind a global variable
+properly results in a compiler error. That is, a global variable
+cannot be dynamically bound.</p>
+
+<p>Global variables therefore allow us to communicate an intended usage
+that differs from special variables. Global variables are also more
+efficient than special variables, especially in the presence of
+threads.</p>
+
+<h2>API</h2>
+
+<ul>
+<li>[macro] <strong><code>define-global-var</code></strong> <code>name</code> <code>value</code> <em><code>&amp;optional</code></em> <code>documentation</code></li>
+</ul>
+
+<p>Define a global variable with a compile-time value.</p>
+
+<p>Subsequent redefinitions will not change the value (like <code>defvar</code>).</p>
+
+<p>The <code>value</code> argument is evaluated at compile-time. On SBCL, this
+  permits optimizations based upon the invariant that <code>name</code> is always
+  bound.</p>
+
+<ul>
+<li>[macro] <strong><code>define-global-var*</code></strong> <code>name</code> <code>value</code> <em><code>&amp;optional</code></em> <code>documentation</code></li>
+</ul>
+
+<p>Same as <code>define-global-var</code> except <code>value</code> is evaluated at load time,
+  not compile time.</p>
+
+<ul>
+<li>[macro] <strong><code>define-global-parameter</code></strong> <code>name</code> <code>value</code> <em><code>&amp;optional</code></em> <code>documentation</code></li>
+</ul>
+
+<p>Same as <code>define-global-var</code> except subsequent redefinitions will
+  update the value (like <code>defparameter</code>).</p>
+
+<ul>
+<li>[macro] <strong><code>define-global-parameter*</code></strong> <code>name</code> <code>value</code> <em><code>&amp;optional</code></em> <code>documentation</code></li>
+</ul>
+
+<p>Same as <code>define-global-parameter</code> except <code>value</code> is evaluated at
+  load time, not compile time.</p>
+
+<h2>Detail</h2>
+
+<p><code>global-vars</code> wraps the following implementation-specific features:</p>
+
+<ul>
+<li><p><a href="http://www.sbcl.org/manual/#Global-and-Always_002dBound-variables" >SBCL</a>: <code>sb-ext:defglobal</code> and <code>sb-ext:define-load-time-global</code>.</p></li>
+<li><p><a href="http://ccl.clozure.com/manual/chapter4.8.html" >CCL</a>: <code>ccl:defstatic</code> and <code>ccl:defstaticvar</code>.</p></li>
+<li><p><a href="http://www.lispworks.com/documentation/lw61/LW/html/lw-122.htm" >LispWorks</a>: <code>hcl:special-global</code>, in particular <code>defglobal-parameter</code> and <code>defglobal-variable</code>.</p></li>
+</ul>
+
+<p>For these implementations, rebinding a global variable is a
+compilation error.</p>
+
+<p>On other implementations, a global variable is implemented as a symbol
+macro which expands to a <code>symbol-value</code> form. Rebinding a global
+variable will (unfortunately) not signal an error.</p>
+
+<p>It is recommended to use a naming convention for global variables,
+such as <code>-foo-</code>. This makes it clear that <code>(let ((-foo- 9)) ...)</code> is a
+mistake even if the compiler doesn&apos;t catch it.</p>
+
+<h2>Author</h2>
+
+<p>James M. Lawrence <a href="m&#x61;&#105;l&#x74;&#111;:&#x6C;&#108;m&#x6A;&#106;m&#x6C;&#108;@&#x67;&#109;a&#x69;&#108;.&#x63;&#111;m">m&#x61;&#105;l&#x74;&#111;:&#x6C;&#108;m&#x6A;&#106;m&#x6C;&#108;@&#x67;&#109;a&#x69;&#108;.&#x63;&#111;m</a></p>

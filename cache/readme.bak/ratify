@@ -1,0 +1,31 @@
+<h2>About Ratify</h2>
+
+<p>Ratify is a collection of utilities to perform validation checks and parsing. The main intention of usage for this is in web-applications in order to check form inputs for correctness and automatically parse them into their proper representations or return meaningful errors.</p>
+
+<h2>How To</h2>
+
+<p>Ratify has a load of <code>TEST-*</code> functions, each accompanied by a predicate equivalent. The <code>TEST-*</code> functions will signal errors of type <code>RATIFICATION-ERROR</code> if the test fails, whereas the predicates will simply return <code>NIL</code>. Both will return the passed argument unmodified on success. Some of the tests have an equivalent <code>PARSE-*</code> function in order to turn the string into a more useful representation.</p>
+
+<p>The main interaction with Ratify is not supposed to be directly with the <code>TEST-*</code> and <code>PARSE-*</code> functions however, but rather through the <code>TEST</code> and <code>PARSE</code> wrapper functions. Both also have a macro shorthand to perform many tests and parsings at once, <code>PERFORM-COMBINED-TESTS</code> and <code>WITH-PARSED-FORMS</code>. These macros will perform as many tests as possible and only signal an error right after all tests have been made. This error is of type <code>COMBINED-ERROR</code>, which contains all the errors that occurred during the testing.</p>
+
+<pre><code>(ratify:perform-combined-tests
+  (:integer "45")
+  (:date "2014-08-01")
+  (:ratio "566/21"))
+
+(ratify:perform-combined-tests
+  (:integer "4.5" "e")
+  (:date "2014-08-01" "2014" "2014-55-99")
+  (:ratio "566/21" "5.6/21"))
+; Evaluation aborted on #&lt;RATIFY-TESTING:COMBINED-ERROR {10074E51D3}&gt;.</code></pre>
+
+<p>Or to perform parsing:</p>
+
+<pre><code>(let ((int "45")
+      (url "http://foo.bar/baz.jp?what=ever#hashtag")
+      (uri "things-are://sometimes:complicated@with-all.these/damn?protocols=i'm#telling+you!")
+      (dt "2014-08-01T21:23:01"))
+  (ratify:with-parsed-forms ((:integer int) (:url url) (:uri uri) (:datetime dt))
+    (list int url uri dt)))</code></pre>
+
+<p>If an error occurs, the <code>ERRORS</code> function gives access to the list of errors that the <code>COMBINED-ERROR</code> contains. For a complete list of testing and parsing functions, please see the <a href="http://shinmera.github.io/ratify" >symbol index</a>. The syntax grammar used to describe the valid values in the docstrings of each test is regex with the addition of <code>&lt;brackets&gt;</code> to refer to other tests, sometimes accompanied with a second line that describes limits of the values.</p>

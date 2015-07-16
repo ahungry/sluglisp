@@ -1,0 +1,47 @@
+<h1>Function-Literal</h1>
+
+<p>Clojure inspired Common Lisp function literal read macro</p>
+
+<p>This file contains a read macro allowing for function
+literals in Common Lisp similar to those in Clojure,
+for example:</p>
+
+<pre><code>(mapcar #f(- % %2) '(1 2 3 4) '(5 6 7 8))
+</code></pre>
+
+<p>is equivalent to:</p>
+
+<pre><code>(mapcar (lambda (a b) (- a b)) '(1 2 3 4) '(5 6 7 8))
+</code></pre>
+
+<p>Note however that unlike function literals seen in Clojure,
+these can be nested freely, as in:</p>
+
+<pre><code>; function that doubles the squared value
+#f(* 2 (#f(* % %) %))
+</code></pre>
+
+<p>Note also that <em>Let over Lambda&apos;s</em> <code>Sharp Backquote</code> is a natural
+consequence of this read macro as can be seen below. The only difference is the <code>f</code> after the <code>#</code> to prevent a conflict with Common Lisp&apos;s built in vector read-macro.</p>
+
+<pre><code>(mapcar #f`(,% ,%) '(A B C))
+</code></pre>
+
+<p>yielding:</p>
+
+<pre><code>((A A) (B B) (C C))
+</code></pre>
+
+<p>Constant functions are another natural use of this macro.</p>
+
+<pre><code>(mapcar #f10 (loop for x from 1 upto 10 collect x))
+</code></pre>
+
+<p>yielding:</p>
+
+<pre><code>(10 10 10 10 10 10 10 10 10 10)
+</code></pre>
+
+<h1>License</h1>
+
+<p>This software falls under the WTFPL.</p>

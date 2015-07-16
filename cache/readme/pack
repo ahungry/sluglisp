@@ -1,0 +1,54 @@
+Python struct hack in Common Lisp written by Death (see https://gist.github.com/266945)
+
+Modified to use ieee-floats instead of sb-kernel to increase compatibility.
+Tested on SBCL linux, windows and CLISP windows.
+
+
+pack spec &rest args => array
+
+Packs arguments according to spec as an octet buffer (simple array
+with 8-bit unsigned bytes).
+
+The spec string should be formatted as given in
+http://docs.python.org/library/struct.html#byte-order-size-and-alignment
+
+
+pack-into spec stream &rest args => stream
+
+Packs arguments according to spec into stream, which should obey the
+stream struct protocol, i.e. a specialized method
+struct-stream-protocol should exist for the stream. See below.
+
+
+unpack spec stream => list
+
+Unpacks bytes from stream according to spec and returns them in a list.
+
+
+calc-size spec => size
+
+Calculates and returns the size (in octets) that the spec specifies.
+
+
+struct-stream-protocol stream => reader writer
+
+A method for the stream object returning reader and writer
+functions. For an arbitrary object, these should be closures over that
+object. The reader function should return the current octet in the
+object and increment its position by one. It takes no arguments. The
+writer function should write the given octet to the object and
+increment its position by one.
+
+See this example from the pack.lisp source, which ensures vectors can
+be used as streams for the pack-into and unpack functions:
+
+(defmethod struct-stream-protocol ((vector vector))
+  (values
+   (let ((i 0))
+     (lambda ()
+       (prog1 (aref vector i)
+         (incf i))))
+   (let ((i 0))
+     (lambda (octet)
+       (setf (aref vector i) octet)
+       (incf i)))))

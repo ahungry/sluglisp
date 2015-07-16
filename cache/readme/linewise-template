@@ -1,0 +1,336 @@
+LINEWISE-TEMPLATE is a Common Lisp library for processing text files and
+streams as templates conforming to simple line-based hierarchical formats.
+It is primarily intended for metaprogramming purposes.
+
+
+[Use Case I]
+
+Suppose you have a program which generates some code in a C-like language,
+and you want the code to be inserted in a file which also has to contain
+handcrafted code all around the generated parts.  In the spirit of
+exploratory programming, you occasionally modify both the handcrafted code
+and that part of the program which affects code generation.  You can choose
+to keep the handcrafted part as literal data in your Lisp program (a list of
+strings or somesuch) and combine them manually, which can become quite ugly
+in complex cases.  An arguably better approach is to use some kind of
+template.  The following template can be processed by LINEWISE-TEMPLATE to
+replace the lines between @BEGIN GENERATED and @END GENERATED:
+
+    #include <stdlib.h>
+    #include <stdio.h>
+    #include "serpent.h"
+    #include "unicorn.h"
+    
+    int main (int argc, char *argv[]) {
+        char *opts;
+        serpent *s;
+        // More vars...
+        opts = parse_opts(argc, argv);
+        s = init_serpent(opts);
+        // More serpents and unicorns...
+    
+    /************ @BEGIN GENERATED ************/
+    // Automatically generated code belongs here
+    /************ @END GENERATED ************/
+    
+        kill_serpent(s);
+        // More finalization...
+        return 0;
+    }
+
+If the template resides in a file called unicorn.c, the following expression
+causes the portion between the two lines — called “directives” in
+LINEWISE-TEMPLATE parlance — to be replaced with the value of
+(GENERATE-UNICORN-CODE):
+
+    (linewise-template:process-template
+        ((:file #P"example:path;to;unicorn.c" :update t
+          :circumfix '("/(\\*{8,}) *" " *\\1/"))
+             :copy
+             ((:block "GENERATED")
+                  :replace :with (generate-unicorn-code)
+                  :preserve-directives t)))
+
+which basically means: copy lines from the file unicorn.c (option :FILE) to
+a new version of the same file (option :UPDATE), looking for directives in
+lines with multiple-asterisk comments (option :CIRCUMFIX), replacing the
+marked part, but keeping the directives that delimit it.  Note that the file
+may still serve as template for this processor after having been updated.
+
+
+[Use Case II]
+
+Suppose you have a program which converts between two textual formats
+(called, rather cryptically, “serpent” and “unicorn”), and you want to
+create for it a suite of Eos or FiveAM unit tests each of which converts
+some serpent input to unicorn, and tests for equality with a reference
+unicorn text.  You like to see your tests alongside the code that defines
+conversion functions for specific features of serpent; also, both serpent
+and unicorn can be heavy on double quotes and backslashes, meaning that
+you'd rather see them presented in raw text than in Lisp string literals.
+This leads you to a decision to wrap test specs in multiline comments in
+your Lisp code and rely on source file postprocessing.  On some occasions,
+you want to test the feature that unicorn has, of embedding reports of
+conversion errors in the output text.  However, unicorn's error format is
+bulky, and its exact presentation is subject to change in the course of your
+program's development cycle, meaning that you'd rather replace it with some
+convenient shorthand in your test spec.
+
+Here's how you go about the business using LINEWISE-TEMPLATE.  Your tests
+shall be marked as blocks, that is, shall begin with a @BEGIN TEST X
+directive (where X stands for the name of the test) and end with an @END
+TEST directive.  Inside, you'll mark the beginning of the source text with a
+@SERPENT, and the beginning of the reference output with a @UNICORN.  Inside
+the reference output, you'll have errors designated by @ERROR Y M (where Y
+stands for the error type, and M for the error message).  Here is a sample
+test template, with some ASCII art substituting for actual serpent and
+unicorn:
+
+#|
+@BEGIN TEST TOAD
+@SERPENT
+                                      ________
+                                     /        \
+                     _____          /   @..@   \
+                    /   \_(        /   (\--/)   \
+       ____        /  \_(         /   (.>__<.)   \
+      /  0 \______/ \_(__________/    ^^^  ^^^    \___________________
+   >~'\v____^_^_^_^_(_^_^_^_^_^_^__________________^_^_^_^_^_^_^_^_^_^>
+
+@UNICORN
+                                            .
+                                      ,;,,;'
+                                     ,;;'(
+                          __       ,;;' ' \
+                        /'  '\'~~'~' \ /'\.)
+                     ,;(      )    /  |.
+@ERROR INDIGESTION "Unexpected toad while parsing serpent body"
+                    ,;' \    /-.,,(   ) \
+                         ) /       ) / )|
+                         ||        ||  \)
+                         (_\       (\
+@END TEST
+|#
+
+Let's assume that you have defined the functions LIST-SOURCE-FILES which
+returns a list of paths; FORMAT-UNICORN-ERROR which takes a type and a
+message and returns a unicorn error presentation; and WRITE-TEST which takes
+a test name, a serpent input text, and a unicorn reference text, and writes
+them to some output file all wrapped up as an Eos / FiveAM (TEST ...) form.
+Your template processor could then look like this:
+
+    (linewise-template:process-template
+        ((:files (list-source-files))
+             :discard
+             ((:block "TEST" test-name &aux serpent unicorn)
+                  :discard :do (write-test test-name serpent unicorn)
+                  ((:after "SERPENT")
+                       :copy :to (:var serpent))
+                  ((:after "UNICORN")
+                       :copy :to (:var unicorn)
+                       ((:atomic "ERROR" type message)
+                            :replace :with (format-unicorn-error
+                                             type message))))))
+
+which means: skim over the lines in source files until you encounter a block
+delimited by @BEGIN TEST and @END TEST (without circumfixes in this case);
+bind TEST-NAME to the Lisp expression occuring after @BEGIN TEST in the
+directive line; inside the block, copy the lines after @SERPENT to a string
+referred to by the block-local auxiliary variable SERPENT and the lines
+after @UNICORN to a string referred to by the auxiliary variable UNICORN,
+while replacing every @ERROR line inside the portion after @UNICORN with the
+result of applying FORMAT-UNICORN-ERROR to the two expressions occuring
+after @ERROR; at the end of the block, output the test specified by the
+values of TEST-NAME, SERPENT and UNICORN.
+
+
+[The LINEWISE-TEMPLATE Dictionary]
+
+{variable} *DIRECTIVE-CIRCUMFIX*
+
+Prefix or circumfix of directive lines (when in comments etc.): a list of 0,
+1 or 2 ppcre strings.  Initial value is NIL.
+
+
+{variable} *DIRECTIVE-ESCAPE*
+
+String to introduce a directive.  Initial value is "@".
+
+
+{variable} *DIRECTIVE-BASE-PACKAGES*
+
+List of packages which are to be used by the temporary package established
+for reading symbols in directives.  Initial value is '(#:COMMON-LISP).
+
+
+{variable} *SOURCE-STREAM*
+
+Reference to the current source stream (the one from which a line most
+recently has been read.
+
+
+{variable} *SOURCE-LINE-COUNT*
+
+Reference to an integer incremented for each line read, and reset for each
+subsequent source stream.
+
+
+{macro} PROCESS-TEMPLATE SPEC
+
+Process the template specified by SPEC, which must have the following
+syntax:
+
+              <SPEC> ::= (<SOURCE-SPEC> <ACTION-AND-OPTIONS>
+                          [ <SUBSPEC>* ])
+
+       <SOURCE-SPEC> ::= ([[ {<SOURCE-STREAM-SPEC>}1 | <SOURCE-OPTS>* ]])
+
+<SOURCE-STREAM-SPEC> ::= :FILE <PATH> [[ <UPDATE-OPTS>* ]] |
+                         :FILES <PATHS> |
+                         :STRING <STRING> | :STRINGS <STRINGS> |
+                         :STREAM <STREAM> | :STREAMS <STREAMS>
+
+       <UPDATE-OPTS> ::= :UPDATE <BOOLEAN> | :BACKUP <BOOLEAN>
+
+       <SOURCE-OPTS> ::= :CIRCUMFIX <REGEXP-PARTS> | :ESCAPE <STRING> |
+                         :BASE-PACKAGES <PACKAGES>
+
+<ACTION-AND-OPTIONS> ::= :COPY [[ <COPY-OPTS>* ]] |
+                         :TRANSFORM [[ <TRANSFORM-OPTS>* ]] |
+                         :REPLACE [[ <REPLACE-OPTS>* ]] |
+                         :DISCARD [[ <DISCARD-OPTS>* ]]
+
+         <COPY-OPTS> ::= :TO <DESTINATION> | <COMMON-OPTS>
+
+    <TRANSFORM-OPTS> ::= :BY <FUNCTION> | :TO <DESTINATION> |
+                         <COMMON-OPTS>
+
+      <REPLACE-OPTS> ::= :WITH <STRING-OR-NIL> | <COMMON-OPTS>
+
+      <DISCARD-OPTS> ::= <COMMON-OPTS>
+
+       <COMMON-OPTS> ::= :DO <EXPRESSION> |
+                         :PRESERVE-DIRECTIVES <BOOLEAN>
+
+           <SUBSPEC> ::= (<SELECTOR> <ACTION-AND-OPTIONS>
+                          [ <SUBSPEC>* ])
+
+          <SELECTOR> ::= <NAME> |
+                         (:ATOMIC <NAME> [ <ARGS> [ <TRAILER-ARG> ]]) |
+                         (:BLOCK <NAME> [ <ARGS> [ <TRAILER-ARG> ]]) |
+                         (:AFTER <NAME> [ <ARGS> [ <TRAILER-ARG> ]])
+
+       <DESTINATION> ::= NIL | <STREAM> |
+                         (:VAR <VAR>) | (:FN <FUNCTION>) 
+
+              <NAME> ::= <string designator>
+
+              <ARGS> ::= <destructuring lambda list>
+
+       <TRAILER-ARG> ::= &TRAILER <VAR>  ; &TRAILER is matched by name
+
+               <VAR> ::= <symbol>
+
+<PATH> | <STRING> | <STRING-OR-NIL> |    ; Evaluated to produce a single
+    <STREAM> | <BOOLEAN> | <FUNCTION>    ; value of the specified type
+                     ::= <expression>
+
+<PATHS> | <STRINGS> | <STREAMS> |        ; Evaluated to produce a list of
+          <PACKAGES> ::= <expression>    ; values of the specified type
+
+      <REGEXP-PARTS> :: <expression>     ; Evaluated to produce a list of
+                                         ; 0, 1 or 2 strings, conjoined
+                                         ; to form a ppcre
+
+The sources specified in <SOURCE-SPEC> are read from by READ-LINE and the
+resulting lines processed in a dynamic environment where
+*DIRECTIVE-CIRCUMFIX*, *DIRECTIVE-ESCAPE* and *DIRECTIVE-BASE-PACKAGES* are
+bound to the values of the corresponding <SOURCE-OPTS> (when provided),
+*SOURCE-STREAM* is bound to the current source stream, and
+*SOURCE-LINE-COUNT* to the number of lines read from that stream.
+
+Lines are processed according to <ACTION-AND-OPTIONS> applying either to the
+whole source (those outside of any <SUBSPEC>), or to some part of the source
+delimited by “directives”.  A directive is a line that has a prefix and
+suffix matching respectively the first and second element of
+*DIRECTIVE-CIRCUMFIX* (unless null), and a middle portion beginning with the
+string *DIRECTIVE-ESCAPE* (unless null), followed by keywords given by
+<SELECTOR>s of applicable <SUBSPEC>s, followed by zero or more
+whitespace-separated Lisp expressions, followed by zero or more trailer
+characters.  In the following, we give examples of directives for
+*DIRECTIVE-ESCAPE* = \"@\" and *DIRECTIVE-CIRCUMFIX* = NIL; X stays for
+arbitrary names.
+
+A <SUBSPEC> with a (:BLOCK X ...) selector applies to any part of the source
+starting with a @BEGIN X directive and an ending with an @END X directive.
+
+A <SUBSPEC> with an (:AFTER X ...) selector applies to any part of the
+source starting with an @X directive and ending immediately before the start
+of any sibling <SUBSPEC>, or before the end of its parent <SUBSPEC>,
+whichever comes first.
+
+A <SUBSPEC> with an (:ATOMIC X ...) selector applies to just the directive
+line.  A plain X selector is shorthand for (:ATOMIC X).
+
+Nested subspecs take precedence over their parent specs.  Nested subspecs
+are not allowed inside atomic subspecs.  :ATOMIC selectors are incompatible
+with :COPY and :TRANSFORM actions.
+
+If the <ACTION> is :COPY, affected lines are copied verbatim to
+<DESTINATION>.  If the applicable (sub)spec specifies a non-stream
+destination, an output string-stream is used.  If the destination is (:VAR
+X), the string associated with the stream is assigned to the variable X once
+all affected lines have been copied.  If the destination is (:FN X), the
+function to which X evaluates is called on the associated string for side
+effects once all affected lines have been copied.
+
+If the (sub)spec does not specify any <DESTINATION>, it is inherited from
+the parent spec; for the topmost <SPEC> without an explicit destination, and
+for a <SPEC> that specifies :TO NIL, an output string-stream is used.
+However, if <SOURCE-STREAM-SPEC> includes the option :UPDATE T, the
+destination shall instead be a stream writing to a new version of the input
+file; additionally, the option :BACKUP T causes the prior version of the
+file to be backed up as if by (OPEN ... :IF-EXISTS :RENAME).
+
+If the <ACTION> is :TRANSFORM, affected lines are copied to a temporary
+string, the string is passed to the specified function, and the value
+returned by the function is written to the destination as if by :COPY.
+Subspecs of this spec shall inherit as destination an output stream writing
+to the temporary string.
+
+If the <ACTION> is :REPLACE, affected lines are not copied.  Instead, the
+specified value (unless null) is written to the destination inherited from
+the parent spec.  :DISCARD is a shorthand for :REPLACE :WITH NIL.
+
+If <SELECTOR> includes some <ARGS>, they are expected to form a
+destructuring lambda list.  In this case, Lisp expressions are read from the
+directive line after the directive name: until the end of the line if <ARGS>
+contains a &REST and no &KEY keywords, or until the maximum possible number
+of arguments needed to satisfy the lambda list is obtained.  The list of
+expressions is matched against <ARGS> as if by DESTRUCTURING-BIND.  Lisp
+expressions inside the selector's <SUBSPEC> are then evaluated in a lexcial
+environment where variables from <ARGS> are bound to the data read, and the
+variable from <TRAILER-ARG> (if specified) is bound to a substring of the
+directive line after the end of the last expression read.  Symbols occuring
+in the data are interned in a temporary package which inherits all external
+symbols from *DIRECTIVE-BASE-PACKAGES*.
+
+The option :DO X causes the expression X to be executed for side-effects
+after all affected lines have been processed.
+
+The option :PRESERVE-DIRECTIVES T causes the directive(s) delimiting the
+affected lines to be copied to the specified or inherited destination,
+except when both the applicable selector and its parent have :REPLACE or
+:DISCARD actions.
+
+The value returned by executing PROCESS-TEMPLATE is the string associated
+with the destination stream, if the action in <SPEC> is :COPY or :TRANSFORM,
+the <DESTINATION> is NIL or unspecified, and <SOURCE-STREAM-SPEC> does not
+specify :UPDATE T.  Otherwise, the value is NIL.
+
+
+[License and Support]
+
+LINEWISE-TEMPLATE has been written and is maintained by Boris Smilga
+<boris.smilga@gmail.com>.  It is distributed under the BSD 3-clause license
+(see the file LICENSE for details).

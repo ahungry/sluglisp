@@ -1,0 +1,7 @@
+<p>Funky Singular Value Decomposition</p>
+
+<p>This is a Common Lisp implementation of Simon Funk&apos;s quasi svd as
+described at http://sifter.org/~simon/journal/20061211.html by Gabor
+Melis.</p>
+
+<p>It&apos;s under the MIT licence. See COPYING.</p>

@@ -1,0 +1,43 @@
+cl-rsvg2 is a Common Lisp binding to RSVG Library to allow rendering
+SVGs to Cairo surfaces.
+
+It requires cffi, asdf, cl-cairo2, cl-gtk2, trivial-gray-streams, and
+naturally, librsvg.
+
+So far it has been tested against librsvg 2.34.1 with SBCL 1.0.54 under
+Ubuntu GNU/Linux.
+
+It is a fork of cl-rsvg by Sasha Kovar which was using cl-cairo instead
+of cl-cairo2.  It also uses the cl-gtk2-glib system of cl-gtk2 for a
+few definitions that cl-rsvg made itself.  If anyone should want to use
+the library but like to avoid this dependency, contact me so I can make
+a light version without it.
+
+The mapping was somewhat minimal in cl-rsvg.  I added FFI declarations
+for most (non-deprecated) functions of the RSVG Library, but tested only
+some of them.  The GdkPixmap functions are in a seperate sytem which
+depends upon cl-ftk2-gdk.  The well supported functionaly consists only
+of what is required to load SVG files and render them to Cairo.  The
+highest level wrappers are DRAW-SVG-DATA and DRAW-SVG-FILE, the later of
+which is doing just that.  If you have used some of the untested
+functionality and noticed problems, or wish for more functionality,
+contact me!
+
+The newest functionality (in highly experimental state) is the
+HANDLE-DATA-STREAM class.  As of yet, it is completely untested.
+Its purpose is to make it possible to treat a RsvgHandle as a stream,
+i.e. feed it data with WRITE-SEQUENCE and WRITE-BYTE.
+
+tests/cairo-test.lisp contains example usage.
+
+See also:
+http://developer.gnome.org/rsvg/stable/index.html (Reference Manual)
+http://librsvg.sourceforge.net
+http://www.cairographics.org
+http://common-lisp.net/project/cl-cairo2/
+
+TODO:
+* Add docstrings for all exported functions.
+
+Enjoy!
+Rörd Hinrichsen <roerd@gmail.com>

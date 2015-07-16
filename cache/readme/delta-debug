@@ -1,0 +1,16 @@
+        Common Lisp library and executable for Delta Debugging
+
+             (see [1] for information on Delta Debugging)
+
+Implementation of the delta debugging algorithm from [2] in the Common
+Lisp DELTA-DEBUG package.
+
+The DELTA-DEBUG-EXE package compiles a command line executable which
+minimizes either plain text files by line or patch files by diff.
+
+Footnotes:
+[1]  http://www.st.cs.uni-saarland.de/dd/
+
+[2]  Zeller, Andreas, and Ralf Hildebrandt. "Simplifying and isolating
+     failure-inducing input." Software Engineering, IEEE Transactions
+     on 28.2 (2002): 183-200.

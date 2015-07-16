@@ -1,0 +1,49 @@
+(with-inotify (inot `((,(user-homedir-pathname) ,in-create)))
+  (read-events inot))
+  
+blocks
+
+ $ touch ~/file
+
+ =>
+(#S(EVENT
+    :WATCH #<WATCH pathname: #P"/home/stas/" mask: (IN-CREATE)>
+    :MASK (IN-CREATE)
+    :COOKIE 0
+    :NAME "file"))
+
+The masks are only printed using names, the actual values are integers.
+
+An easy way to check for multiple events:
+(member (logior in-ignored in-delete-self in-move-self)
+        events
+        :key #'event-mask
+        :test #'logtest)
+ 
+With a timeout:
+
+(with-inotify (inotify `(("/tmp/test" ,(logior in-modify
+                                               in-close))))
+  (loop for events = (read-events inotify :time-out 1)
+        thereis events
+        do (write-line "timed out")))
+timed out
+timed out
+
+$ echo 10 >> /tmp/test
+
+ =>
+(#S(INOTIFY:EVENT
+    :WATCH #<INOTIFY:WATCH
+             pathname: #P"/tmp/test" mask: (IN-CLOSE-NOWRITE IN-CLOSE-WRITE
+                                            IN-MODIFY)>
+    :MASK (INOTIFY:IN-MODIFY)
+    :COOKIE 0
+    :NAME NIL)
+ #S(INOTIFY:EVENT
+    :WATCH #<INOTIFY:WATCH
+             pathname: #P"/tmp/test" mask: (IN-CLOSE-NOWRITE IN-CLOSE-WRITE
+                                            IN-MODIFY)>
+    :MASK (INOTIFY:IN-CLOSE-WRITE)
+    :COOKIE 0
+    :NAME NIL))

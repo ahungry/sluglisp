@@ -1,0 +1,22 @@
+CODATA recommended values of physical constants.
+
+See <http://physics.nist.gov/cuu/index.html>.
+
+All CODATA recommended values are defined as a constant and as a
+function.  The function returns three values, the value of the
+constant, the standard uncertainty, and the relative standard
+uncertainty.  Floating-point numbers are of the type `long-float'.
+Please note that some of the constants have values which can not be
+represented as IEEE 754 single precision floating-point numbers.
+
+Usage:
+
+     (ql:quickload :codata-recommended-values)
+
+     (defun E (m)
+       (symbol-macrolet ((c codata-recommended-values:speed-of-light-in-vacuum))
+         (* m c c)))
+
+The latest values are available via the `codata-recommended-values'
+package.  If you need a previously issued value, append the year to
+the package name, for example, `codata-recommended-values-2010'.

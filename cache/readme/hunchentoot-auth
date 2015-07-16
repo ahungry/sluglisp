@@ -1,0 +1,47 @@
+
+hunchentoot-auth
+
+This package is for implementing user authentication with passwords
+for the hunchentoot Common Lisp web server.
+
+The core unit of hunchentoot-auth is the realm. Currently a realm is
+just a persistent "bag" for holding users and their associated (hashed)
+passwords, along with the beginnings of support for groups. 
+
+In the initial incarnation, realms use the cl-store module for storing
+the users and groups information for the realm. This is clearly not
+the most efficient approach, but works well enough for a small number
+of users.
+
+To create a realm, one can use a lisp expression such as:
+
+
+  (defparamter *test-realm-directory "/tmp/myrealm/")
+
+  (ensure-directories-exist *test-realm-directory*)
+
+  (defparameter *test-realm*
+    (make-instance 'ht-auth:realm
+                   :user-storage-path
+                   (merge-pathnames "users.store"
+                                    *test-realm-directory*)
+                   :group-storage-path
+                   (merge-pathnames "groups.store"
+                                    *test-realm-directory*)))
+
+
+Then to add users to the realm, one would use the following code:
+
+
+  (ht-auth:add-user *test-realm* "alice" "secret1")
+
+
+This would add the user "alice" to the realm with the password
+"secret1". Note that the password is not directly stored in the
+persistent storage, but rather the password is appended to a random
+(per-user) salt (which is stored in the persistent database) and this
+salted uesr name is then hashed using the MD5 hashing algorithm. The
+hash of the salted password is stored in the database. To subsequently
+verify if a given password matches that of the user, the (per-user)
+salt is prepened to the candidate password, this string is then hashed
+and compared to the hash stored in the realm.

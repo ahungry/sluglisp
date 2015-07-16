@@ -1,0 +1,74 @@
+<h1>hl7-client</h1>
+
+<p>Common-Lisp client for sending HL7-Messages with MLLP envelope over TCP/IP socket.</p>
+
+<blockquote>
+<p>The HL7 Version 2 Messaging Standard — Application Protocol for Electronic
+Data Exchange in Healthcare Environments — is considered to be the workhorse
+of data exchange in healthcare and is the most widely implemented standard
+for healthcare information in the world.</p>
+</blockquote>
+
+<p>Source: http://www.hl7.org/about/FAQs/index.cfm?ref=nav (&ldquo;General HL7 FAQ&rdquo; &gt; &ldquo;Version 2&rdquo; &gt; &ldquo;What is Version 2?&rdquo;)</p>
+
+<p>The client sends HL7-Messages in MLLP evelopes to a TCP/IP socket and returns the acknowledges.</p>
+
+<p>There is no validation of messages or acknowledges done by the client so it will NOT stop when an NACK-Message occurs.</p>
+
+<h2>License</h2>
+
+<p>http://opensource.org/licenses/BSD-3-Clause</p>
+
+<h2>Installation</h2>
+
+<p>HL7-Client is &lsquo;quickloadable&rsquo;:
+<code>cl
+(ql:quickload &quot;hl7-client&quot;)
+</code></p>
+
+<h2>Usage</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">hl7-client:send server port message-or-message-list</span>)</span></span></code></pre>
+
+<ul>
+<li>server: hostname [String]</li>
+<li>port: receiving port of server [Number]</li>
+<li>message-or-message-list: single Message [String] or [List] of Messages</li>
+</ul>
+
+<p>hl7-client:send returns a list with the HL7-acknowledges</p>
+
+<h2>Example</h2>
+
+<p>For testing purposes there is a function (hl7-client:get-hl7-test-message) which returns a HL7-Message with random message-ID.</p>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">hl7-client:SEND <span class="string">"localhost"</span> 24777 <span class="paren2">(<span class="code">hl7-client:get-hl7-test-message</span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><span class="string">"MSH|^~</span><span class="string">\\</span><span class="string">&amp;|Receiving-App^^|Receiving-Facility^^|Sending-App^^|Sending-Facility^^|20150101195400^||ACK|9089|P^|2.2^^|||||||^^^^^|^MMSA|AA|9089^M"</span></span>)</span>
+CL-USER&gt; <span class="paren1">(<span class="code">hl7-client:SEND <span class="string">"localhost"</span> 24777 <span class="paren2">(<span class="code">list <span class="paren3">(<span class="code">hl7-client:get-hl7-test-message</span>)</span> <span class="paren3">(<span class="code">hl7-client:get-hl7-test-message</span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><span class="string">"MSH|^~</span><span class="string">\\</span><span class="string">&amp;|Receiving-App^^|Receiving-Facility^^|Sending-App^^|Sending-Facility^^|20150101195400^||ACK|1800|P^|2.2^^|||||||^^^^^|^MMSA|AA|1800^M"</span>
+ <span class="string">"MSH|^~</span><span class="string">\\</span><span class="string">&amp;|Receiving-App^^|Receiving-Facility^^|Sending-App^^|Sending-Facility^^|20150101195400^||ACK|1309|P^|2.2^^|||||||^^^^^|^MMSA|AA|1309^M"</span></span>)</span>
+CL-USER&gt; </span></code></pre>
+
+<p>^M = #\Return</p>
+
+<h2>Dependencies</h2>
+
+<ul>
+<li>usocket</li>
+</ul>
+
+<p>Installable via Quicklisp:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="string">"usocket"</span></span>)</span></span></code></pre>
+
+<h2>Development</h2>
+
+<p>I developed and tested hl7-client on:
+* Debian GNU/Linux (jessie)
+* SBCL and CCL</p>
+
+<h2>ToDo</h2>
+
+<ul>
+<li>&lsquo;with&rsquo;-Macro for sending multiple messages within one connection</li>
+</ul>

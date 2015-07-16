@@ -1,0 +1,6 @@
+<p>Torta clones filelights&apos;s way to represent disk usage.
+usage example:</p>
+
+<p>(torta:torta &ldquo;/home/pepito&rdquo; :output &ldquo;output.swf&rdquo;)</p>
+
+<p>special note: if you are keeping separated source and binary files, be sure that the freeserif.fo file is at the right directory when you load torta</p>

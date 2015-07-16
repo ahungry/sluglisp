@@ -1,0 +1,47 @@
+<p>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+Branch trie - a generic trie implementation with branch widths
+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-
+Version:  0.2.1
+Initial Common Lisp version:  2010-08-01</p>
+
+<p>Features:</p>
+
+<p>This trie implementation has an original idea of “branch width”
+  invented by Peter Hillerström on 14 of November 2008. Branch width
+  of a trie node tells how many branches go through that node.
+  Widths can be used to calculate probabilites for different suffixes.</p>
+
+<p>Notes about this implementation</p>
+
+<ul>
+<li>The trie is implemented recursively, so &lsquo;trie&rsquo; can mean the whole
+tree or a single node on a trie.</li>
+<li>Generic: Keys can be sequences of any type.</li>
+<li>IMPORTANT: All functions are destructive, for efficiently handling
+large data sets. There will be non-destructive versions of functions.</li>
+</ul>
+
+<p>About tries generally:</p>
+
+<p>Trie, or prefix tree, is an ordered tree data structure that is used
+  to store an associative array where the keys are usually strings.</p>
+
+<p>Unlike a binary search tree, no node in the tree stores the whole key
+  associated with that node instead, its position in the tree shows
+  what key it is associated with.</p>
+
+<p>All the descendants of a node have a common prefix of the string
+  associated with that node, and the root is associated with the empty
+  string. Looking up a key of length m takes worst case O(m) time.</p>
+
+<p>More information about tries:
+  http://en.wikipedia.org/wiki/Trie</p>
+
+<p>Todo:</p>
+
+<ul>
+<li>Removal of sequences</li>
+<li>Merging (union) of several tries and other set operations like intersection</li>
+<li>Sliding window to keep at most n sequences in the trie</li>
+<li>Bit tries using bit-vectors</li>
+</ul>

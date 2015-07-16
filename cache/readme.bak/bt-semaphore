@@ -1,0 +1,127 @@
+<h1>bt-semaphore</h1>
+
+<p>A simple semaphore class for bordeaux-threads inspired by SBCL&apos;s semaphore.</p>
+
+<h2>Installation</h2>
+
+<p><code>bt-semaphore</code> is available via <a href="http://www.quicklisp.org/beta/" >Quicklisp</a>. You
+can also clone the Git repo if you prefer to use bleeding edge:</p>
+
+<pre><code>cd ~/quicklisp/local-projects
+git clone https://github.com/rmoritz/bt-semaphore</code></pre>
+
+<h2>Usage</h2>
+
+<p>There are seven functions of interest at the moment:</p>
+
+<ul>
+<li><code>make-semaphore</code> creates a semaphore instance</li>
+<li><code>wait-on-semaphore</code> blocks until the semaphore can be decremented (ie. its
+   count &gt; 0) or the timeout has expired</li>
+<li><code>signal-semaphore</code> increments the semaphore &amp; wakes n waiting threads</li>
+<li><code>try-semaphore</code> decrements the semaphore without blocking</li>
+<li><code>semaphore-count</code> returns the current count of the semaphore</li>
+<li><code>semaphore-waiters</code> returns the number of threads waiting on semaphore</li>
+<li><code>semaphore-name</code> is an accessor for the semaphore&apos;s name slot</li>
+</ul>
+
+<p>To illustrate, here&apos;s a tiny example:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:bt-semaphore</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> semaphore-demo <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">defparameter</span></i> sem <span class="paren3">(<span class="code">bt-sem:make-semaphore</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">defparameter</span></i> lock <span class="paren3">(<span class="code">bt:make-lock</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">defparameter</span></i> num 0</span>)</span>
+  
+  <span class="paren2">(<span class="code">format t <span class="string">"spawn 20 threads with 4s timeout~%"</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">loop</span></i>
+    repeat 20
+    do <span class="paren3">(<span class="code">bt:make-thread
+         <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code"></span>)</span>
+           <span class="paren5">(<span class="code"><i><span class="symbol">if</span></i> <span class="paren6">(<span class="code">bt-sem:wait-on-semaphore sem <span class="keyword">:timeout</span> 4</span>)</span>
+             <span class="paren6">(<span class="code"><i><span class="symbol">bt:with-lock-held</span></i> <span class="paren1">(<span class="code">lock</span>)</span>
+               <span class="paren1">(<span class="code">incf num</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">format t <span class="string">"num is ~d~%"</span> num</span>)</span>
+  <span class="paren2">(<span class="code">sleep 0.33</span>)</span>
+  <span class="paren2">(<span class="code">format t <span class="string">"there are ~d waiting threads~%~%"</span> <span class="paren3">(<span class="code">bt-sem:semaphore-waiters sem</span>)</span></span>)</span>
+
+  <span class="paren2">(<span class="code">format t <span class="string">"signal 5 threads~%"</span></span>)</span>
+  <span class="paren2">(<span class="code">bt-sem:signal-semaphore sem 5</span>)</span>
+  <span class="paren2">(<span class="code">sleep 0.33</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">bt:with-lock-held</span></i> <span class="paren3">(<span class="code">lock</span>)</span>
+    <span class="paren3">(<span class="code">format t <span class="string">"num is ~d~%"</span> num</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">format t <span class="string">"there are ~d waiting threads~%~%"</span> <span class="paren3">(<span class="code">bt-sem:semaphore-waiters sem</span>)</span></span>)</span>
+
+  <span class="paren2">(<span class="code">format t <span class="string">"signal 10 threads~%"</span></span>)</span>
+  <span class="paren2">(<span class="code">bt-sem:signal-semaphore sem 10</span>)</span>
+  <span class="paren2">(<span class="code">sleep 0.33</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">bt:with-lock-held</span></i> <span class="paren3">(<span class="code">lock</span>)</span>
+    <span class="paren3">(<span class="code">format t <span class="string">"num is ~d~%"</span> num</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">format t <span class="string">"there are ~d waiting threads~%~%"</span> <span class="paren3">(<span class="code">bt-sem:semaphore-waiters sem</span>)</span></span>)</span>
+
+  <span class="paren2">(<span class="code">format t <span class="string">"4s sleep~%"</span></span>)</span>
+  <span class="paren2">(<span class="code">sleep 4</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">bt:with-lock-held</span></i> <span class="paren3">(<span class="code">lock</span>)</span>
+    <span class="paren3">(<span class="code">format t <span class="string">"num is ~d~%"</span> num</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">format t <span class="string">"there are ~d waiting threads~%~%"</span> <span class="paren3">(<span class="code">bt-sem:semaphore-waiters sem</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>Calling <code>SEMAPHORE-DEMO</code> at the REPL should produce the following output:</p>
+
+<pre><code>spawn 20 threads with 4s timeout
+num is 0
+there are 20 waiting threads
+
+signal 5 threads
+num is 5
+there are 15 waiting threads
+
+signal 10 threads
+num is 15
+there are 5 waiting threads
+
+4s sleep
+num is 15
+there are 0 waiting threads</code></pre>
+
+<h2>Status</h2>
+
+<p>The basics are done. It&apos;s not yet a replacement for <code>SB-THREAD:SEMAPHORE</code>, but
+we&apos;re getting there.</p>
+
+<p>You can run the test suites to verify that everything is working as it
+should by invoking <code>(ql:quickload :bt-semaphore-test)</code> or <code>(asdf:test-system
+:bt-semaphore)</code>.</p>
+
+<h2>Bugs</h2>
+
+<p>I&apos;m not aware of any bugs, but if you believe you&apos;ve found one, please do
+<a href="https://github.com/rmoritz/bt-semaphore/issues" >report it</a>.</p>
+
+<h2>Author</h2>
+
+<ul>
+<li>Ralph Möritz (ralphmoritz@outlook.com)</li>
+</ul>
+
+<h2>License</h2>
+
+<p>Copyright (c) Ralph Möritz 2013.</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the &ldquo;Software&rdquo;), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</p>
+
+<p><strong>THE SOFTWARE IS PROVIDED &ldquo;AS IS&rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.</strong></p>

@@ -1,0 +1,68 @@
+<h1>asteroids</h1>
+
+<p>Classic asteroids arcade game in Common Lisp, using SDL.</p>
+
+<p>Originally ported from Python by andyhd (thanks, andyhd!).
+The game now has sounds, keyboard 
+controls, a built-in REPL (triggered by ESC key) and is very playable.</p>
+
+<h2>Installation (no git cloning needed)</h2>
+
+<p>Install SBCL (or CCL) and quicklisp 
+<a href="http://xach.livejournal.com/278047.html">as described here</a>)</p>
+
+<p><b>IMPORTANT</b> - install native sdl libraries!  For linux, that means apt-get install</p>
+
+<ul>
+<li>libsdl-dev</li>
+<li>libsdl-gfx1.2-dev</li>
+<li>libsdl-mixer1.2-dev</li>
+</ul>
+
+<p>Now, in lisp 
+(ql:quickload &ldquo;asteroids&rdquo;)
+(asteroids:main)</p>
+
+<p>Quicklisp updates monthly.  If you want the newest version, git clone this repo
+into an asdf-visible directory <a href="http://xach.livejournal.com/278047.html">(see Xach&apos;s article)</a>.
+  ql:quickload will load the local repo first</p>
+
+<h2>Play Instructions</h2>
+
+<p>The game plays like original asteroids, except instead of saucers you get 
+powerups.  Ram the powerups to pick up super-missiles that go through anything,
+shields, or to stop time.</p>
+
+<p>Keyboard controls:</p>
+
+<p>Q   - quit 
+A   - rotate ship left
+F   - rotate ship right
+J   - thrust
+SPC - fire
+ESC - REPL</p>
+
+<p>P starts the game in attract mode.</p>
+
+<h2>Notes</h2>
+
+<p>Code has been re-organized and cleaned up.  Names have been altered
+to make it more sensible and bugs fixed.  Now loading with quicklisp</p>
+
+<p>ESC now brings you to (cla REPL.  Examine the game state, recompile anything
+(carefully).</p>
+
+<p>I also added audio using MAME asteroids samples.  lispbuilder-sdl-mixer is 
+fragile and very sensitive to being (defun foo (x y)
+    (declare (type integer x y))
+    (logxor x y))shut down correctly in an interactive 
+environment.</p>
+
+<p>Background music is courtesy http://teknoaxe.com/Home.php.</p>
+
+<h2>TODO:</h2>
+
+<ul>
+<li>allow remapping of keys</li>
+<li>fix pause</li>
+</ul>

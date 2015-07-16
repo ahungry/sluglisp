@@ -1,0 +1,106 @@
+
+Queues (for Lisp!)
+==================
+
+This is a simple queue library for Common Lisp. It's goals are to
+exist, be simple, nicely wrapped, and efficient.
+
+The library depends on "bordeaux-threads" for locking, although
+that dependency is only required if you use one of the "cqueue"
+concurrent queues.
+
+Four queue types are provided:
+
+* simple-queue
+* priority-queue
+
+Thread safe versions are provided in:
+
+* simple-cqueue
+* priority-cqueue
+
+ASDF systems are:
+
+* queues.simple-queue
+* queues.simple-cqueue
+* queues.priority-queue
+* queues.priority-cqueue
+
+Example: (asdf:oos 'asdf:load-op :queues.simple-cqueue) or (require :queues.simple-cqueue)
+
+Bug reports/fixes welcome: <Eric O'Connor> oconnore@gmail.com
+
+Application Programming Interface
+---------------------------------
+
+Package: queues
+
+### General API functions:
+
+* **make-queue** (type &key comparison copy minimum-size)
+
+    * __type__ is a symbol, one of
+         * :simple-queue
+         * :priority-queue
+         * :simple-cqueue
+         * :priority-cqueue
+
+    * __copy__ is another queue of the same type, which will be duplicated in the newly created queue
+
+    * __comparison__ is a function of two arguments that returns true when the first should be returned before the second.  For example: #'< or #'> for min and max respectively.  Obviously this is only used with priority queues
+
+    * __minimum-size__ is the minimum size of the queue. This is only applicable to simple-queues
+
+* **qpush** (queue element)
+
+    _Note:_ In priority queues, returns (values element node). Node can later be passed to functions such as #'queue-delete.
+
+* **qpop** (queue &optional (empty nil))
+
+    * __empty__ is the value returned if the queue is empty. The second value returned is t when an element was found.
+
+* **qtop** (queue &optional empty)
+
+* **qsize** (queue)
+
+* **map-queue** (function queue)
+
+     _Note:_ While mapping over a priority queue, *current-queue-node* is bound to the node associated with the current element. This node can be used to call #'queue-change or #'queue-delete.
+
+* **print-queue** (queue)
+
+### Priority Queue Only:
+
+* **queue-merge** (queue-1 queue-2)
+
+     Destructively merges queue-2 into queue-2 if they are compatible Queues are compatible when they have #'eq comparison tests. Note that #'queue-merge and #'queue-merge-safe are susceptible to deadlocks when using the "thread-safe" version. This is because the code must lock on queue1 and then on queue2. Avoid this issue by either not issuing merges, or being careful that merges are called in the same order everywhere.
+
+* **queue-merge-safe** (queue-1 queue-2)
+
+     Non destructive version of #'queue-merge.
+
+* **queue-find** (queue predicate-or-key)
+
+     Searches the queue for an element based on a predicate, or a derived predicate from the supplied key and the comparison. A node is returned that can be used in #'queue-change or #'queue-delete.
+
+* **queue-change** (queue node new-value)
+
+     The given node is modified to contain new-value.
+
+* **queue-delete** (queue node)
+
+     The given node is removed from the queue
+
+* **queue-comparison** (queue)
+
+     Returns the comparison used by queue
+
+### Miscellaneous Exported Symbols:
+
+* queue-node-p
+* *current-queue-node*
+* simple-queue
+* priority-queue
+* simple-cqueue
+* priority-cqueue
+* node-active-p

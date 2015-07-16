@@ -1,0 +1,9 @@
+Image is an image-drawing with a few drawing primitives (circles, ellipses, 
+lines, rectangles, text). It currently has code for "dumping" an image to 
+either X11 drawables or GIF files (via Skippy). It currently only has a single
+font available for drawing text, but it should be possible to extend the font 
+handling to load fonts from other formats. 
+
+NOTE: Now image does not support export to X11 image. It's an optional feature,
+You can eval (push :support-clx *features*) to enable this feature.
+

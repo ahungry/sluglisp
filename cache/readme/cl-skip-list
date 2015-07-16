@@ -1,0 +1,19 @@
+Concurrent lockless skip lists for Common Lisp.
+
+Currently, "Common Lisp" means SBCL version 1.0.42 or higher.  If other Lisps 
+support compare-and-swap and memory barriers, let me know and I will add macros 
+for those Lisps.  There is also a need to sort update locations based on some 
+global order, in this case the pointer addresses.  SBCL allows that via 
+(logandc2 (sb-kernel:get-lisp-obj-address vector) sb-vm:lowtag-mask))
+combined with sb-sys:with-pinned-objects to avoid a GC moving things around.
+Do other Lisps have similar facilities?
+
+TODO
+1. Improve performance by reusing CCAS descriptors during the first phase of an MCAS
+2. Add search fingers
+2. Add skip list merges
+3. Add splitting
+
+DONE
+1. Added a skip-list-based priority queue
+2. Added memory barriers where necessary, making the code dependent on sbcl 1.0.42

@@ -1,0 +1,43 @@
+MADEIRA-PORT
+
+Indended to be used mainly as :DEFSYSTEM-DEPENDS-ON dependency in ASDF
+systems, but can also be useful outside ASDF systems.
+
+The provided component class :MADEIRA-PORT makes it easy to specify
+implementation (or feature) dependent files as part of an ASDF system
+definition:
+
+  (:MADEIRA-PORT <name> :WHEN <feature-expression>)
+
+    Specifies that the file is to be compiled and loaded only when the
+    feature expression evaluates to true under FEATURE-EVAL for the
+    current implementation.
+
+  (:MADEIRA-PORT <name> :UNLESS <feature-expression>)
+
+    Specifies that the file is to be compiled and loaded only when the
+    feature expression evaluates to false under FEATURE-EVAL for the
+    current implementation.
+
+  Example:
+
+    (defsystem :foo
+      :serial t
+      :defsystem-depends-on (:madeira-port)
+      :components
+      ((:file "package")
+       (:module "ports"
+        :components
+        ((:madeira-port "sbcl" :when :sbcl)
+         (:madeira-port "ccl" :when :ccl)
+         (:madeira-port "ansi" :unless (:or :sbcl :ccl))))
+       (:file "foo")))
+
+Also provides FEATURE-EVAL mentioned above, which supports extended
+feature syntax, allowing expression such as
+
+  (:FIND-FUNCTION #:EXIT :SB-EXT)
+
+Finally, exposes FEATURE-EVAL via EXTEND-FEATURE-SYNTAX, which copies
+the current readtable, adds extended versions of #+ and #- read macros
+to it, and assigns it to *READTABLE*.

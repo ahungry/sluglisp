@@ -1,0 +1,211 @@
+<p><img src="http://www.kenanb.com/static/img/stumpwm-logo/stumpwm-logo-stripe.png" alt="" /></p>
+
+<h1>The Stump Window Manager</h1>
+
+<p><img src="https://travis-ci.org/stumpwm/stumpwm.svg" alt="" />
+Stumpwm is a window manager written entirely in Common Lisp. It
+attempts to be highly customizable while relying entirely on the
+keyboard for input. You will not find buttons, icons, title bars, tool
+bars, or any of the other conventional GUI widgets.</p>
+
+<p>These design decisions reflect the growing popularity of productive,
+customizable lisp based systems.</p>
+
+<h2>Philosophy</h2>
+
+<p>Stumpwm is a &ldquo;everything-and-the-kitchen-sink WM&rdquo; or &ldquo;the emacs of
+WMs.&rdquo;</p>
+
+<p><strong>StumpWM:Windows::Emacs:Text</strong></p>
+
+<ul>
+<li>StumpWM is</li>
+<li>Hackable</li>
+<li>A tileable window manager</li>
+<li>Includes support for floats</li>
+<li>Written in Common Lisp</li>
+<li>Compatible with many lisp distributions</li>
+<li>A Superior window managing experience</li>
+<li>StumpWM is <em>not</em></li>
+<li>Minimalist</li>
+<li>Narrow Scope</li>
+<li>Configured by editing the source directly</li>
+<li>A full blown desktop environment</li>
+</ul>
+
+<p>If you want a minimalist tiling window manager, then StumpWM is <em>not</em>
+what you&apos;re looking for.  The code base is ~15k sloc, the binaries
+produced are ~60mb.</p>
+
+<p>StumpWM manages windows the way emacs manages buffers, or the way
+screen manages terminals. If you want a flexible, customizable,
+hackable desktop experience, look no further.</p>
+
+<h1>Build &amp; Start Stumpwm</h1>
+
+<h2>Prerequisites</h2>
+
+<ul>
+<li>a common lisp distribution.  sbcl, clisp, ccl and ecl all work (ecl must have been built with clx support, must use version &gt;= 13.5.1 <a href="https://github.com/sabetts/stumpwm/issues/55" >see here for discussion</a>).</li>
+<li>quicklisp (for obtaining the following dependencies, not needed if you use your distribution&apos;s package manager.)</li>
+<li>clx</li>
+<li>cl-ppcre</li>
+<li>cl-xembed</li>
+</ul>
+
+<p>The recommended way to install the dependencies is using Quicklisp.
+Follow the instructions at http://www.quicklisp.org/ to install it.
+In short: 
+<code>
+$ curl -O http://beta.quicklisp.org/quicklisp.lisp
+</code></p>
+
+<pre><code>$ sbcl --load quicklisp.lisp</code></pre>
+
+<p>Or insert your favorite lisp distribution (clisp, ccl or ecl). 
+Then at the REPL:
+<code>lisp
+(quicklisp-quickstart:install)
+</code>
+Make sure you have added it to your lisp init file using:
+<code>lisp
+ (ql:add-to-init-file)
+</code>
+Then, in a repl:
+<code>lisp
+ (ql:quickload &quot;clx&quot;)
+ (ql:quickload &quot;cl-ppcre&quot;)
+</code></p>
+
+<h2>Building</h2>
+
+<p>Building stumpwm from git requires that you build the configure script:
+<code>
+ autoconf
+</code>
+If there&apos;s already a configure script then just run it.
+<code>
+ ./configure
+</code>
+By default stumpwm selects sbcl.  If you have multiple lisps installed,
+you can explicitly select clisp, ccl, or ecl like so:
+<code>
+ ./configure --with-lisp=clisp
+</code>
+If your lisps are in strange places you may need to tell the script
+where to find them:
+<code>
+ ./configure --with-sbcl=/home/sabetts/opt/bin/sbcl
+ ./configure --with-clisp=/usr/local/downstairs/to/the/left/clisp
+</code>
+Now build it:
+<code>
+ make
+</code>
+If all goes well, you should have a stumpwm binary now.  You can run
+the binary from where it is or install it, along with the .info
+documentation, with:
+<code>
+ make install
+</code>
+Now that you have a binary, call it from your ~/.xinitrc file:
+<code>
+ echo /path/to/stumpwm &gt;&gt; ~/.xinitrc
+ startx
+</code>
+Hopefully that will put you in X running stumpwm! See <a href="https://github.com/sabetts/stumpwm/wiki/StartUp" >StartUp on the
+wiki</a> for more
+examples.</p>
+
+<h2>Requirements for multiple monitor setups</h2>
+
+<p>For stumpwm to work as intended with multiple monitors setups the 
+<code>xdpyinfo</code> utility is needed.</p>
+
+<h1>Contributing</h1>
+
+<p>Pull requests are always welcome! Here are some guidelines to ensure
+that your contribution gets merged in a timely manner: 
+* Do&apos;s 
+  * Add your name to the list of AUTHORS with your pull request.<br/>
+  * Preserve comments or docstrings explaining what code does, and
+    update them if your patch changes them in a significant way
+  * Try to follow an &ldquo;80 column rule.&rdquo; The current code base does not
+    follow this all the time, so don&apos;t use it as an example
+  * <a href="http://people.ace.ed.ac.uk/staff/medward2/class/moz/cm/doc/contrib/lispstyle.html" >Use lisp idioms</a>
+  * If you are working on a major change to the internals, keep us
+    informed on stumpwm-devel! Also, it will probably help if the
+    changes are made and the incrementally applied to the codebase in
+    order to avoid introducing show-stopping bugs.
+* Do not&apos;s
+  * Include emacs local variables 
+  * Change whitespace 
+  * Write lots of code without supporting comments/documentation
+  * Delete comments or docstrings (yes this is a duplicate of above!)
+  * Export symbols from packages that aren&apos;t widely useful (many times
+    a little more thought will reveal how to implement your internal
+    change without having to export/break encapsulation)
+  * Make stylistic changes that suit your coding style/way of thinking </p>
+
+<p>Our wiki has fallen into disarray/disrepair, but it is shaping up.  If
+you aren&apos;t a lisp hacker, you can contribute in the form of
+documenting and organizing the wiki. There&apos;s a lot of information
+floating around, if you find it where you didn&apos;t expect it, move or
+link to it in a more logical place.</p>
+
+<h1>Wishlist</h1>
+
+<p>Fancy yourself a lisp hacker? Here&apos;s a wishlist of features for the
+StumpWM universe (in no particular order):
+* float-splits (ie allow floating windows over tiled ones)
+* Float windows within parent applications (specifically dialogs in
+  gimp or firefox).
+* tab-list showing the contents of the current frame at the side, top,
+  or bottom of the frame
+* Emacs&apos; iswitchb function implemented in emacs
+  * Re-arranging windows between groups
+  * Killing windows
+  * Marking windows for batch operations
+  * Deleting/adding groups
+  * Import data from stumpwm to emacs, use an emacs minor mode to
+    implement the above features, then export the data back to stumpwm
+    and let stumpwm perform the appropriate actions 
+* Emacs&apos; completing-read-multiple function
+* Dynamic tiling
+* Lock Screen (with support for leaving notes, bonus points if emacs
+  is involved)
+* Wallpapers! (support pulling from remote sources, changing based on
+  timers, and other hacky features)
+* Shutdown, restart, suspend, and hibernate functions that don&apos;t
+  require root access
+* Revamped, mouse-friendly mode-line. 
+  * Support fixed number of chars for window titles
+  * Dynamically trimp window titles to fit them all on the mode-line
+  * Split the mode-line into multiple cells for containing different information
+  * Implement widget icons to indicate system status (new mail, low
+    battery, network etc)
+  * Support raising windows when left-clicked, closing/killing when right-clicked  </p>
+
+<h1>CCL And Virtual Memory</h1>
+
+<p>On 64bit platforms, CCL reserves a &ldquo;very large&rdquo; amount of virtual
+memory. If this bothers you for some reason, you can pass the -R or
+&ndash;heap-reserve option to the binary in your ~/.xinitrc file. See
+http://ccl.clozure.com/manual/chapter15.1.html for an explanation.</p>
+
+<h1>Help</h1>
+
+<p>There&apos;s a texinfo manual, stumpwm.texi.  The build scripts generate an
+info file you can read in emacs or with the `info&apos; program.  The
+manual for the latest git version (may be slightly out of date) is
+available to read online at: <a href="https://stumpwm.github.io/" >The Manual</a></p>
+
+<p>And, as in emacs, you can always do &ldquo;C-t h v,f,k,c,w&rdquo; for docstrings
+of Variable,Functions,Keys,Commands, and Where-is respectively.</p>
+
+<p>For other stuff (tips tricks and examples) visit the <a href="https://github.com/stumpwm/stumpwm/wiki" >stumpwm wiki</a></p>
+
+<p>There&apos;s a #stumpwm channel on irc.freenode.net, too.</p>
+
+<p>Finally, there&apos;s our mailing list (click to sign up)
+<a href="https://lists.nongnu.org/mailman/listinfo/stumpwm-devel" >stumpwm-devel@nongnu.org</a>.</p>

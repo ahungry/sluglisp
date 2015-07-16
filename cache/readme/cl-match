@@ -1,0 +1,43 @@
+================================================================================
+================================================================================
+NOTE: SUPERSEDED BY OPTIMA, https://github.com/m2ym/optima.
+================================================================================
+================================================================================
+
+This is the README file for cl-match,
+an extended--ML-style pattern-matching library for Common Lisp.
+
+cl-match is Copyright (c) 2008 Daniel S. Bensen, and released 
+under the terms of the Lisp Lesser GNU Public License
+(http://opensource.franz.com/preamble.html), known as the LLGPL.
+
+The code was moved in 2011 to Github by Tony Garnock-Jones.
+
+LOADING
+
+There are three ways to load cl-match:
+* load the file load.lisp in this directory
+* asdf-install :cl-match
+* asdf-load the system files in this directory:
+  * standard-cl   (general-purpose library)
+  * cl-match      (pattern matching)
+  * pcl-unit-test (unit testing framework)
+  * cl-match-test (unit tests)
+
+To learn how to use asdf, see the online asdf documentation here:
+http://constantly.at/lisp/asdf/Using-asdf-to-load-systems.html
+
+TESTING
+
+To test cl-match after loading, 
+evaluate the form (cl-match-test::test-match).
+cl-match has been tested on SBCL and Allegro CL.
+
+NOTES
+
+* There's an html user's manual in the doc directory.
+* pcl-unit-test is based on Peter Seibel's book Practical Common Lisp.
+* cl-match is based in part on fare-matcher, by Fare Rideau.
+
+Please direct any and all bug reports to the Github issue tracker,
+  <http://github.com/tonyg/cl-match/issues>

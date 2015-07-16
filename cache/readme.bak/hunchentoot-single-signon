@@ -1,0 +1,42 @@
+<h1>hunchentoot-single-signon</h1>
+
+<p>This package implements SPNEGO implementation for Hunchentoot.</p>
+
+<ul>
+<li>Author: Elias Martenson</li>
+<li>Email: lokedhs@gmail.com</li>
+</ul>
+
+<p>The main dependency is on the package cl-gss, which uses is an FFI
+wrapper around the GSSAPI library.</p>
+
+<h2>Usage information</h2>
+
+<p>First, make sure you have a keytab file that contains the service
+credentials for the principal <code>HTTP/domain</code> where <code>domain</code> is the
+fully qualified domain name of the HTTP server.</p>
+
+<p>Before starting the Hunchentoot server, register the keytab with
+GSSAPI using the following function:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">cl-gss:krb5-register-acceptor-identity file</span>)</span></span></code></pre>
+
+<p>Once this is done, every Hunchentoot handler function needs to be
+wrapped in a call to <code>SPNEGO-AUTH</code>. Here is a simple example. Assuming
+the original content of the handler looked like this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> handler-function <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">hunchentoot:content-type*</span>)</span> <span class="string">"text/plain"</span></span>)</span>
+  <span class="string">"You should be authenticated here"</span></span>)</span></span></code></pre>
+
+<p>When enabling single sign-on, the content should look like this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> handler-function <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code">hunchentoot-single-signon:spnego-auth #'<span class="paren3">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren4">(<span class="code">name</span>)</span>
+                                             <span class="paren4">(<span class="code">setf <span class="paren5">(<span class="code">hunchentoot:content-type*</span>)</span> <span class="string">"text/plain"</span></span>)</span>
+                                             <span class="string">"You should be authenticated here"</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>The callback is called with an instance of <code>CL-GSS:NAME</code> which can be
+used for authorisation. You can retrieve the name of the princpial
+using the function <code>CL-GSS:NAME-TO-STRING</code>. Check the cl-gss package
+for further information.</p>

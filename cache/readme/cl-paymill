@@ -1,0 +1,133 @@
+PLEASE NOTE THE FOLLOWING IN ADDITION TO THE USUAL DISCLAIMERS THAT
+ACCOMPANY FREE SOFTWARE: THE RELEASE OF THIS LIBRARY IN NO WAY IMPLIES
+AN ENDORSMENT OF THE PAYMILL PAYMENT SERVICE. BE CAREFUL OUT THERE.
+
+CL-PAYMILL provides an interface to the Paymill payment service API.
+You should definitely read their documentation in order to use their
+service.  Ie, do NOT just rely on what is written here.  You use this
+interface entirely at your own risk, as stated in the licence.  Not
+everything in here is robustly tested.
+
+INSTALLING:
+
+cl-paymill requires drakma, st-json and cl+ssl (required for paymill
+access).  However, if you use quicklisp, these are automatically
+installed for you.
+
+Put cl-paymill in a place where quicklisp
+(http://www.quicklisp.org/beta/) can find it, by default
+~/quicklisp/local-projects/ Then do:
+
+(ql:quickload :cl-paymill)
+(pml:initialize-paymill "your private test key from paymill")
+
+And the package "PAYMILL" (nickname PML) is installed and ready to use.  
+
+USAGE:
+
+PML:INITIALIZE-PAYMILL (KEY)
+
+KEY is a string which is your paymill key, or a symbol with its
+symbol-value setf to your key string. This macro defines the access
+functions using the provided key. If you called it with a
+symbol, you can unbind the symbol afterwards, if you want.  Until you
+call this macro with a key, the access functions will not be defined.
+If you give it an invalid key all usage will result in access
+unathorized errors. Use your test-key, unless you want to get billed
+by Paymill.
+
+First some examples, then an explanation: 
+
+To create a new client, without an email or description:
+(pml:clients :new)
+
+To create a new client, with an email:
+(pml:clients :new :data '(:email "joey@fubar.org"))
+
+To update an existing client's email and description:
+(pml:clients :update 
+         :id "client_xyz12345" 
+         :data '(:email "joe@foo.org" :description "a lousy client"))
+
+You get the client ID as a return value from (pml:clients :new).  See below.
+
+
+All access has this general form:
+
+PML:RESOURCE (ACCESS-TYPE &KEY [ID] [DATA])
+
+Where RESOURCE is a generic function, ACCESS-TYPE is a keyword,
+optional ID is a string, and optional DATA is for all resources
+*except WEBHOOKS* (see below), a list (SLOT1 VALUE1 SLOT2 VALUE2 ...)
+where SLOTN can be a string or a keyword and VALUEN is a string.  If
+SLOTN is a keyword, it is converted to a lowercase string before
+sending the request to paymill.  ACCESS-TYPE determines how the
+resource should be accessed.  Most resources have ACCESS-TYPES :new,
+:retrieve, :list, and :delete.
+
+The possible values for SLOTN depend on the resource which is being
+accessed. As you have seen in the examples, CLIENTS have settable
+slots "email" and "description". See the Paymill API docs for other
+possible values of SLOTN.
+
+For WEBHOOKS, DATA is a list which looks like '(:EMAIL <string email>
+((:EVENT1 :STATUS1) (:EVENT2 :STATUS) ...)) OR '(:URL <string url>
+((:EVENT1 :STATUS1) (:EVENT2 :STATUS) ...)). All keywords are
+converted to downcased strings, and can be replaced by strings in
+calls to the resource. See the Paymill API docs for WEBHOOKS for
+possible events and statuses.
+
+The return value(s) also depend on ACCESS-TYPE. Accessing a resource
+with 
+
+:NEW returns the id of the created object as a first value, and
+the actual object (well, actually an st-json representation of it) as
+the second value.
+
+:LIST returns a (gasp) list of st-json representations of
+the objects of that type.  <Aside: from now on, I am not going to
+bother to write 'an st-json representation of ...' You know what I
+mean.>
+
+:DELETE returns the object (an st-json rep ...) in the "data" slot
+which Paymill returns from the request.  In most cases this is :NULL.
+Deleting a CLIENT or a SUBSCRIPTION returns the deleted object.
+
+:RETRIEVE returns the object
+
+:REFUND takes a transaction id and refunds the client the given
+amount. It should return the transaction but I can't remember if it
+does so - read the Paymill API.  I am not using refunds, so ...
+
+Errors:
+
+If any call to paymill fails to result in a reply with status code
+200, an error is signalled. Here are the conditions, exported from
+PAYMILL package, together with their status code:
+
+ PAYMILL-BAD-REQUEST 400
+ PAYMILL-UNAUTHORIZED 401
+ PAYMILL-TRANSACTION-ERROR 403
+ PAYMILL-NOT-FOUND 404
+ PAYMILL-PRECONDITION-FAILED 412
+ PAYMILL-SERVER-ERROR 500 <= status-code <= 505
+ PAYMILL-GENERAL-ERROR  other-status-code ~= 200
+
+The error will be signalled from the macro which wraps the actual
+request, so don't think you can install an error handler by a :before
+method.  Sorry.
+
+The following resources are currently accessible, all exported from
+the PAYMILL package:
+
+CLIENTS, TRANSACTIONS, REFUNDS, PAYMENTS, SUBSCRIPTIONS, OFFERS,
+WEBHOOKS
+
+Note:
+
+You need to look at st-json as well, but it's nice and simple, and
+easy to use.  You might want to build the interface up towards your
+app.  For example: define (new-client &optional ...), (new-payment
+...) etc.  Thats what I do.  The webhooks interface is new, but tests
+suggest it is working.
+

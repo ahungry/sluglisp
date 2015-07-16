@@ -1,0 +1,74 @@
+-*- mode: org -*-
+
+* INTRODUCTION
+
+This is the README for SIMPLE-FINALIZER, a package that wraps the 
+finalizer functionality provided by TRIVIAL-GARBAGE and CFFI.
+
+SIMPLE-FINALIZER depends on TRIVIAL-GARBAGE and CFFI.
+ 
+ASDF packaging is provided; 
+
+(asdf:oos 'asdf:load-op :simple-finalizer)
+
+After loading the system, try the following example;
+ 
+(make-instance 'simfin:foreign-object :fp (cffi:foreign-alloc :char :count 20))
+
+(simfin:gc-p *)
+(simfin:free **)
+
+* DESCRIPTION
+
+Simple-finalizer manages the deletion of a foreign object by implementing a wrapper object 
+that contains both the foreign-object and the function to free the foreign object.
+The foreign object may be deleted explictly by calling FREE, or automatically when the 
+object is finalized (at time of garbage collection).
+
+Use MAKE-INSTANCE to create a new FOREIGN-OBJECT, as show below.
+
+(make-instance 'simfin:foreign-object :fp <foreign-object> :free <free-function> :gc <enable-finalization>)
+
+FOREIGN-OBJECT wraps the foreign object stored in FP. The foreign object is finalized 
+when the wrapper is garbage collected using the function in :FREE and :GC is T.
+
+FP returns a reference to the foreign object or NIL if the object has already been 
+deleted using FREE.
+
+(simfin:FP *obj*)
+
+The object can be explicitely freed using FREE. Once freed, the reference to the foreign 
+object as well as the deletion function are set to NIL. Attempting to enable finalization
+on a previously deleted foreign object will result in an error.
+
+(simfin:FREE *obj*)
+
+GC-P will return T if the object will be deleted at finalization/garbage collection.
+Returns NIL if the foreign object was previously deleted or if the foreign object must 
+be freed manually using FREE.
+
+(simfin:GC-P *obj*)
+
+FREE-P returns T if the foreign object was previously freed
+
+(simfin:FREE-P *obj*)
+
+Object deletion at finalization is enabled or disabled by setting GC-P to T or NIL, as follows;
+
+(SETF (GC-P *obj*) T)   ; Enable finalization
+(SETF (GC-P *obj*) NIL) ; Disable finalization
+
+THIS-FP a reference to the foreign object. Unlike FP which can be overridden 
+by a subclass, THIS-FP must never be overridden and must always point to the foreign object.
+
+An important point to note is that the function passed in :FREE does not act as an object 
+'destructor' in the C++ or Java sense because there are no destructors in Common Lisp. 
+:FREE is not called when FOREIGN-OBJECT goes out of scope, but rather when the LISP
+object is being garbage collected. Another point to note is that by the time the function 
+in :FREE is called, the CLOS slots for the object will already have been garbage-collected.
+  
+Comments, criticisms, additions, and optimizations are welcome at the
+email address below.
+ 
+Luke Crook
+luke@balooga.com

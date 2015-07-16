@@ -1,0 +1,103 @@
+<h1>cl-prime-maker</h1>
+
+<p>A simple library to generate big prime numbers in a fast way. But in some cases, the generated number is not a prime number (these are called pseudo-primes). </p>
+
+<p>Translated from the erlang version: http://www.oschina.net/code/snippet_222150_8518</p>
+
+<h2>About pseudo-primes</h2>
+
+<p>&ldquo;The probability of mis-classifying a number is approximately 2^-100. So we can be fairly sure that the classification is correct.&rdquo;</p>
+
+<h2>Usage</h2>
+
+<h3>Load the library</h3>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">ql:quickload <span class="string">"cl-prime-maker"</span></span>)</span>
+To load "cl-prime-maker":
+  Load 1 ASDF system:
+    cl-prime-maker</span></code></pre>
+
+<h3>Function: cl-prime-maker:make-prime</h3>
+
+<p>Generates a random prime P with at least K decimal digits. Returns nil when k &lArr; 0. Returns NIL otherwise. K should be an INTEGER. </p>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">cl-prime-maker:make-prime 10</span>)</span>
+1028450429
+CL-USER&gt; <span class="paren1">(<span class="code">cl-prime-maker:make-prime 10</span>)</span>
+247158671
+CL-USER&gt; <span class="paren1">(<span class="code">cl-prime-maker:make-prime 10</span>)</span>
+9424855123
+CL-USER&gt; <span class="paren1">(<span class="code">cl-prime-maker:make-prime 100</span>)</span>
+2527793987464535166219814069528290578410091106736510171938329845710426162526052832327367116801544019
+CL-USER&gt; <span class="paren1">(<span class="code">time <span class="paren2">(<span class="code">cl-prime-maker:make-prime 100</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">CL-PRIME-MAKER:MAKE-PRIME 100</span>)</span>
+took 516 milliseconds <span class="paren1">(<span class="code">0.516 seconds</span>)</span> to run.
+During that period, and with 2 available CPU cores,
+     516 milliseconds <span class="paren1">(<span class="code">0.516 seconds</span>)</span> were spent in user mode
+       0 milliseconds <span class="paren1">(<span class="code">0.000 seconds</span>)</span> were spent in system mode
+ 11,720,160 bytes of memory allocated.
+5699885229276577728495724707769425629156908217502336077240701491905327286488809030648850373069454909</span></code></pre>
+
+<h3>Function: cl-prime-maker:primep</h3>
+
+<p>Tests if N is a prime number. Returns T if N is a prime number. Returns NIL otherwise. </p>
+
+<p><strong>NOTES</strong>
+* If n &lArr; 65535, the detection of whether a number is prime can always get the correct answer.
+* If n &gt; 65535, the detection of whether a number is prime is based on the Fermat&apos;s little theorem.</p>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">time <span class="paren2">(<span class="code">cl-prime-maker:primep 5699885229276577728495724707769425629156908217502336077240701491905327286488809030648850373069454909</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">CL-PRIME-MAKER:PRIMEP 5699885229276577728495724707769425629156908217502336077240701491905327286488809030648850373069454909</span>)</span>
+took 390 milliseconds <span class="paren1">(<span class="code">0.390 seconds</span>)</span> to run.
+During that period, and with 2 available CPU cores,
+     391 milliseconds <span class="paren1">(<span class="code">0.391 seconds</span>)</span> were spent in user mode
+       0 milliseconds <span class="paren1">(<span class="code">0.000 seconds</span>)</span> were spent in system mode
+ 8,757,192 bytes of memory allocated.
+T
+CL-USER&gt; <span class="paren1">(<span class="code">time <span class="paren2">(<span class="code">cl-prime-maker:primep 569988522927657772849572470776942562915690821750233607724070149190532728648880903064885037306945490</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">CL-PRIME-MAKER:PRIMEP 569988522927657772849572470776942562915690821750233607724070149190532728648880903064885037306945490</span>)</span>
+took 0 milliseconds <span class="paren1">(<span class="code">0.000 seconds</span>)</span> to run.
+During that period, and with 2 available CPU cores,
+     0 milliseconds <span class="paren1">(<span class="code">0.000 seconds</span>)</span> were spent in user mode
+     0 milliseconds <span class="paren1">(<span class="code">0.000 seconds</span>)</span> were spent in system mode
+ 89,992 bytes of memory allocated.
+NIL
+
+</span></code></pre>
+
+<h3>Function: cl-prime-maker:get-nth-prime</h3>
+
+<p>Generate the Nth prime number when N &gt;= 1. Otherwise, this function always returns 2.</p>
+
+<p><strong>NOTES</strong>
+* This function will cache some intermediate results to speed up the computation.</p>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code"><i><span class="symbol">loop</span></i> for i from 1 to 10 do <span class="paren2">(<span class="code">print <span class="paren3">(<span class="code">cl-prime-maker:get-nth-prime i</span>)</span></span>)</span></span>)</span>
+2 
+3 
+5 
+7 
+11 
+13 
+17 
+19 
+23 
+29 
+NIL
+CL-USER&gt; <span class="paren1">(<span class="code">time <span class="paren2">(<span class="code">cl-prime-maker:get-nth-prime 4000</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">CL-PRIME-MAKER:GET-NTH-PRIME 4000</span>)</span>
+took 9,435,975 microseconds <span class="paren1">(<span class="code">9.435975 seconds</span>)</span> to run.
+       422,584 microseconds <span class="paren1">(<span class="code">0.422584 seconds, 4.48%</span>)</span> of which was spent in GC.
+During that period, and with 4 available CPU cores,
+     9,420,502 microseconds <span class="paren1">(<span class="code">9.420502 seconds</span>)</span> were spent in user mode
+       100,228 microseconds <span class="paren1">(<span class="code">0.100228 seconds</span>)</span> were spent in system mode
+ 1,428,879,264 bytes of memory allocated.
+ 1,194 minor page faults, 0 major page faults, 0 swaps.
+37813
+CL-USER&gt; <span class="paren1">(<span class="code">time <span class="paren2">(<span class="code">cl-prime-maker:get-nth-prime 4000</span>)</span></span>)</span>
+<span class="paren1">(<span class="code">CL-PRIME-MAKER:GET-NTH-PRIME 4000</span>)</span>
+took 16 microseconds <span class="paren1">(<span class="code">0.000016 seconds</span>)</span> to run.
+During that period, and with 4 available CPU cores,
+      0 microseconds <span class="paren1">(<span class="code">0.000000 seconds</span>)</span> were spent in user mode
+      0 microseconds <span class="paren1">(<span class="code">0.000000 seconds</span>)</span> were spent in system mode
+37813</span></code></pre>

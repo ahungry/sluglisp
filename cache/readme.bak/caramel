@@ -1,0 +1,233 @@
+<h1>Caramel</h1>
+
+<p>Enlive like css selector-based template system in Common Lisp</p>
+
+<h2>Installation</h2>
+
+<pre><code>(ql:quickload :caramel)
+</code></pre>
+
+<h2>Usage</h2>
+
+<h3>html-resource</h3>
+
+<p>build dom from html file</p>
+
+<pre><code>(html-resource #p&quot;/path/to/your/html/file&quot;)
+</code></pre>
+
+<h3>select</h3>
+
+<p>search node by css selector</p>
+
+<pre><code>(select &quot;#id&quot; dom-node)
+=&gt; Matching node list 
+</code></pre>
+
+<h3>Translator</h3>
+
+<p>Every translator returns a function 
+which takes a node and return translated node or nodes.</p>
+
+<h4>set-attr</h4>
+
+<p>Set attributes to node</p>
+
+<pre><code>(set-attr :foo &quot;baz&quot; :bar &quot;wow&quot;)
+</code></pre>
+
+<h4>remove-attr</h4>
+
+<p>Remove attributes from node</p>
+
+<pre><code>(remove-attr :foo :bar)
+</code></pre>
+
+<h4>add-class</h4>
+
+<p>Add css classes to node</p>
+
+<pre><code>(add-class &quot;cls-foo&quot; &quot;cls-bar&quot;)
+</code></pre>
+
+<h4>remove-class</h4>
+
+<p>Remove css classes from node</p>
+
+<pre><code>(remove-class &quot;cls-foo&quot; &quot;cls-bar&quot;)
+</code></pre>
+
+<h4>content</h4>
+
+<p>Set content of node</p>
+
+<pre><code>(content &quot;foo&quot; a-node &quot;foo&quot;)
+</code></pre>
+
+<h4>html-content</h4>
+
+<p>Build html from specified string and set</p>
+
+<pre><code>(html-content &quot;&lt;p&gt;Foo&lt;/p&gt;&quot;)
+</code></pre>
+
+<h4>wrap</h4>
+
+<p>Wrap node with specified tag</p>
+
+<pre><code>(wrap &quot;p&quot;)
+</code></pre>
+
+<h4>unwrap</h4>
+
+<p>Get content of node</p>
+
+<pre><code>(unwrap)
+</code></pre>
+
+<h4>do&rarr;</h4>
+
+<p>Cascade transform to node</p>
+
+<pre><code>(do-&gt; (content &quot;foo&quot;) (set-attr :color &quot;green&quot;) (add-class &quot;cls-foo&quot;))
+</code></pre>
+
+<h4>before</h4>
+
+<p>Insert nodes before node</p>
+
+<pre><code>(before &quot;foo&quot; a-node &quot;baz&quot;)
+</code></pre>
+
+<h4>after</h4>
+
+<p>Insert nodes after node</p>
+
+<pre><code>(after &quot;foo&quot; a-node &quot;baz&quot;)
+</code></pre>
+
+<h4>substitute</h4>
+
+<p>Replace node with nodes</p>
+
+<pre><code>(substitute &quot;foo&quot; a-node &quot;baz&quot;)
+</code></pre>
+
+<h4>move</h4>
+
+<p>Move matched node</p>
+
+<pre><code>(move src-selector dst-selector)
+</code></pre>
+
+<h4>clone-for</h4>
+
+<p>Clone nodes</p>
+
+<pre><code>(clone-for x '(1 2 3) (content x))
+
+(clone-for x '(1 2 3)
+ &quot;p&quot; (content x)
+ &quot;h1&quot; (content &quot;foo&quot;))
+</code></pre>
+
+<h2>Snippet &amp; Template</h2>
+
+<h3>defsnippet</h3>
+
+<p>Define snippet from file.</p>
+
+<pre><code>(defsnippet bar #p&quot;/path/to/your/file&quot; &quot;div#baz&quot; ()
+  &quot;p&quot; (content &quot;foo&quot;))
+
+(bar)
+=&gt; node-list
+</code></pre>
+
+<h3>deftemplate</h3>
+
+<p>Define template from file.</p>
+
+<pre><code>(deftemplate foo #p&quot;/path/to/your/base/file&quot; (&amp;optional foo)
+  &quot;#bar&quot; (do-&gt; 
+          (content &quot;fuge&quot;) 
+          (set-attr :color &quot;green&quot;) 
+          (add-class &quot;cls-foo&quot;))
+  &quot;p#para&quot; (if foo
+             (content foo)
+             (content &quot;defaul&quot;)))
+</code></pre>
+
+<h2>Scraping</h2>
+
+<h3>get-attr</h3>
+
+<p>Get attribute value of node</p>
+
+<pre><code>(get-attr node name)
+</code></pre>
+
+<h3>get-attrs</h3>
+
+<p>Get attribute alist of node</p>
+
+<pre><code>(get-attrs node)
+</code></pre>
+
+<h3>get-content</h3>
+
+<p>Get content of node</p>
+
+<pre><code>(get-content text-node)
+=&gt; content string
+(get-content document-or-element)
+=&gt; children-list
+</code></pre>
+
+<h4>example</h4>
+
+<pre><code>    (defun -&gt; (&amp;rest fns)
+     (lambda (init)
+      (loop with citem = init
+       for fn in fns
+       do
+       (setf citem (funcall fn citem))
+       finally (return citem))))
+
+    (defun google-search (word)
+       (let* ((query (list (cons &quot;q&quot; word)))
+              (str (drakma:http-request &quot;http://www.google.com/search&quot;
+                                  :parameters query))
+              (dom (html-resource str)))
+            (loop 
+               for node in (select &quot;h3.r&quot; dom)
+               collect (get-attr (funcall (-&gt; (unwrap) #'first) node) &quot;href&quot;))))
+
+    (google-search &quot;foo&quot;)
+    =&gt;
+    (&quot;/url?q=http://en.wikipedia.org/wiki/Foobar&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CBgQFjAA&amp;usg=AFQjCNENNqcYY0yw8Y9RKmzildDpcRlcSg&quot;
+     &quot;/url?q=http://www.foo.com/&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CCEQFjAB&amp;usg=AFQjCNEi6s8gBpsT6sK5Em5Rq-zpL6v01w&quot;
+     &quot;/url?q=http://www.urbandictionary.com/define.php%3Fterm%3Dfoo&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CCUQFjAC&amp;usg=AFQjCNFC3xe17h6LLn86ZXUtY4CXfCcOwQ&quot;
+     &quot;/url?q=http://catb.org/jargon/html/F/foo.html&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CCkQFjAD&amp;usg=AFQjCNFmr2ssHlV9Sjrrq833Rz8TjsDSFQ&quot;
+     &quot;/url?q=http://foofood.ca/&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CCwQFjAE&amp;usg=AFQjCNFVHsem3EcurfHqsByEIR70wJ0vNA&quot;
+     &quot;/url?q=http://www.foofighters.com/&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CC8QFjAF&amp;usg=AFQjCNFgY5a73m8zvOltlo1SeHm3h0asUw&quot;
+     &quot;/url?q=http://www.forgetfoo.com/&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CDMQFjAG&amp;usg=AFQjCNFHZEG0pjLC-fwDNKPOv6MZu4Y4qQ&quot;
+     &quot;/url?q=http://www.foo-apartment.com/&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CDgQFjAH&amp;usg=AFQjCNHkIFr_2j-KtvcHPxWd-XMhLudjcQ&quot;
+     &quot;/url?q=http://www.facebook.com/foofighters&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CDwQFjAI&amp;usg=AFQjCNE-mJsSRMzQUdMOXjPToJljjmVeFg&quot;
+     &quot;/url?q=http://www.ietf.org/rfc/rfc3092.txt&amp;sa=U&amp;ei=Oas2UZrOFoyIkwXot4C4Cw&amp;ved=0CEAQFjAJ&amp;usg=AFQjCNFYfQd6aQqdZy9M5W4lzgTkosaniA&quot;)
+</code></pre>
+
+<h2>Author</h2>
+
+<ul>
+<li>Masato Sogame (poketo7878@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2013 Masato Sogame (poketo7878@gmail.com)</p>
+
+<h1>License</h1>
+
+<pre><code>    Licensed under the LLGPL License.
+</code></pre>

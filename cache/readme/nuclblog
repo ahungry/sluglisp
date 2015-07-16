@@ -1,0 +1,60 @@
+
+nuclblog
+
+Cyrus Harmon
+Thu Dec 20 09:16:27 2007
+
+nuclblog is a blog engine written in Common Lisp. nuclblog aims to be
+a clean, relatively lightweight blog engine based on the hunchentoot
+web server.
+
+To install it you need to do/get the following:
+
+1. Prerequisites:
+
+  * hunchentoot
+  * cl-who
+  * cl-store
+
+and for the demo:
+
+  * ch-asdf
+
+2. Install the nuclblog.asd file
+
+Install the nuclblog.asd file in the usual place .asd
+files go on your system (e.g., /usr/local/lib/sbcl/site-systems)
+
+3. SSL
+
+edit demo/ssl/openssl.config and then:
+
+To create a new cert:
+
+cd demo/ssl
+openssl genrsa -out key.pem 1024      
+openssl req -config openssl.config -new -key key.pem -out request.pem
+openssl req -x509 -days 365 -key key.pem -in request.pem -out certificate.pem
+
+4. Running the demo
+
+execute the following:
+
+(asdf:oos 'asdf:load-op :nuclblog-demo)
+
+(nuclblog-demo:start-services)
+
+or
+
+(nuclblog-demo:start-services :use-ssl t)
+
+(nuclblog::add-user nuclblog-demo::*blog* "demo" "demo")
+
+and you should be ready to go!
+
+5. Acknowledgments
+
+Thanks to Brian Mastenbrook for his cl-blog which served as
+inspiration for this project. Thanks to Edi Weitz for his wonderful
+hunchentoot, cl-who, drakma, among others, projects.
+

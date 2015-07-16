@@ -1,0 +1,27 @@
+<h1>ht-simple-ajax</h1>
+
+<p>Another Ajax library for <a href="http://weitz.de/hunchentoot/" >Hunchentoot</a>, a web server written in Common Lisp.</p>
+
+<p>See <a href="http://martin-loetzsch.de/ht-simple-ajax/">http://martin-loetzsch.de/ht-simple-ajax/</a> for details.</p>
+
+<h2>Revisions</h2>
+
+<h3>Version 0.1 2010-01-21</h3>
+
+<p>Initial release</p>
+
+<h3>Version 0.2 2010-02-02</h3>
+
+<p>Added demo</p>
+
+<h3>Version 0.3 2010-02-22</h3>
+
+<p>Renamed <code>ajax_call_uri</code> to <code>ajax_call</code></p>
+
+<h3>Version 0.4 2012-01-25</h3>
+
+<p>Demo uses <code>hunchentoot:easy-acceptor</code> instead of <code>hunchentoot:acceptor</code></p>
+
+<h3>Version 0.5 2013-04-17</h3>
+
+<p>Bug fix for a problem when the <code>*print-case*</code> is set to <code>:downcase</code> (provided by Ben Hyde).</p>

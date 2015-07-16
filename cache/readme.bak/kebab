@@ -1,0 +1,46 @@
+<h1>Kebab</h1>
+
+<p>Common Lisp string,symbol,keyword PascalCase &hArr; camelCase &hArr; snake_case &hArr; kebab-case(lisp-case) converter.</p>
+
+<h2>Usage</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">to-camel-case <span class="string">"snake_case"</span></span>)</span>
+# =&gt; "snakeCase"
+
+<span class="paren1">(<span class="code">to-snake-case <span class="string">"camelCase"</span></span>)</span>
+# =&gt; "camel_case"
+
+<span class="paren1">(<span class="code">to-pascal-case <span class="string">"snake_case"</span></span>)</span>
+# =&gt; "SnakeCase"
+
+<span class="paren1">(<span class="code">to-kebab-case <span class="string">"snake_case"</span></span>)</span>
+# =&gt; "snake-case"
+
+<span class="paren1">(<span class="code">to-lisp-case <span class="string">"snake_case"</span></span>)</span>
+# =&gt; "snake-case"</span></code></pre>
+
+<h2>Installation</h2>
+
+<h2>API</h2>
+
+<ul>
+<li>to-camel-case</li>
+<li>to-snake-case</li>
+<li>to-pascal-case</li>
+<li>to-kebab-case</li>
+<li>to-lisp-case</li>
+</ul>
+
+<h2>Author</h2>
+
+<ul>
+<li>Masato Sogame (poketo7878@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2015 Masato Sogame (poketo7878@gmail.com)</p>
+
+<h2>License</h2>
+
+<p>Licensed under the LLGPL License.</p>

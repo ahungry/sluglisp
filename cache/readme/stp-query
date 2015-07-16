@@ -1,0 +1,31 @@
+What
+----
+css-selectors + buildnode ported to STP and dressed up to look like jQuery.
+
+Why
+---
+STP is both a nicer API than DOM and has better namespace handling.  And
+there's no point in re-inventing an API when someone else has already done
+such a good job of it.
+
+Licence
+-------
+LGPL.  I usually prefer MIT, but both css-selectors and buildnode are LGPL
+and they're 90% of this iceberg.
+
+Usage
+-----
+Basically, use the "lisp-name" of the corresponding jQuery method from the $
+package.  So, addClass becomes $:add-class.  That's all there is to it.
+
+($:query selector nodes) searches using CSS3 syntax.  Not $:$ because that
+looks stupid.
+
+The only really odd thing, from a Lisp perspective, is that $:map behaves
+like jQuery's map.  Which is to say that it is sometimes mapcar and sometimes
+mapcan, depending.
+
+To get jQuery style chaining, try the -> macro from my backports library.
+
+And just so there's no confusion, yes my docstrings were stolen whole-hog
+from jQuery.  Originality is not a goal here.

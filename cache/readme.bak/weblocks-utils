@@ -1,0 +1,134 @@
+<h1>Weblocks-utils - utilities for Weblocks.</h1>
+
+<h2>About</h2>
+
+<p>Contains useful utilities, mostly to work with database (inspired by rails ActiveRecord methods).</p>
+
+<h2>Usage and Documentation</h2>
+
+<p>Used as any package, I prefer to put it into :use part of parent packages. Documentation is generated for example by </p>
+
+<pre><code>(atdoc:generate-html-documentation 
+  '(:weblocks-utils) "doc/" 
+     :single-page-p t 
+     :index-title "Weblocks utils" 
+     :heading "Weblocks utils")</code></pre>
+
+<p>after quickloading <code>weblocks-utils</code> and <code>atdoc</code> of course.</p>
+
+<h2>Weblocks Assets Packages</h2>
+
+<p>For Weblocks plugins or extensions there is often need in external files like javascript code or stylesheets or something other.</p>
+
+<p>Weblocks-utils contains <code>require-assets</code> function which downloads all needed stuff and serves downloaded files.</p>
+
+<p>So we getting free from downloading assets and putting them into the right places with every new application created.</p>
+
+<h3>Usage</h3>
+
+<p>If our application/plugin/extension needs jQuery for normal work we need to put somewhere following code</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">weblocks-utils:require-assets <span class="string">"https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/"</span></span>)</span></span></code></pre>
+
+<p>and jQuery will be loaded into <getcwd>/assets/jquery-1.8.2/ and single file will be served from hunchentoot - /pub/scripts/jquery-1.8.2.js</p>
+
+<p>We can just include script with url /pub/scripts/jquery-1.8.2.js somewhere.</p>
+
+<p>Url we used here - https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/ is the url of <em>assets package</em>.</p>
+
+<p>When <code>require-assets</code> is called inside some application it serves files with application prefix.</p>
+
+<p>For example if our app has &ldquo;/admin&rdquo; prefix, code above will give us /admin/pub/scripts/jquery-1.8.2.js file.</p>
+
+<p><code>weblocks-utils:prepend-webapp-path</code> is useful for loading files, we can include jQuery by creating following dependency</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">make-instance 'script-dependency 
+  <span class="keyword">:url</span> <span class="paren2">(<span class="code">make-instance 'puri:uri 
+    <span class="keyword">:path</span> <span class="paren3">(<span class="code">weblocks-utils:prepend-webapp-path <span class="string">"/pub/scripts/jquery-1.8.2.js"</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>We&apos;ll receive following result inside application with prefix &ldquo;/admin&rdquo;</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">weblocks-utils:prepend-webapp-path <span class="string">"/pub/scripts/jquery-1.8.2.js"</span></span>)</span> <span class="comment">; =&gt; /admin/pub/scripts/jquery-1.8.2.js</span></span></code></pre>
+
+<h3>Assets Packages</h3>
+
+<p><em>Assets package</em> is small piece of code which will </p>
+
+<ul>
+<li>Download all necessary files on demand</li>
+<li>Serve all necessary files and directories</li>
+</ul>
+
+<p>It contains 3 required files </p>
+
+<ul>
+<li>version.txt - text file with single line.</li>
+</ul>
+
+<p>Contains name of directory  which will be created inside of assets/. </p>
+
+<p>Also it describes package name and version. </p>
+
+<p>Inside of https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/version.txt 
+  we have <em>jquery-1.8.2</em> and assets/jquery-1.8.2 directory will be created.</p>
+
+<ul>
+<li>get.sh - a bash script for downloading needed stuff.</li>
+</ul>
+
+<p>It is executed from lisp during <code>require-assets</code> call and only when there is no package installed yet.</p>
+
+<p>You can go to assets/<package version> directory and evaluate bash get.sh if there will be problems with automatic installation.</p>
+
+<ul>
+<li>serve.lisp  - contains lisp code for serving files and directories.</li>
+</ul>
+
+<p>Use function <code>serve-file</code> for serving files and <code>serve-directory</code> for directories.</p>
+
+<p>Any url which contains these files can be used as <em>assets package</em> so anybody can create own <em>assets packages</em> and <em>assets packages repository</em>.</p>
+
+<p>Here is example repository https://github.com/html/weblocks-assets </p>
+
+<p>It is used in </p>
+
+<ul>
+<li>https://github.com/html/weblocks-twitter-bootstrap-application</li>
+<li>https://github.com/html/weblocks-ajax-file-upload-presentation</li>
+<li>https://github.com/html/weblocks-bootstrap-date-entry-presentation</li>
+<li>https://github.com/html/weblocks-cms</li>
+</ul>
+
+<h3>Creating own Assets Packages and Assets Repositories</h3>
+
+<p>Any http server is suitable for serving <em>assets packages</em>. I&apos;m using Github for these purposes since it allows to view repository files through http.</p>
+
+<p>To create <em>assets package</em> you should create directory with files described above and to publish it.</p>
+
+<h4>For every version of software used you should create own <em>assets package</em>.</h4>
+
+<p>For example if I need to update some code for using jquery-seq 0.0.3 instead of 0.0.1, I&apos;m creating <em>assets package</em> jquery-seq/0.0.3 in https://github.com/html/weblocks-assets </p>
+
+<p>It is just a copy of jquery-seq/0.0.1 directory with changed version.txt and get.sh files.</p>
+
+<h4>Every <em>assets package</em> should download specific version of software.</h4>
+
+<p>We can see code</p>
+
+<pre><code>wget https://raw.github.com/html/jquery-seq/8f1c86c8a21a35578760aa3efd6da3a318fec936/jquery-seq.js</code></pre>
+
+<p>in jquery-seq/0.0.1 and </p>
+
+<pre><code>wget https://raw.github.com/html/jquery-seq/accfd715128a0251e768a2c8acb907fa5eeba42d/jquery-seq.js</code></pre>
+
+<p>in jquery-seq/0.0.3 downloads file of specific revision, 8f1c86c8a21a35578760aa3efd6da3a318fec936 in first case and accfd715128a0251e768a2c8acb907fa5eeba42d in second.</p>
+
+<p>Using https://raw.github.com/html/jquery-seq/master/jquery-seq.js here would be mistake since it points to last version of file and code which uses 0.0.1 version would be broken with this link.</p>
+
+<h3>Assets Packages Licenses</h3>
+
+<p>It is often required to have license file in software distributive.</p>
+
+<p>Please remember that all assets files are downloaded automatically and you are responsive of accepting licenses of software inside of assets/*/ directories.</p>
+
+<p>Please remember that created <em>assets package</em> should download license files if it is required.</p>

@@ -1,0 +1,120 @@
+ext-blog 0.9.1 1.9.2012 updated
+
+ABOUT
+
+ext-blog is a common lisp blog engine. It supports custom theme and you can
+port a WordPress theme for it.
+
+A sample ext-blog powered website can be found at my personal blog site:
+
+    http://codemacro.com
+
+FEATURES
+
+* Basic blog engine features including: post an entry, display an entry, post
+  a comment
+* Support admin manage page so that you can manage your blog online
+* Support custom themes
+* Support RSS feed, only full export
+* Support metaweblog API, only post/edit new entry
+* Some basic themes ported by author
+
+The more is coming.
+
+LICENSE
+
+See doc/LICENSE
+
+PLATFORMS
+
+ext-blog do not use any compiler specific APIs, so it can run in most Common
+Lisp compilers in theory. But it still need to test. Currently ext-blog has
+been tested on those compilers:
+
+* SBCL
+* Clozure CL
+
+These compilers are not well tested now:
+
+* ABCL
+* Allegro CL
+* CLISP, I have tried this compiler, but failed with hunchentoot:start which
+ hangs the interpreter. After some google, I suppose it's because of CLISP 
+ thread support.
+* CMUCL, some dependent libraries can not be compiled, i.e, parenscript
+* ECL
+* LispWorks
+* Scieneer CL
+
+INSTALL
+
+You can use quicklisp to install ext-blog now (since 1.7.2012). So you can 
+install ext-blog by :
+
+    (ql:quickload 'ext-blog)
+
+After that, you can run ext-blog now, i.e:
+
+    (ext-blog:start)
+
+ext-blog will launch a web server using hunchentoot at port 8080. So you can 
+visit it to test:
+
+    http://localhost:8080
+
+If you're the first time to run ext-blog, there's no data files for your blog,
+so you will be redirected to initializing page to setup your blog. The setup 
+page only needs admin user name and password.
+
+After that, everytime you want to launch ext-blog, you can only load it in SBCL
+ and start it, i.e:
+
+    (ql:quickload 'ext-blog)
+    (ext-blog:start)
+
+NOTE: if you install ext-blog by quicklisp, it maybe not the latest version, so
+something will no work described in this document. You can get the latest 
+version from Github.
+
+Configuration
+
+ext-blog has some path relative configuration like data store path, log path 
+etc. You can config these path by modifying src/specials.lisp.
+
+In src/specials.lisp:
+
+*data-root*: The root path for all data files, the default is currently path 
+where you launched lisp compiler. 
+*entry-static-path*: Store the uploaded images by metaweblog API.
+*store-path*: Store the blog data like posts, comments etc.
+*font-path*: the font file used to generate verify picture.
+*log-path*: The log file path.
+*enable-log*: t or nil, to enable/disable log.
+
+Reporting Bugs
+
+ext-blog is not well tested currently. If you find any bug or problems you can
+ send me an email, and I will try to help you out. Feel free to send email to 
+me kevinlynx at gmail dot com.
+
+FAQ
+
+1. The font in verify code picuture is too small?
+
+You can find a pcf font file make the font much more bigger. Just put the font
+file in ./font and named it wenquanyi_12ptb.pcf. You can download this font 
+file from:
+https://github.com/kevinlynx/ext-blog-data/blob/master/font/wenquanyi_12ptb.pcf
+
+2. When I visit localhost:8080 I got an error something like:
+
+  Recursive lock attempt #S(SB-THREAD:MUTEX
+                            :NAME "global-message-log-lock"
+                            :%OWNER #<SB-THREAD:THREAD
+                                      "hunchentoot-worker-127.0.0.1:58031" RUNNING
+                                      {B166361}>
+                            :STATE 1).
+
+Actually this is a misleading error message. Just rm log and store directory in 
+your *data-root* path which default in your current path.
+

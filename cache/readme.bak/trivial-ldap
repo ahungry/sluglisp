@@ -1,0 +1,118 @@
+<h1>Introduction</h1>
+
+<p>One-two, one-two&hellip; is this thing working?</p>
+
+<p>This is Kevin Montuori&apos;s <em>trivial-ldap</em>, with a few modifications.</p>
+
+<p>A few years back, I needed some mechanism for querying AD servers, as
+part of a custom content connector for the FAST ESP search engine. I
+found trivial-ldap, and was soon using it to good effect.</p>
+
+<p>After having used trivial-ldap for a while, I made some modifications,
+and asked Kevin to review them, and integrate them if he felt that
+they added value. Unfortunately, Kevin is too busy to spend time
+on trivial-ldap, so he graciously let me publish whatever changes I
+had.</p>
+
+<h1>Changes</h1>
+
+<h2>LDAP Filter Parser</h2>
+
+<p>The LDAP filter parser has been rewritten from scratch, using
+<em>cl-yacc</em>. This makes filter parsing somewhat faster, and should also
+make it easier to maintain. The downside is one more dependency.</p>
+
+<h2>Attribute Naming</h2>
+
+<p>The original code used symbols in the current package to name LDAP
+attributes. This has changed, and all attribute names are now interned
+in the keyword package. So, something like</p>
+
+<pre><code>(ldap:attr-value *entry* 'cname)
+</code></pre>
+
+<p>should now be</p>
+
+<pre><code>(ldap:attr-value *entry* :cname)
+</code></pre>
+
+<p>and so on. Note: this is probably only important when working with an
+LDAP entry, as that is the only place where we use symbol identity for
+matching.</p>
+
+<h2>Binary Attributes</h2>
+
+<p>There was a tacit assumption in the trivial-ldap code that all
+attributes are UTF-8 encoded strings, while in reality they can be
+7-bit ASCII (USASCII), UTF-8 or even binary. There is now a mechanism
+in place for giving hints to trivial-ldap that certain attributes
+should be treated as binary values &mdash; such attributes will be
+returned as lists of (unsigned-byte 8), instead of as unicode
+strings.</p>
+
+<p>The interface to this mechanism is</p>
+
+<pre><code>(ldap:attribute-binary-p &lt;attribute-name&gt;) =&gt; &lt;generalized-boolean&gt;
+</code></pre>
+
+<p>and</p>
+
+<pre><code>(setf (ldap:attribute-binary-p &lt;attribute-name&gt;) &lt;generalized-boolean&gt;)
+</code></pre>
+
+<p>Note: Elias Mårtenson has supplied some handy restarts that can be
+used when it turns out that an attribute cannot be converted to UTF-8
+(which, in turn, probably means that it should be treated as
+binary). See handle-as-binary and handle-as-binary-and-add-known in
+trivial-ldap.lisp .</p>
+
+<h2>List Equivalents</h2>
+
+<p>Search filters and values can be specified as lists instead of as
+strings. This has two advantages:</p>
+
+<ul>
+<li><p>Binary values can be specified (lists of octet values will not be
+  treated as UTF-8 sequences).</p></li>
+<li><p>It is not necessary to build string representations of a filter just
+  to have the filter parser deconstruct it back to the representation
+  that should be natural for Lisp.</p></li>
+<li><p>Values can be specified as octet lists, strings or symbols &ndash;
+  when a symbol is specified, the actual value used is whatever
+  <code>(symbol-name &lt;symbol&gt;)</code> returns.</p></li>
+<li><p>The function #&apos;listify-filter can be used to turn a string filter
+  into an equivalent list representation; this should be useful for
+  experimenting with the list format.</p></li>
+</ul>
+
+<h3>Examples:</h3>
+
+<pre><code>(ldap:search *ldap* '(and (= objectclass person) (= cname &quot;rayw&quot;)))
+
+(let ((name &quot;rayw&quot;))
+    (ldap:search *ldap* `(and (= objectclass person) (= cname ,name))))
+</code></pre>
+
+<h2>Paging Through Results</h2>
+
+<p>Support for the LDAP Control Extension &ldquo;Simple Paged Results&rdquo;
+(rfc2696) has been added. It is invoked by setting the :size-limit
+search parameter to 0 (zero), and setting :paging-size to a positive
+integer. Note that the server imposes its own restrictions here, so
+the actual number of results in a batch may be lower than specified.</p>
+
+<p>Apart from setting these two required parameters, the operation of the
+paging mechanism is wholly transparent: batches are fetched
+automatically whenever the #&apos;next-search-result method has exhausted
+all entries in the current batch (assuming that the appropriate
+parameters have been specified, and that there are actually more
+results to be fetched.)</p>
+
+<h3>Examples:</h3>
+
+<pre><code>(and (ldap:search *ldap* '(&amp; (substring samaccountname &quot;ra*&quot;) (= objectclass person))
+                  :attributes '(&quot;1.1&quot;) :size-limit 0 :paging-size 500)
+     (loop for entry = (ldap:next-search-result *ldap*)
+           while entry
+           count entry))
+</code></pre>

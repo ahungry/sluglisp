@@ -92,7 +92,7 @@ cl-json."
   "Load up a previously cached file"
   (let ((file-name (format nil "~~/src/lisp/sluglisp/cache/~a/~a" type name)))
     (when (probe-file file-name)
-      (format nil "~{~a~}"
+      (format nil "~{~a~%~}"
               (with-open-file (s file-name)
                 (loop for line = (read-line s nil 'eof)
                    until (eq line 'eof)
@@ -134,12 +134,13 @@ cl-json."
           (setf readme-html (drakma:http-request (build-github-readme-url-long (cadr source)))))
         (unless (stringp readme-html)
           (setf readme-html (drakma:http-request (build-github-readme-url-tiny (cadr source)))))
-        (when (stringp readme-html)
-          (md-to-html readme-html))))))
+        readme-html))))
 
 (defun package-readme (name)
   "Get the readme for the package, cache it after retrieval."
   (if (gethash name *project-readme*) (gethash name *project-readme*)
       (setf (gethash name *project-readme*)
             (or (cache-load name "readme") ;; Load from file if we have
-                (cache-save name "readme" (package-readme-remote name))))))
+                (cache-save name "readme" (package-readme-remote name)))))
+  (when (stringp (gethash name *project-readme*))
+    (md-to-html (gethash name *project-readme*))))

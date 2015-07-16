@@ -1,0 +1,16 @@
+This is YACLML, Yet Another Common Lisp Markup Language.
+
+The documentation can be found in the docstrings, start with the
+package :it.bese.yaclml.
+
+The mailing list for YACLML is bese-devel@common-lisp.net (the list is
+shared with FiveAM, arnesi, and ucw).
+
+All the code is Copyright (C) 2002-2005 Edward Marco Baringer.
+
+Sharplispers update:
+
+This version of YACLML is currently maintained at
+https://github.com/sharplispers/yaclml/. It contains minor changes to
+the original darcs sources from common-lisp.net in order to keep it
+building on SBCL.

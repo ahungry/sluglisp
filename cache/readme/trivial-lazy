@@ -1,0 +1,3 @@
+TRIVIAL-LAZY -- Trivial lazy macros and functions for Common Lisp
+
+It was implemented many times and by many people. It has turned out that I needed a separate and complete library that would implement trivial lazy macros and functions DELAY, FORCE and MEMO described in SICP. Only my implementation has an optional support of multi-threading.

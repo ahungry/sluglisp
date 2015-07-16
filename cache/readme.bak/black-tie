@@ -1,0 +1,54 @@
+<h1>Black Tie</h1>
+
+<p><strong>status:</strong> active</p>
+
+<h2>A noise library in Common Lisp</h2>
+
+<table align="center" width="100%">
+  <tr>
+    <td>&nbsp;</td>
+    <td align="center">
+      <img src="http://www.aerique.net/software/black-tie/wood-2.png">
+    </td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+
+<h3>Introduction</h3>
+
+<p>This library is still in it&apos;s infancy and only supports very few types
+of noise yet.</p>
+
+<p>It offers both heavily optimized (tested only on SBCL so far) and
+reference implementations if they are available.</p>
+
+<h3>License</h3>
+
+<p>This project is released under the simplified
+<a href="http://www.opensource.net/licenses/bsd-license.php" >BSD</a> license.</p>
+
+<h3>Features</h3>
+
+<ul>
+<li><a href="http://en.wikipedia.org/wiki/Perlin_noise" >Perlin noise</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Simplex_noise" >Simplex noise</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Voronoi" >Voronoi noise</a></li>
+</ul>
+
+<h3>Documentation</h3>
+
+<p>None.  See the examples/textures.lisp.</p>
+
+<table align="center" border="0" width="100%">
+  <tr>
+    <td align="center">
+      <img src="http://www.aerique.net/software/black-tie/goo.png">
+    </td>
+    <td align="center">
+      <img src="http://www.aerique.net/software/black-tie/voronoi-2d-sum.png">
+    </td>
+    <td align="center">
+      <img src="http://www.aerique.net/software/black-tie/canvas.png">
+    </td>
+  </tr>
+</table>

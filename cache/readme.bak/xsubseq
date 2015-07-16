@@ -1,0 +1,56 @@
+<h1>XSubseq</h1>
+
+<p>XSubseq provides functions to be able to handle &ldquo;subseq&rdquo;s more effieiently. As Common Lisp&apos;s <code>subseq</code> copies the data every time, &ldquo;subseq&rdquo; and &ldquo;concatenate&rdquo; code is very inefficient like the following code.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">result <span class="paren4">(<span class="code">make-array 0 <span class="keyword">:element-type</span> '<span class="paren5">(<span class="code">unsigned-byte 8</span>)</span></span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren3">(<span class="code">data start end</span>)</span>
+    <span class="paren3">(<span class="code">setf result <span class="paren4">(<span class="code">concatenate '<span class="paren5">(<span class="code">simple-array <span class="paren6">(<span class="code">unsigned-byte 8</span>)</span> <span class="paren6">(<span class="code">*</span>)</span></span>)</span>
+                              result
+                              <span class="paren5">(<span class="code">subseq data start end</span>)</span></span>)</span></span>)</span>
+    result</span>)</span></span>)</span></span></code></pre>
+
+<p>XSubseq delays the copying until it is actually needed.</p>
+
+<h2>Usage</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*data1*</span> #<span class="paren2">(<span class="code">1 2 3</span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*data2*</span> #<span class="paren2">(<span class="code">4 5 6</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">xsubseq <span class="special">*data1*</span> 0 1</span>)</span>
+<span class="comment">;=&gt; #S(XSUBSEQ:XSUBSEQ :DATA #(1 2 3) :START 0 :END 1 :LEN 1)
+</span>
+<span class="paren1">(<span class="code">xnconc <span class="paren2">(<span class="code">xsubseq <span class="special">*data1*</span> 0 1</span>)</span>
+        <span class="paren2">(<span class="code">xsubseq <span class="special">*data2*</span> 2</span>)</span></span>)</span>
+<span class="comment">;=&gt; #S(XSUBSEQ:CONCATENATED-XSUBSEQS
+</span><span class="comment">;     :LEN 2
+</span><span class="comment">;     :LAST (#S(XSUBSEQ:XSUBSEQ :DATA #(4 5 6) :START 2 :END 3 :LEN 1))
+</span><span class="comment">;     :CHILDREN (#S(XSUBSEQ:XSUBSEQ :DATA #(1 2 3) :START 0 :END 1 :LEN 1)
+</span><span class="comment">;                #S(XSUBSEQ:XSUBSEQ :DATA #(4 5 6) :START 2 :END 3 :LEN 1)))
+</span>
+<span class="paren1">(<span class="code">coerce-to-sequence
+ <span class="paren2">(<span class="code">xnconc <span class="paren3">(<span class="code">xsubseq <span class="special">*data1*</span> 0 1</span>)</span>
+         <span class="paren3">(<span class="code">xsubseq <span class="special">*data2*</span> 2</span>)</span></span>)</span></span>)</span>
+<span class="comment">;=&gt; #(1 6)
+</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">with-xsubseqs</span></i> <span class="paren2">(<span class="code">result</span>)</span>
+  <span class="paren2">(<span class="code">xnconcf result <span class="paren3">(<span class="code">xsubseq <span class="special">*data1*</span> 0 1</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">xnconcf result <span class="paren3">(<span class="code">xsubseq <span class="special">*data2*</span> 2</span>)</span></span>)</span></span>)</span>
+<span class="comment">;=&gt; #(1 6)</span></span></code></pre>
+
+<h2>Installation</h2>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:xsubseq</span></span>)</span></span></code></pre>
+
+<h2>Author</h2>
+
+<ul>
+<li>Eitaro Fukamachi (e.arrows@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2014 Eitaro Fukamachi (e.arrows@gmail.com)</p>
+
+<h2>License</h2>
+
+<p>Licensed under the BSD 2-Clause License.</p>

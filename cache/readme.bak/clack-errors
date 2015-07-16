@@ -1,0 +1,52 @@
+<h1>clack-errors</h1>
+
+<p><a href="https://travis-ci.org/eudoxia0/clack-errors" ><img src="https://travis-ci.org/eudoxia0/clack-errors.svg?branch=master" alt="Build Status" /></a></p>
+
+<p><img src="https://raw.github.com/eudoxia0/clack-errors/master/screenshot-dev.png" alt="Development screenshot" />
+<img src="https://raw.github.com/eudoxia0/clack-errors/master/screenshot-prod.png" alt="Production screenshot" /></p>
+
+<p>A clone of <a href="https://github.com/charliesome/better_errors" >better_errors</a>
+for <a href="https://github.com/fukamachi/clack" >Clack</a>.</p>
+
+<p>By default, when Clack throws an exception when rendering a page, the server
+waits for the response until it times out while the exception waits in the
+REPL. This isn&apos;t very useful. So now there&apos;s this.</p>
+
+<h1>Usage</h1>
+
+<p>Simply add the <code>&lt;clack-error-middleware&gt;</code> to your application&apos;s clackup form.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">clack:clackup
+  <span class="paren2">(<span class="code">builder
+    clack-errors:&lt;clack-error-middleware&gt;
+    <span class="special">*app*</span></span>)</span></span>)</span></span></code></pre>
+
+<p>By default, the middleware will show all information. In a production
+environment, you&apos;ll want to initialize this with the <code>:debug</code> parameter set to
+NIL.</p>
+
+<p>If you use <a href="https://github.com/fukamachi/envy" >Envy</a> to manage configuration,
+you&apos;d initialize it like this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">clack:clackup
+  <span class="paren2">(<span class="code">builder
+    <span class="paren3">(<span class="code">clack-errors:&lt;clack-error-middleware&gt;
+      <span class="keyword">:debug</span> <span class="paren4">(<span class="code">getf <span class="paren5">(<span class="code">envy:config <span class="keyword">:myapp</span></span>)</span> <span class="keyword">:debug</span></span>)</span></span>)</span>
+    <span class="special">*app*</span></span>)</span></span>)</span></span></code></pre>
+
+<h2>Using a Custom Error Page</h2>
+
+<p>The middleware can be initialized with the <code>:fn</code> slot set to a lambda that takes
+a condition as its argument and returns the HTML string to return to the client.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">clack:clackup
+  <span class="paren2">(<span class="code">builder
+    <span class="paren3">(<span class="code">clack-errors:&lt;clack-error-middleware&gt;
+      <span class="keyword">:fn</span> <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code">condition</span>)</span> <span class="string">"500 Internal Server Error"</span></span>)</span>
+    <span class="special">*app*</span></span>)</span></span>)</span></span></span></span></code></pre>
+
+<h1>License</h1>
+
+<p>Copyright (c) 2013-2015 Fernando Borretti (eudoxiahp@gmail.com)</p>
+
+<p>Licensed under the LLGPL License.</p>

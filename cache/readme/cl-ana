@@ -1,0 +1,143 @@
+cl-ana is a free (GPL) library of Common Lisp code for doing data
+analysis via either straightforward programming or dependency oriented
+programming.  It aims to be a general purpose framework for analyzing
+small and large scale datasets, including binned data analysis and
+visualization.  Much effort has been made to ensure modularity so that
+individual components may be used/re-used for a new purpose.
+
+cl-ana is available via quicklisp (http://www.quicklisp.org/beta/);
+for other dependencies see below.
+
+Example code for using some of the functionality is contained in
+various test.lisp files throughout the project; the full documentation
+is located on the wiki page: http://github.com/ghollisjr/cl-ana/wiki
+
+Whenever possible, features are implemented via generic functions so
+that users can extend cl-ana to whatever they want to do.
+
+The functionality of this framework is divided into two layers.  The
+lower layer provides basic libraries for the following:
+
+* Tabulated data: Supports data tables read-from and written-to HDF5
+  files (buffered read-write), ntuples (like CERN's PAW uses), comma
+  separated value (CSV) files, and plists for all-in-memory operation.
+  Adding a new table type is as easy as extending the table class and
+  defining 4 functions for the table type.  (The libraries cl-csv and
+  GSLL provide the backbone for the CSV and ntuple tables; the HDF5
+  table access is completely new.)
+
+* Histograms: Supports categorical, contiguous, and sparse histograms
+  of arbitrary dimensions.  Provides functional access to histograms
+  via mapping (which allows reducing) and filtering.
+
+* Nonlinear least squares fitting: Allows plain-old lisp functions to
+  be fitted to data using the GNU Scientific Library (GSL); infers the
+  number of fit parameters the function takes from the initial
+  parameter guess.  Can fit against alists of data & histograms and is
+  easily extended to allow fitting against other types by defining a
+  single function for the new type.
+
+* Plotting: Uses gnuplot to plot histograms, data samples, plain-old
+  lisp functions, and strings interpreted as formulae.
+
+* Generic math: Common Lisp doesn't provide user-extendable math
+  functions; cl-ana provides its own versions of the basic math
+  functions CL gives you but with the ability to extend them for
+  whatever types you want.  Also provides use-gmath which easily adds
+  generic-math's symbols to a package even if you already use the
+  common-lisp package.  Already provided are extensions to the generic
+  math functions for error propogation, quantities (values with
+  units), and treating CL sequences as tensors with all the usual math
+  functions being applied element-by-element in a MATLAB/GNU Octave
+  fashion.
+
+The higher layer provides dependency oriented programming.  Dependency
+oriented programming is my own term for defining your program in terms
+of targets needing execution as opposed to an explicit computation.
+It is a hybrid of imperative and declarative programming.  The target
+table can be transformed to allow for optimizations.  Provided
+optimizations include table pass merge and collapse which minimize the
+number of passes over source datasets.
+
+Also included are various utilities which have use in a variety of
+places.
+
+The main principles of the project are:
+
+1. Conceptual clarity and documentation.  These are often neglected in
+   software development, to the point where reading code can cause one
+   to drink.  Conceptual clarity refers to the way in which code is
+   written and the way in which algorithms are implemented: A slightly
+   slower but easier to understand implementation is favored above a
+   clusterfuck of bit shifts.  Documentation should always be provided
+   for any feature along with example usages--ESPECIALLY with example
+   usages, as these are sometimes more helpful than the actual
+   documentation.
+
+2. Modularity/Bottom-up design.  Whenever two components have a common
+   feature/function/dependency, this commonality should be placed in a
+   separate sublibrary.  To limit sublibrary number explosion, this
+   should be done in conjunction with point 1 preserving conceptual
+   clarity.  For example list utilities should be a sublibrary for
+   general purpose list functions.  Further: If a feature can be
+   provided by either a set of utility functions or a type heirarchy,
+   strong preference should be given to the utility functions
+   approach; i.e. one should have to argue long and hard before
+   stratifying things into classes.
+
+3. Lispyness.  Whenever possible, already established motifs from Lisp
+   programming practices should be used.  This goes for naming
+   conventions, access macros, and the general desire to provide at
+   least functional access to things.
+
+Each sublibrary should go in its own directory and come with its own
+.asdf file so that one can choose any subset of functionality to use
+from the library.
+
+As you will see in reading the code, I've tried to keep everything
+well documented.  I place a high emphasis on documentation since I
+know how easy it is to fall out of practice.  The last thing I want is
+for the usual cargo-cult around old code to emerge.
+
+Disclaimer: much of the code I've written has been part of my own
+personal development as a Lisp programmer; this is my first
+non-trivial project with Lisp, and coming from a C++ background I've
+had to learn quite a few things along the way.  This means that there
+may be some dark corners of the code which need help from more
+experienced coders/myself at a later time.  In addition, I haven't
+used any general testing framework.  (To be honest I haven't needed
+one either as I've done the development in a highly bottom-up way,
+testing everything as I write it.)  In short this is a work in
+progress.
+
+The code tries to be self documented, but I'm working on a
+tutorial/user's guide on the github wiki page to explain how to use
+the software to best effect.
+
+The dependencies for this project are:
+
+* HDF5 (http://www.hdfgroup.org/HDF5/)
+* GSL (http://www.gnu.org/software/gsl/)
+* CFFI (http://common-lisp.net/project/cffi/)
+* GSLL (http://common-lisp.net/project/gsll/)
+* Alexandria (http://common-lisp.net/project/alexandria/)
+* iterate (http://common-lisp.net/project/iterate/)
+* antik (http://www.common-lisp.net/project/antik/)
+* closer-mop (http://common-lisp.net/project/closer/closer-mop.html)
+* cl-csv (https://github.com/AccelerationNet/cl-csv)
+* gnuplot (http://www.gnuplot.info/)
+* cl-fad (http://weitz.de/cl-fad/)
+* external-program (http://github.com/sellout/external-program)
+
+All of the Lisp dependencies can be installed via quicklisp
+(http://www.quicklisp.org/).
+
+I copied the API for using gnuplot from gnuplot_i
+(http://ndevilla.free.fr/gnuplot/).  gnuplot_i was written by
+N. Devillard <ndevilla@free.fr>, released to the public domain, and is
+a no-nonsense gnuplot session manager written in C.
+
+I use SBCL (http://www.sbcl.org/) almost exclusively; however, I also
+intentionally try to ensure that all the code only assumes what the CL
+standard provides.  Anytime implementation-specific functionality is
+needed I try to use third party libraries for this.

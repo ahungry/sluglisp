@@ -1,0 +1,24 @@
+RFC3339-timestamp is relaxed implementation of RFC3339 timestamps
+using cl-yacc for parsing and a very simple timestamp class for
+keeping track of fractions of a second and offset if you need it to
+survive a decode/encode round trip.
+
+A known limitation is that fractions of a second are limited to 10
+digits. The parser implementation is quite relaxed about what it
+passes. For instance a single space is allowed in place of a T for
+date time seperation. Z or time offset is not needed at all and when
+left out the parser will assume the timestamp is UTC+00:00. Fractions
+are of course optional although that is also true per the RFC.
+
+Another limitation is that dates prior to 1900-01-01 01:00:00 cannot
+be represented because that is when universal time which is used
+internally starts.
+
+If you don't care for the relaxed mode of the parser you can make it
+stricter by pushing :rfc3339-strict-parser to your *features* and
+recompile. This will make the parser only accept true RFC3339
+timestamps.
+
+The other kind of timestamp that will be parsed if
+:rfc3339-strict-parser is not in *features* is the specific format
+used by xml-rpc. Which to my understanding is YYYYMMDDTHH:MM:SS.

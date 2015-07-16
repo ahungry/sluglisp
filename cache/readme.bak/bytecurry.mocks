@@ -1,0 +1,51 @@
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. bytecurry.mocks</a>
+<ul>
+<li><a href="#sec-1-1">1.1. WITH-MOCKED-FUNCTIONS</a></li>
+<li><a href="#sec-1-2">1.2. WITH-ADDED-METHODS</a></li>
+<li><a href="#sec-1-3">1.3. More Info</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<h1>bytecurry.mocks<a id="sec-1" name="sec-1"></a></h1>
+
+<p><strong>bytecurry.mocks</strong> is a small library for using mock functions and methods in unit tests.
+It is framework agnostic. That is, it doesn&apos;t depend on any specific testing framework, nor is it
+designed with any specific framework in mind. In fact <strong>bytecurry.mocks</strong> has no external dependencies.</p>
+
+<p><strong>bytecurry.mocks</strong> contains two macros: <code>with-mocked-functions</code> and <code>with-added-methods</code>.
+These macros allow you to create mock functions and methods respectively in a limited scope
+so that you can control the outputs of functions while running a unit test.</p>
+
+<h2>WITH-MOCKED-FUNCTIONS<a id="sec-1-1" name="sec-1-1"></a></h2>
+
+<p><code>with-mocked-functions</code> is a macro which acts very similarly to <code>flet</code>, but binds the
+functions with dynamic scope rather than lexical scope. It does this by redefining the function
+before executing the body, then restores the original definition afterwards.</p>
+
+<p>There are a couple of things to note when using this macro:
+1.  You can&apos;t mock functions in a locked package (such as CL on sbcl)
+2.  The compiler may inline function calls, in which case changing the function
+    definition will have no effect on the inlined calls.</p>
+
+<h2>WITH-ADDED-METHODS<a id="sec-1-2" name="sec-1-2"></a></h2>
+
+<p><code>with-added-methods</code> is somewhat similar to <code>with-mocked-functions</code>, but allows you to
+define methods for a generic function in a limited scope (again with dynamic scope).
+It defines new methods before executing the body, and then removes the method after the body.</p>
+
+<p>Since it removes the method afterwards, and <code>defmethod</code> replaces any previous method with
+the same specifiers, replacing an existing method will effectively remove the original
+method outside the scope of <code>with-added-methods</code>.</p>
+
+<h2>More Info<a id="sec-1-3" name="sec-1-3"></a></h2>
+
+<p>For more information see the documentation strings.</p>
+
+<p>The API manual is available <a href="http://bytecurry.github.io/bytecurry.mocks/docs/" >here</a>.</p>

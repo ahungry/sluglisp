@@ -1,0 +1,122 @@
+# buffalo
+An LALR(1) and canonical LR(1) parser generator, written in pure
+Common Lisp.
+
+Buffalo is a parser generator: it computes parsing tables and
+associated semantic actions out of a BNF grammar specification that is
+then used by a pushdown automaton (also part of the package) to parse
+input in the language specified by the grammar.
+
+Buffalo's LALR(1) generator is a pure Common Lisp implementation of
+the DeRemer/Pennello algorithm to compute lookahead sets, while
+the LR(1) generator is based on Knuth's original canonical method.
+
+Both generators use sparse sets, patricia tries, and other efficient
+algorithms, to achieve very competitive compile times, in particular
+noticeable for the LR(1) method and large grammars.
+
+buffalo implements POSIX yacc-compatible conflict resolution mechanisms,
+including per-production context-dependent precedence (%prec).
+
+Compile time of typical grammars like the accompaying C grammar should
+be fractions of a second for both the LALR(1) and LR(1) method. (Just
+type (buffalo:make-parser buffalo::cgrammar) or (buffalo:make-parser
+buffalo::cgrammar :canonical-lr1 t) at your REPL for a first
+impression.)
+
+Compile times with sbcl are:
+
+Grammar       | LALR          | canonical LR(1)
+------------- |:-------------:|:-------------:
+C             | 0.04s         | 0.24s
+Ada           | 0.09s         | 0.64s
+
+Buffalo is quickload-able (just type (ql:quickload 'buffalo) at your
+REPL) and is tested with sbcl, ccl and clisp, but should work with
+every conformant implementation. The version in quicklisp might not
+reflect the latest changes, though.
+
+Buffalo implements all of the functionality and all of the user
+interface functions and macros of cl-yacc (on whose API code it is in
+part built). Software that runs with cl-yacc should work with buffalo
+without modification.
+
+Features:
+- Very fast, scalable table construction
+- Simple compilation model for seamless integration with Lisp
+- Comprehensive grammar checks
+- Basic Export/Import facilities to and from POSIX yacc
+- yacc conflict resolution mechanism
+
+Current limitations:
+- No "error" productions
+- No mid-rule actions
+- No lexer
+
+
+## Examples
+
+### Buffalo-tests
+
+This package contains various small grammars (right- and left-recursive,
+ambigious with left or right precedence or non-associativity, of LALR(1) or
+LR(1) type).
+
+### Upstream integration
+
+There is a separate project [e2bnf](https://github.com/fhuttner/e2bnf)
+that allows one to create AST builder directly from a grammar
+specification by transforming an extended grammar to the BNF form
+expected by buffalo.
+
+
+### Parser factory
+
+It shows how semantic actions can be modified programatically
+even though the parser is defined by a macro at compile time:
+
+```lisp
+(defun parser-factory (plus times)
+  (def-parser
+    (:terminals (+ * id lb rb))  ; lb = '(', rb = ')'
+    (:start-symbol e)
+    (e
+     (e + tt (values plus))
+     tt)
+    (tt
+     (tt * f (values times))
+     f)
+    (f
+     (lb e rb (lambda (lb e rb)
+		(declare (ignore lb rb)) e))
+     id)))
+
+(defun test-parser-factory ()
+  (let ((list '(lb id + id * id rb)))
+    (flet ((list-lexer (list)
+	     (lambda ()
+	       (let ((x (pop list)))
+		 (values x x))))
+	   (plus (a p b)
+	     (declare (ignore p))
+	     `(+ ,a ,b))
+	   (times (a p b)
+	     (declare (ignore p))
+	     `(* ,a ,b)))
+      (let ((a (parser-factory #'list #'list))
+	    (b (parser-factory #'plus #'times)))
+	;; print as infix: > (ID + (ID * ID))
+	(print
+	 (parse-with-lexer (list-lexer list) a))
+	;; print as prefix: > (+ ID (* ID ID))
+	(print
+	 (parse-with-lexer (list-lexer list) b))))))
+```
+
+### Torture test
+
+For license reasons there is a separate project
+[buffalo-testsuite](https://github.com/fhuttner/buffalo-testsuite)
+that demonstrates that buffalo can build parsers for grammars with
+many thousand tokens and productions, and in time and space
+requirements comparable to GNU Bison.

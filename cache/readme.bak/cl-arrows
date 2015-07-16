@@ -1,0 +1,9 @@
+<h1>CL-Arrows</h1>
+
+<p>Implements the &rarr; and &rarr;&gt; threading macros in Clojure.</p>
+
+<p>This is a ASDF package. The package name is cl-arrows.</p>
+
+<h2>Todo</h2>
+
+<p>Future versions <em>might</em> include the nil-shortcutting and/or diamond wand forms implemented in rplevy&apos;s <a href="https://github.com/rplevy/swiss-arrows" >swiss-arrows</a>.</p>

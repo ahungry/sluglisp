@@ -1,0 +1,41 @@
+<p><img src="logo.png" alt="logo" /></p>
+
+<h1>Lime</h1>
+
+<p><a href="https://travis-ci.org/eudoxia0/lime" ><img src="https://travis-ci.org/eudoxia0/lime.svg?branch=master" alt="Build Status" /></a>
+<a href="https://coveralls.io/r/eudoxia0/lime?branch=master" ><img src="https://coveralls.io/repos/eudoxia0/lime/badge.svg?branch=master" alt="Coverage Status" /></a></p>
+
+<p>A Swank (<a href="https://github.com/slime/slime" >SLIME</a>) client for Common Lisp applications, built on
+<a href="https://github.com/eudoxia0/swank-protocol" >swank-protocol</a>. It can be used to connect to a remote or local
+Swank server, evaluate code, and receive responses for printing to the screen,
+handling debugger events, etc.</p>
+
+<h1>Usage</h1>
+
+<h2>Example</h2>
+
+<p>To load and run the REPL example, do this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:lime-example</span></span>)</span>
+<span class="paren1">(<span class="code">lime-example:repl</span>)</span></span></code></pre>
+
+<p>It works as you&apos;d expect:</p>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">lime-example:repl</span>)</span>
+Starting Swank server...
+Connecting...
+Swank server running on sbcl 1.2.9
+COMMON-LISP-USER&gt; <span class="paren1">(<span class="code">+ 2 2</span>)</span>
+4
+COMMON-LISP-USER&gt;</span></code></pre>
+
+<h1>Name</h1>
+
+<p>Like SLIME, but without the leading S. No relation to
+<a href="http://limetext.org/" >the text editor</a>.</p>
+
+<h1>License</h1>
+
+<p>Copyright (c) 2015 Fernando Borretti</p>
+
+<p>Licensed under the MIT License.</p>

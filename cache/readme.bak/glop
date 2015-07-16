@@ -1,0 +1,134 @@
+<h1>Glop</h1>
+
+<p>The goal is to provide simple OpenGL window and context manipulation code as well as system
+input handling (i.e. mouse &amp; keyboard).</p>
+
+<p>Direct FFI bindings to system functions are used so no third party C lib is required
+except system libraries.</p>
+
+<h2>Dependencies</h2>
+
+<ul>
+<li>CFFI</li>
+</ul>
+
+<h2>Tested implementations/platforms</h2>
+
+<p>The following list is just here for information and is certainly not
+meant to be exhaustive and/or up-to-date.</p>
+
+<p>Tested platforms:</p>
+
+<ul>
+<li><code>Win32</code>: WindowsXP SP2</li>
+<li><code>X11</code>: Linux64</li>
+<li><code>OSX</code>: OSX 10.6</li>
+</ul>
+
+<p>The following combinations have been tested sucessfully for GL 2.X:</p>
+
+<ul>
+<li>CLISP 2.49      / X11</li>
+<li>CLISP 2.48      / Win32</li>
+<li>SBCL 1.1.14     / X11</li>
+<li>SBCL 1.0.46     / OSX  (still experimental)</li>
+<li>CCL  1.9-r15756 / X11</li>
+<li>ECL 12.2.1      / X11</li>
+</ul>
+
+<p>The following combination are known to fail:</p>
+
+<ul>
+<li>CCL / OSX</li>
+</ul>
+
+<h2>Running the tests</h2>
+
+<p>Make sure <code>glop.asd</code> and <code>glop-test.asd</code>  are in a location known to asdf and run:</p>
+
+<pre><code>(asdf:operate 'asdf:load-op :glop-test)
+</code></pre>
+
+<p>Then you can run an hello world test with:</p>
+
+<pre><code>(glop-test:test-gl-hello)
+</code></pre>
+
+<p>Available tests are:</p>
+
+<ul>
+<li><code>test-manual-create</code>: manual window create/destroy</li>
+<li><code>test-multiple-contexts</code>: multiple OpenGL contexts for a single window</li>
+<li><code>test-with-window</code>: glop:with-window macro usage</li>
+<li><code>test-manual-events</code>: manual event dispatching</li>
+<li><code>test-gl-hello</code>: cl-opengl hello world example</li>
+<li><code>test-gl-hello-fullscreen</code>: same in fullscreen</li>
+<li><code>test-gl-hello-gl3</code>: same with OpenGL 3.x context</li>
+<li><code>test-multiple-windows</code>: two hello world windows each one with its own GL context</li>
+<li><code>test-on-event</code>: hello world using the on-event dispatch code</li>
+<li><code>test-subclassing</code>: how to make your own window class and use it</li>
+</ul>
+
+<p>In all tests except <code>test-manual-events</code> you can press the following keys:</p>
+
+<ul>
+<li>ESC: close the window</li>
+<li>&lsquo;f&rsquo;: toggle fullscreen mode (change display mode)</li>
+<li>&lsquo;g&rsquo;: set window to fullscreen state (no display mode change)</li>
+<li>&lsquo;h&rsquo;: hide mouse cursor</li>
+<li>&lsquo;j&rsquo;: show mouse cursor</li>
+</ul>
+
+<h2>Quick start</h2>
+
+<p>To use glop, make sure <code>glop.asd</code>  is in a location known to asdf and run:</p>
+
+<pre><code>(asdf:operate 'asdf:load-op :glop)
+</code></pre>
+
+<p>Now you can just do:</p>
+
+<pre><code>(glop:with-window (win &quot;My title&quot; 800 600)
+    ;; gl init code here
+    (loop while (glop:dispatch-events win :blocking nil) do
+       ;; gl code here
+       (glop:swap-buffers win)))
+</code></pre>
+
+<p>The <code>glop:dispatch-events</code> macro will take care of processing glop events and call corresponding
+methods. Generic functions for these methods are:</p>
+
+<ul>
+<li><code>(on-key window pressed keycode keysym string)</code></li>
+<li><code>(on-button window pressed button)</code></li>
+<li><code>(on-mouse-motion window x y dx dy)</code></li>
+<li><code>(on-resize window new-width new-height)</code></li>
+<li><code>(on-draw window)</code></li>
+<li><code>(on-close window)</code></li>
+</ul>
+
+<p>None of them have a default definition, so you should implement all these methods in you application.</p>
+
+<p>There&apos;s another method based dispatch mechanism with the <code>on-event</code> generic function.
+To use it just pass <code>:on-foo nil</code> to <code>glop:dispatch-events</code>.
+In that case the <code>(on-event window event)</code> method will be called instead of <code>on-foo</code> methods.</p>
+
+<p>The <code>glop:dispatch-events</code> macro isn&apos;t mandatory and you can use your own event dispatch code,
+see <code>glop-test:test-manual-events</code> for an example of how to do this.</p>
+
+<p>You may also completely bypass glop&apos;s event handling mechanism and use your own,
+see <code>glop-test:test-custom-event-loop</code> (X11 only) for a simple example of how it may be done.
+Basically just don&apos;t call any of glop&apos;s event related functions and do the work yourself.</p>
+
+<p>See <code>test.lisp</code> for more details.</p>
+
+<h2>Notes</h2>
+
+<p>OsX support is still experimental.</p>
+
+<p>GL 3.x contexts are known to work on Linux and there should be experimental
+support those on Win32 (not tested).</p>
+
+<p>See also <a href="http://github.com/patzy/glop/issues" >issues</a> on github.</p>
+
+<p>Patches and improvements are welcome :=)</p>

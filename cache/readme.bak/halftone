@@ -1,0 +1,5 @@
+<h2>About Halftone <a href="https://travis-ci.org/Shinmera/halftone"><img src="https://travis-ci.org/Shinmera/halftone.svg?branch=master" alt="Build Status" align="right" /></a></h2>
+
+<p>This is a simple image viewer application written in Common Lisp, using the Qt framework.</p>
+
+<p><img src="https://filebox.tymoon.eu/file/TmpFMA==" alt="screenshot" /></p>

@@ -1,0 +1,4 @@
+TRIVIAL-OCTET-STREAMS is a library to provide analogues to
+MAKE-STRING-{INPUT,OUTPUT}-STREAM.  I find myself frequently wanting
+such functionality, but it's not worth importing libraries like ironclad
+or flexi-streams to get access to them.

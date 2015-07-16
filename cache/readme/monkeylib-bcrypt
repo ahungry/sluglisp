@@ -1,0 +1,27 @@
+-*- mode: markup; -*-
+
+This code is based on the code from this blog posting:
+
+  http://www.letsyouandhimfight.com/2010/07/14/cl-bcrypt-a-first-attempt/
+
+I packaged it up with an .asd file, frobbed the API, and added some
+comments.
+
+* Installing
+
+Since this code is just a thin wrapper around a C bcrypt library
+you'll need one of those installed on your system. (Note that the
+bcrypt package available on Ubuntu and Debian does not provide this
+library—it is a file encryption program that uses the Blowfish
+algorithm.) The easiest solution is probably to get the Openwall
+bcrypt from http://www.openwall.com/crypt/. I’ve also put a version on
+Github at:
+
+   https://github.com/gigamonkey/openwall-bcrypt
+
+to which I’ve added a ‘library’ target to the makefile to build the
+shared library. If you grab my version you can cd into the directory
+and ‘make library’. Then place the resulting libbcrypt.so.1.0.4
+somewhere where Lisp can find it. (On OS X ~/lib will work or the
+cffi:*foreign-library-directories* variable may be useful here.)
+

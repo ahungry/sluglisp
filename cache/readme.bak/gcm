@@ -1,0 +1,17 @@
+<h1>GCM</h1>
+
+<p>A <a href="http://developer.android.com/google/gcm/index.html" >Google Cloud Messaging</a> library for Common Lisp.</p>
+
+<h1>Example</h1>
+
+<pre><code><span class="code">CL-USER&gt; <span class="paren1">(<span class="code">gcm:configure <span class="string">"&lt;your api key&gt;"</span></span>)</span>
+<span class="comment">; No value
+</span>CL-USER&gt; <span class="paren1">(<span class="code">gcm:send <span class="paren2">(<span class="code">make-instance 'gcm:message
+                                  <span class="keyword">:payload</span> <span class="paren3">(<span class="code">list <span class="string">"title"</span> <span class="string">"Hello"</span>
+                                                 <span class="string">"text"</span> <span class="string">"Hey there"</span></span>)</span></span>)</span>
+                   <span class="keyword">:registration-ids</span> <span class="paren2">(<span class="code">list <span class="string">"&lt;a registration id&gt;"</span></span>)</span></span>)</span>
+#&lt;GCM:RESPONSE {100A3022A3}&gt;</span></code></pre>
+
+<h1>License</h1>
+
+<p>MIT</p>

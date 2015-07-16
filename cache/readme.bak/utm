@@ -1,0 +1,41 @@
+<p>This library converts coordinates in latitude/longitude to UTM and from UTM to latitude/longitude.</p>
+
+<p>Here&apos;s a sample run showing all off essentially all of the functionality.</p>
+
+<pre><code><span class="code">    * <span class="paren1">(<span class="code">ql:quickload 'utm</span>)</span>
+    To load "utm":
+      Load 1 ASDF system:
+        utm
+    <span class="comment">; Loading "utm"
+</span>    
+    <span class="paren1">(<span class="code">UTM</span>)</span>
+    * <span class="paren1">(<span class="code">utm:lat-lon-to-utm 39.264657358 -105.396267073</span>)</span>
+    
+    465814.36361674307d0
+    4346221.50650324d0
+    13
+    * <span class="paren1">(<span class="code">utm:utm-to-lat-lon 465814.36361674307d0 4346221.50650324d0 13</span>)</span>
+    
+    39.264654456410966d0
+    -105.39627074290249d0
+    * <span class="paren1">(<span class="code">utm:lat-lon-to-utm 39.264657358 -105.396267073 <span class="keyword">:ellipsoid</span> <span class="string">"WGS72"</span></span>)</span>
+    
+    465814.3743203891d0
+    4346220.137838842d0
+    13
+    * <span class="paren1">(<span class="code">utm:utm-to-lat-lon 465814.3743203891d0 4346220.137838842d0 13 <span class="keyword">:ellipsoid</span> <span class="string">"WGS72"</span></span>)</span>
+    
+    39.26465442463012d0
+    -105.39627074272353d0
+    * <span class="paren1">(<span class="code">utm:ellipsoid-names</span>)</span>
+    
+    <span class="paren1">(<span class="code"><span class="string">"NAD83"</span> <span class="string">"WGS84"</span> <span class="string">"GRS80"</span> <span class="string">"WGS72"</span> <span class="string">"Australian1965"</span> <span class="string">"Krasovsky1940"</span>
+     <span class="string">"International1924"</span> <span class="string">"Hayford1909"</span> <span class="string">"Clake1880"</span> <span class="string">"Clarke1866"</span> <span class="string">"Airy1830"</span>
+     <span class="string">"Bessel1841"</span> <span class="string">"Everest1830"</span></span>)</span>
+    *</span></code></pre>
+
+<p>It is based heavily on information from Steve Dutch&apos;s <a href="http://www.uwgb.edu/dutchs/FieldMethods/UTMSystem.htm" >UTM info website</a> and <a href="http://www.uwgb.edu/dutchs/UsefulData/UTMFormulas.htm" >UTM formula website</a>.</p>
+
+<p>It does not make any attempt to correct for the polar regions, so the results for those areas may be incorrect.  To learn why UTM breaks at the polar regions, <a href="http://www.uwgb.edu/dutchs/FieldMethods/UTMSystem.htm" >see here</a>.</p>
+
+<p>The calculations seem to be fairly accurate.  Converting from lat/lon&rarr; utm &rarr; lat/lon returns the same latitude and longitude within 6 or 7 decimal places, which is probably more accurate than coordinates coming from a regular GPS unit.  The results also match up with several online converters, such as <a href="http://www.rcn.montana.edu/Resources/Converter.aspx" >this very good one</a> on the University of Montana&apos;s website.</p>

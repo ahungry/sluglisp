@@ -1,0 +1,18 @@
+hh-redblack
+
+This package is a Common Lisp implemention of red-black trees (http://en.wikipedia.org/wiki/Red-black_tree)
+using the algorithms described in Introduction to Algorithms, by Thomas H. Cormen, Charles E. Leiserson, 
+Ronald L. Rivest, and Clifford Stein.
+
+In addition to a straight-forward in-memory implementation of red-black trees, an implementation of a persistent
+tree is also included.  The persistent implementation uses a text file for storage (for human readability), and
+uses an append-only strategy for updating that text file.  A footer always appears at the end of the file (actually, 
+a footer and a backup copy of the footer), containing information about where the root of the tree is located
+and other relevant housekeeping details.  A small header appears at the beginning of the file containing
+a version number for the tree's storage format.  Under correct behavior, at no time is any byte of the file
+written more than once.
+
+Contact phil@haphazardhouse.net for any questions, comments, feedback, or contributions, and keep an eye on
+http://haphazardhouse.net/projects/hh-redblack for info and news about hh-redblack.
+
+Thanks!

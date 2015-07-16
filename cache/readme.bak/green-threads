@@ -1,0 +1,248 @@
+<h1>Green-Threads</h1>
+
+<p>A lightweight thread / cooperative multitasking library for Common Lisp.</p>
+
+<h2>Usage</h2>
+
+<p>Allows for cooperative multitasking with help of CL-CONT for
+continuations. Tries to mimic BORDEAUX-THREADS API as much as possible.</p>
+
+<p>Let&apos;s show how the threads work and build up to higher level
+abstractions.</p>
+
+<p>The MAKE-THREAD function takes a closure/function of zero arguments and
+starts executing it, since we are not using OS threads, it cannot
+actually preempt the thread, so the thread has to yield by calling
+QUEUE-NEXT, passing a closure containing the continuation of the thread
+and return. MAKE-THREAD has an optional keyword parameter :NAME for
+specifying a name for the thread.</p>
+
+<p>In this example, we create a thread which executes immediately, it
+creates an additional thread and then continues on, it yields by calling
+QUEUE-NEXT and passing a continuation. That allows the other thread to
+execute before continuing the first:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">use-package <span class="keyword">:green-threads</span></span>)</span>
+
+<span class="paren1">(<span class="code">make-thread
+  <span class="paren2">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren3">(<span class="code"></span>)</span>
+    <span class="paren3">(<span class="code">format t <span class="string">"Do Something~%"</span></span>)</span>
+    <span class="paren3">(<span class="code">make-thread
+      <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code"></span>)</span>
+        <span class="paren5">(<span class="code">format t <span class="string">"Do Something Else.~%"</span></span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">queue-next <span class="comment">;; queue next action and yield
+</span>      <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code"></span>)</span>
+        <span class="paren5">(<span class="code">format t <span class="string">"Do More.~%"</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+
+<span class="comment">;; output:
+</span><span class="comment">;; Do Something
+</span><span class="comment">;; Do Something Else.
+</span><span class="comment">;; Do More.</span></span></code></pre>
+
+<p>In the above example, the continuation of the primary thread is nested
+inside a QUEUE-NEXT call. That&apos;s pretty inconvenient. Nobody enjoys
+programming in continuation-passing-style (CPS), so let&apos;s see how we can
+avoid that.</p>
+
+<p>In the next example, we use the CL-CONT library directly to transform
+our code into CPS which allows us to use THREAD-YIELD to yield without
+having to specify the continuation ourselves. You&apos;ll notice that the
+primary thread no longer has to nest the continuation in a closure.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">make-thread
+  <span class="paren2">(<span class="code"><i><span class="symbol">cl-cont:with-call/cc</span></i>
+    <span class="paren3">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren4">(<span class="code"></span>)</span>
+      <span class="paren4">(<span class="code">format t <span class="string">"Do Something~%"</span></span>)</span>
+      <span class="paren4">(<span class="code">cl-cont:without-call/cc
+        <span class="paren5">(<span class="code">make-thread
+          <span class="paren6">(<span class="code"><i><span class="symbol">cl-cont:with-call/cc</span></i>
+            <span class="paren1">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren2">(<span class="code"></span>)</span>
+              <span class="paren2">(<span class="code">format t <span class="string">"Do Something Else~%"</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+      <span class="paren4">(<span class="code">thread-yield</span>)</span> <span class="comment">;; allow other threads to run
+</span>      <span class="paren4">(<span class="code">format t <span class="string">"Do More~%"</span></span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>The last example is a bit noisy with the CL-CONT calls, so we can
+instead use the WITH-GREEN-THREAD macro which wraps our code in an
+anonymous closure, and applies CL-CONT macros appropriately.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">with-green-thread</span></i>
+  <span class="paren2">(<span class="code">format t <span class="string">"Do Something~%"</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">with-green-thread</span></i>
+    <span class="paren3">(<span class="code">format t <span class="string">"Do Something Else~%"</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">thread-yield</span>)</span> <span class="comment">;; allow other threads to run
+</span>  <span class="paren2">(<span class="code">format t <span class="string">"Do More~%"</span></span>)</span></span>)</span></span></code></pre>
+
+<p>Viola, you can now write cooperatively multitasking code without
+resorting to writing CPS by hand.</p>
+
+<p>Dynamic bindings don&apos;t over well into green threads, so this library has
+a similar mechanism as BORDEAUX-THREADS, and that is the
+*DEFAULT-SPECIAL-BINDINGS* special variable which can be set to an
+alist of symbol/value pairs that will be specially bound in any green
+threads you create.</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*foo*</span> <span class="string">"outer"</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">with-green-thread</span></i>
+  <span class="paren2">(<span class="code">print <span class="special">*foo*</span></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren3">(<span class="code"><span class="paren4">(<span class="code"><span class="special">*default-special-bindings*</span> '<span class="paren5">(<span class="code"><span class="paren6">(<span class="code"><span class="special">*foo*</span> . <span class="string">"first"</span></span>)</span></span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code"><i><span class="symbol">with-green-thread</span></i>
+      <span class="paren4">(<span class="code">print <span class="special">*foo*</span></span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">thread-yield</span>)</span>
+  <span class="paren2">(<span class="code">print <span class="special">*foo*</span></span>)</span></span>)</span>
+
+<span class="comment">;; output:
+</span><span class="comment">;; "outer"
+</span><span class="comment">;; "first"
+</span><span class="comment">;; "outer"</span></span></code></pre>
+
+<p>MAKE-THREAD creates a new green thread and runs it if no green threads
+are currently running. If called from within a running green thread, it
+will queue the thread to run later.</p>
+
+<p>CURRENT-THREAD returns the currently running thread object or NIL if you
+are not currently in one.</p>
+
+<p>THREADP returns T if the object passed to it is a thread object.</p>
+
+<p>THREAD-NAME returns the name of the thread passed to it or NIL of none
+was provided.</p>
+
+<p>ALL-THREADS returns a list of all threads.</p>
+
+<p>DESTROY-THREAD will do just that, cannot be called on currently
+executing thread.</p>
+
+<p>THREAD-ALIVE-P returns T if thread passed to it is still alive.</p>
+
+<p>JOIN-THREAD (thread) Requires CL-CONT:WITH-CALL/CC environment, causes
+the current thread to wait for the other thread to complete before
+continuing.</p>
+
+<h3>Futures</h3>
+
+<p>MAKE-FUTURE () creates a future object.</p>
+
+<p>QUEUE-FUTURE (future action &amp;optional thread) queues an action on
+current (or specified) thread to take place when provided future is
+completed.</p>
+
+<p>FINISH (future &amp;rest values) signals that a future is complete
+and provides return values for the future.</p>
+
+<p>FUTURE-FINISHED-P (future) T if future has already had COMPLETE-FUTURE
+called on it.</p>
+
+<p>FUTURE-VALUES (future) Returns the values given to the future when it
+was completed.</p>
+
+<p>WAIT-ON (future) Requires CL-CONT:WITH-CALL/CC environment, causes the
+current thread to wait for the completion of the specified future and
+returns the values given to the future when it was completed.</p>
+
+<p>GET-JOIN-FUTURE (thread) Returns a future which will complete when the
+passed in thread completes. This provides a lower level way to join
+threads without using JOIN-THREAD which requires CL-CONT:WITH-CALL/CC.</p>
+
+<p>Example use of futures from (taken from tests):</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*future-one*</span> <span class="paren2">(<span class="code">make-future</span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*val1*</span> nil</span>)</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*val2*</span> nil</span>)</span>
+
+<span class="comment">;; WAIT-FOR test
+</span><span class="paren1">(<span class="code"><i><span class="symbol">with-green-thread</span></i>
+  <span class="paren2">(<span class="code">multiple-value-bind <span class="paren3">(<span class="code">v1 v2</span>)</span> <span class="paren3">(<span class="code">wait-for <span class="special">*future-one*</span></span>)</span>
+    <span class="paren3">(<span class="code">setf <span class="special">*val1*</span> v1</span>)</span>
+    <span class="paren3">(<span class="code">setf <span class="special">*val2*</span> v2</span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">is <span class="special">*val1*</span> nil</span>)</span>
+<span class="paren1">(<span class="code">is <span class="special">*val2*</span> nil</span>)</span>
+<span class="paren1">(<span class="code">is <span class="paren2">(<span class="code">future-complete-p <span class="special">*future-one*</span></span>)</span> nil</span>)</span>
+
+<span class="paren1">(<span class="code">complete-future <span class="special">*future-one*</span> <span class="keyword">:foo</span> <span class="keyword">:bar</span></span>)</span>
+
+<span class="paren1">(<span class="code">is <span class="special">*val1*</span> <span class="keyword">:foo</span></span>)</span>
+<span class="paren1">(<span class="code">is <span class="special">*val2*</span> <span class="keyword">:bar</span></span>)</span>
+<span class="paren1">(<span class="code">is <span class="paren2">(<span class="code">future-complete-p <span class="special">*future-one*</span></span>)</span> T</span>)</span></span></code></pre>
+
+<h3>Channels</h3>
+
+<p>Inspired by sykopomp&apos;s <a href="https://github.com/sykopomp/chanl" >ChanL</a>, which
+relies on BORDEAUX-THREADS, I&apos;ve added basic unbuffered channel support.</p>
+
+<p>(make-instance &apos;CHANNEL) creates a new channel.</p>
+
+<p>SEND/CC (channel value &amp;key blockp) Requires CL-CONT:WITH-CALL/CC
+environment. Sends a value to a channel, and blocks, unless blockp is
+nil. Returns the channel that received the value unless blockp is nil
+and there is no thread waiting to receive in which case it returns nil.</p>
+
+<p>RECV/CC (channel &amp;key blockp) Requires CL-CONT:WITH-CALL/CC environment.
+Receives a value from a channel, and blocks, unless blockp is nil.
+Returns 2 values, the first is the value being received and the second
+is a generalized boolean that is only nil if blockp is nil and there is
+no thread waiting to send a value.</p>
+
+<p>SEND (channel value continuation &amp;key blockp) Just like SEND/CC but
+doesn&apos;t require CL-CONT, you just have to pass in the continuation
+manually. CPS is fun. Instead of returning the channel that receives the
+message, it (or nil) is passed to continuation.</p>
+
+<p>RECV (channel continuation &amp;key blockp) Just like RECV/CC but doesn&apos;t
+require CL-CONT, you just have to pass in the continuation manually.
+CPS is fun. Instead of returning the 2 values, the continuation is
+called with them.</p>
+
+<p>Behold, the venerable sieve of Eratosthenes:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:green-threads</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">cl-cont:defun/cc</span></i> counter <span class="paren2">(<span class="code">end chan</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">loop</span></i> for i from 2 to end
+        do <span class="paren3">(<span class="code">gt:send/cc chan i</span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">declaim <span class="paren2">(<span class="code">ftype <i><span class="symbol">function</span></i> filter</span>)</span></span>)</span> <span class="comment">;; unnecessary, silence warnings
+</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">cl-cont:defun/cc</span></i> filter <span class="paren2">(<span class="code">listen</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren3">(<span class="code"><span class="paren4">(<span class="code">prime <span class="paren5">(<span class="code">gt:recv/cc listen</span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">format t <span class="string">"~a "</span> prime</span>)</span>
+    <span class="paren3">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code">chan <span class="paren6">(<span class="code">make-instance 'gt:channel</span>)</span></span>)</span></span>)</span>
+      <span class="paren4">(<span class="code"><i><span class="symbol">gt:with-green-thread</span></i>
+        <span class="paren5">(<span class="code">filter chan</span>)</span></span>)</span>
+      <span class="paren4">(<span class="code"><i><span class="symbol">loop</span></i>
+        <span class="paren5">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren6">(<span class="code"><span class="paren1">(<span class="code">i <span class="paren2">(<span class="code">gt:recv/cc listen</span>)</span></span>)</span></span>)</span>
+          <span class="paren6">(<span class="code"><i><span class="symbol">if</span></i> <span class="paren1">(<span class="code">&gt; <span class="paren2">(<span class="code">mod i prime</span>)</span> 0</span>)</span>
+            <span class="paren1">(<span class="code">gt:send/cc chan i</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">gt:with-green-thread</span></i>
+  <span class="paren2">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren3">(<span class="code"><span class="paren4">(<span class="code">count <span class="paren5">(<span class="code">make-instance 'gt:channel</span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code"><i><span class="symbol">gt:with-green-thread</span></i>
+      <span class="paren4">(<span class="code">counter 100 count</span>)</span></span>)</span>
+    <span class="paren3">(<span class="code"><i><span class="symbol">gt:with-green-thread</span></i>
+      <span class="paren4">(<span class="code">filter count</span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<h2>Installation</h2>
+
+<p>Clone repo into ~/quicklisp/local-projects. Run the following command:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">ql:quickload <span class="keyword">:green-threads</span></span>)</span></span></code></pre>
+
+<h2>TODO</h2>
+
+<p>100% test coverage.</p>
+
+<h2>Author</h2>
+
+<ul>
+<li>Stephen A. Goss (steveth45@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2012 Stephen A. Goss (steveth45@gmail.com)</p>
+
+<h1>License</h1>
+
+<p>Licensed under the Modified BSD License.</p>

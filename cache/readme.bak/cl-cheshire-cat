@@ -1,0 +1,818 @@
+<h1>Summary</h1>
+
+<p>cl-cheshire-cat is a project for a CL redirection server.</p>
+
+<p>The core of the server is based on Edi Weitz (http://weitz.de/) CL librairies,
+in particular:</p>
+
+<ul>
+<li>Hunchentoot (Web Server)</li>
+<li>CL-PPCRE</li>
+</ul>
+
+<p>The persistence layer is ensured using CL-STORE
+(http://common-lisp.net/project/cl-store).</p>
+
+<h1>Installation</h1>
+
+<p>The recommended way to install cheshire is by using quicklisp as much as
+possible:</p>
+
+<ol>
+<li>Using <a href="http://www.quicklisp.org/" ><code>quicklisp</code></a>, you can install:</li>
+<li><code>hunchentoot</code></li>
+<li><code>cl-store</code></li>
+<li><code>split-sequence</code></li>
+<li>You need to manually install <code>sb-daemon</code></li>
+</ol>
+
+<p>If you use the provided <code>cheshire.sh</code> and <code>cheshire.lisp</code>, you also need to
+install <code>py-configparser</code> (available via quicklisp).</p>
+
+<h1>How to use</h1>
+
+<p>The recommended usage requires you to use SBCL (and optionnaly swank) and is
+divided in a three component process:</p>
+
+<ol>
+<li>The <code>cheshire.sh</code> script which is responsible for daemon management
+ operations.</li>
+<li>The <code>cheshire.lisp</code> script which is responsible for loading and
+ starting the cheshire daemon.</li>
+<li>The daemon itself.</li>
+</ol>
+
+<p>You are encouraged to modify and adapt the first two component in the way most
+convinient to your own use of the Cheshire.</p>
+
+<p>As mentionned, the default process is dependent on SBCL. However we would like
+Cheshire to be compatible with as many CL distributions as possible. Any
+adaptation of the starting process be compatible with a different CL
+distribution is welcome.</p>
+
+<h2>cheshire.sh</h2>
+
+<p>The daemon operations are performed using <code>scripts/cheshire.sh</code>. The
+first argument of the script is either <code>start</code>, <code>stop</code>, <code>restart</code> or <code>status</code>
+and makes the script perform the appropriate action. The script should always be
+executed as root.</p>
+
+<p>If you copy this script directly into <code>/etc/init.d/</code>, there is a slight
+possibility that the script will run when started as root, but not at boot time
+(e.g. on Debian 6.0). In this case, you will need to specify locale and/or home
+in the configuration file. That&apos;s because the environment is not exactly the
+same one when the service is started at boot time.</p>
+
+<p>Second, if you see that the error log is populated with messages &ldquo;Cannot open
+such file&rdquo; or &ldquo;Cannot create such directory&rdquo; when you use daemonize and
+privilege dropping, make sure all the directories Cheshire tries to right into
+are owned by the appropriate user. This include in particular <code>home/.cache</code>,
+<code>home/.slime</code> and their sub-directories.</p>
+
+<p>The second argument is expected to be a configuration file. If none is given,
+<code>/etc/cheshire.conf</code> is the default configuration file.</p>
+
+<p>cheshire.sh is looking for a <code>pidfile=</code> entry in the configuration
+file. If there is no such entry, <code>/var/run/cheshire.pid</code> is used.</p>
+
+<p>The required action is then performed by <code>cheshire.sh</code>. If it needs to run the
+server, it assumes that <code>scripts/cheshire.lisp</code> is located as
+<code>/usr/share/cheshire/scripts/cheshire.lisp</code> unless it finds a <code>system=</code>
+directive in the configuration file.</p>
+
+<h2>cheshire.lisp</h2>
+
+<p><code>cheshire.lisp</code> is loading the configuration file and starting the
+daemon. (Please refer to <code>config/cheshire.conf</code> for the details of the
+documentation). <code>cheshire.lisp</code> expects the configuration file as its
+first command-line argument and assumes that the cl-cheshire-cat system is
+loadable via <code>(asdf:load-system &quot;cl-cheshire-cat&quot;)</code>.</p>
+
+<p>The starting process includes:</p>
+
+<ol>
+<li>starting to listen on the specified port</li>
+<li>daemon bookeeping (debugging, dropping privileges, swank loading)</li>
+<li>loading the redirection rules</li>
+</ol>
+
+<p>The privileges are dropped after Cheshire started listening. This is a
+limitation from usocket and hunchentoot. This means:</p>
+
+<ul>
+<li>you should not have any problem listening directly on the 80 port (or any
+   other privileged port).</li>
+<li>the few first requests could happen to be served as root. Since the
+   redirection specifications is not loaded untill the privileges are dropped
+   and this issue can be prevented by a system firewall (like iptables), we
+   don&apos;t consider it a big security issue.</li>
+</ul>
+
+<h2>Customization</h2>
+
+<p>If the recommended usage does not fit your use of Cheshire, feel free to adapt
+any of the previously described steps. They are made to be highly and easily
+customizable.</p>
+
+<p>Note that the debugging bookeeping step in <code>cheshire.lisp</code> is provided for
+convinience. If you skip this part, Hunchentoot defaults will be used:</p>
+
+<ul>
+<li>the debugger will never be called in case of an error</li>
+<li>error pages will show complete error message and backtrace</li>
+</ul>
+
+<h1>Behavior</h1>
+
+<p>The server is listening on the HTTP port (80), awaiting an HTTP query. Other
+ports will work, but you must keep in mind that no port rewritting facility is
+currently offered.</p>
+
+<p>The server first search for a domain name rule to apply and then for a URI
+rewritting rule. The details of each rule is descript is the following section.</p>
+
+<p>The rules are always checked <em>in turn</em>, if a rule matches, it&apos;s applied (and the
+search stop).</p>
+
+<p>If no domain name matching rule is found and the domain name does not start with
+<code>www.</code>, the server will send a &ldquo;301 Moved Permanently&rdquo; to the same URL with an
+additional <code>www.</code> prefix to domain name. If the domain name already starts with
+<code>www.</code>, the server will return a &ldquo;404 Not Found&rdquo; error in order to avoid
+redirection loop.</p>
+
+<p>If a domain name rule matched, Cheshire then search its list of URI rule to
+apply any addition URI modification. If there is no URI matching rule and no
+domain rewritting in effect, the server will return a &ldquo;404 Not Found&rdquo; error in
+order to prevent redirection loops.</p>
+
+<p>Domain name rules parameters are used as default for its associated URI rules.</p>
+
+<p>The loop protections intend to protect you from mild obvious rule specification
+errors. Their goal is not to prevent willingful redirection loops or
+mischievious configurations. For example it is easy to trick Cheshire into
+issuing infinite redirection loops with a domain name rule with no URI rule, key
+<code>(:exact &quot;www.domain.example&quot;)</code> and replacement <code>&quot;www.domain.example&quot;</code>. In other
+words you are responsible for the correctness of your redirection
+rules. Cheshire will not check them for you and there is no plan to do so in the
+future.</p>
+
+<h2>Unspecified behavior</h2>
+
+<p>Since Cheshire intends to be a production-grade product, we made our best to
+keep unspecified behavior implementation on a fail-early and safe basis.</p>
+
+<p>For example, if you provide an invalid argument for a rule specification, we try
+to fail and send an error message when you create or update the rule rather than
+at apply time.</p>
+
+<p>However, this behavior may not be always easy to have, don&apos;t forget that
+unspecified behaviour is still unspecified and may make Cheshire to crash on
+each and every request it receives.</p>
+
+<h1>Rules</h1>
+
+<p>Each rule is composed of two main elements:</p>
+
+<ul>
+<li>The rule&apos;s key is identifying whether the rule can be applied to a
+   given URL. The key is itself composed of two elements:</li>
+<li>The kind specifies the algorithm used to match the rule.</li>
+<li>The match specification gives the information to match the rule against the
+URL.</li>
+<li>The rule&apos;s effect including the modification to apply to the matching URL,
+   options for the HTTP Answer or subsequent rules to apply.</li>
+</ul>
+
+<h2>Domain rules</h2>
+
+<h2>Key</h2>
+
+<p>Three rules matching algorithms (kinds) are used:</p>
+
+<ul>
+<li><code>exact</code></li>
+<li><code>suffix</code> (matches if the end of the domain name matches)</li>
+<li><code>regex</code></li>
+</ul>
+
+<p>Following the DNS specification
+([<a href="https://www.ietf.org/rfc/rfc1035.txt" >RFC1035</a>]), domain name matches are
+always case-insensitive.</p>
+
+<h2>Effect</h2>
+
+<h3>Domain rewritting</h3>
+
+<p>If the rewrite specification is not nil, the domain will be rewritten.</p>
+
+<p>If the rule is an <code>exact</code> match, the rewritte specification is use to replace the
+whole domain name.</p>
+
+<p>If the rule is a <code>suffix</code> match, the rewritte specification may contain once the
+special substring <code>&quot;\1&quot;</code>, which will be replaced by the prefix (non matching part)
+of the original domain name.</p>
+
+<p>If the rule is a <code>regex</code> match, any string replacement accepted by
+<code>cl-ppcre:regex-replace</code> will be accepted and the result will be equivalent to
+<code>(cl-ppcre:regex-replace regex original-domain-name replacement)</code>. Function
+designators are not allowed since they cannot be saved easily.</p>
+
+<h2>URI rules</h2>
+
+<p>A list of URI rewritting rules can be used for each domain.</p>
+
+<h3>Key</h3>
+
+<p>Three rules matching algorithms (kinds) are used:</p>
+
+<ul>
+<li><code>exact</code></li>
+<li><code>prefix</code> (matches if the beggining of the URI matches)</li>
+<li><code>regex</code></li>
+</ul>
+
+<p>URI match are case-sensitive by default (this can be changed via regex flags).</p>
+
+<p>URI replacements for <code>exact</code> and <code>regex</code> match occurs the same way as Domain
+rewritting.</p>
+
+<p>If the rule is a <code>prefix</code> match, the rewritte specification may contain once the
+special substring <code>&quot;\1&quot;</code>, which will be replaced by the suffix (non matching part)
+of the original URI.</p>
+
+<h2>Redirection parameters</h2>
+
+<p>Each redirection specification can also include redirection parameters.</p>
+
+<h3>HTTP Status Code</h3>
+
+<p>The first parameter supported is <code>http-code</code> and its default value is 301.</p>
+
+<p><code>http-code</code> must be one of 300, 301 (default), 302, 303 or 307. This status code
+will be the one used in the answer sent to the client. The behavior is
+unspecified if an invalid status code specification is given.</p>
+
+<h3>HTTP/HTTPS Protocol</h3>
+
+<p>The second parameter is <code>protocol</code> and its default value is <code>http</code>.</p>
+
+<p><code>protocol</code> must be one of <code>http</code> or <code>https</code> and it is the protocol that will be
+used as the redirection target.</p>
+
+<h3>Port</h3>
+
+<p>The third and last parameter is <code>port</code> and its default depends on the value of
+<code>protocol</code> (443 if <code>protocol</code> is <code>https</code>, 80 otherwise).</p>
+
+<p><code>port</code> must be a valid port number (i.e. an integer between 1 and 63565).</p>
+
+<h2>Query string manipulation</h2>
+
+<p>Each rule can be given a list of query string manipulation to do. These
+operations are run before any rewritting occurs.</p>
+
+<p>There are 5 operations which can be exectued on the list of get parameters:</p>
+
+<p>The default behaviour is to leave the query string unmodified.</p>
+
+<h3>Clear</h3>
+
+<p>The first operation is the basic clearing of the whole query string in order to
+have a fresh start. Any operation executed before that one will be without
+effect.</p>
+
+<h3>Add</h3>
+
+<p>You can choose to add any get parameter to the URL. If the parameter already
+exists, it will be twice in the query string, which may create unexpected
+behaviour on the other side of the redirection.</p>
+
+<p>The new parameter&apos;s value can be:</p>
+
+<ul>
+<li>a constant string your giving to the operation</li>
+<li>the path of the query (before rewritting)</li>
+<li>the domain name of the query (before rewritting)</li>
+</ul>
+
+<p>Parameters:</p>
+
+<ul>
+<li><code>name</code>: the name of the paramter you will create</li>
+<li><code>value</code>: the value of the parameter (a string, <code>:path</code> or <code>:domain</code>)</li>
+</ul>
+
+<h3>Delete</h3>
+
+<p>Of course, if you can add, you can delete.</p>
+
+<p>Parameter:</p>
+
+<ul>
+<li><code>name</code>: the name of the parameter to delete</li>
+</ul>
+
+<h3>Update (the value)</h3>
+
+<p>The value update is performed by applying a regular expression substitution to
+the value of the parameter.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><code>name</code>: the name of the parameter to update</li>
+<li><code>match</code>: the regular expression used to match the old value</li>
+<li><code>replacement</code>: the replacement string used to defini the new value</li>
+</ul>
+
+<h3>Rename</h3>
+
+<p>Often, it&apos;s easier to rename a parameter than delete and re-create it.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><code>name</code>: the old name of the parameter</li>
+<li><code>new-name</code>: the new name of the parameter</li>
+</ul>
+
+<h1>Management</h1>
+
+<p>Management options can be setup when creating the server.</p>
+
+<p>Currently two management options are supported:</p>
+
+<ul>
+<li><code>admin-host</code>: The domain name used to manage the server (default is
+ <code>&quot;management.invalid&quot;</code>).</li>
+<li><code>admin-allowed</code>: A list of CIDR blocks. IP addresses in these blocks
+ are allowed to manage the server (default is localhost only)</li>
+</ul>
+
+<p>Each CIDR network specifications is a pair of two elements. The first one is an
+IPv4 address (either a string in dotted notation <code>&quot;127.0.0.1&quot;</code> or a vector of
+four integers in host order <code>#(127 0 0 1)</code>). The second is the prefix-length of
+the CIDR block. If the second part is missing, its default value is 32.</p>
+
+<p>The recommended tool to manage Cheshire is <a href="curl.haxx.se" >curl</a> or another low
+level HTTP or TCP tool such as nc(1) or telnet(1).</p>
+
+<p>The management API is splited in three parts:</p>
+
+<ol>
+<li>Global management</li>
+<li>Domain rules management</li>
+<li>URI rules management</li>
+</ol>
+
+<p>Each operation is specified using three mecanisms:</p>
+
+<ol>
+<li>The URI of the operation (to choose what you want to do).</li>
+<li>The GET parameters (URL query string) to select the rule you want to manage.</li>
+<li>The POST parameters to provide the information required by the operation you want to perform.</li>
+</ol>
+
+<h2>Global management</h2>
+
+<p>Global management operations are impacting the behavior of the whole server.</p>
+
+<h3>Save the current rules</h3>
+
+<p>Path: <code>/save-rules</code></p>
+
+<p>POST Parameter:</p>
+
+<ul>
+<li><code>name</code> (optional): name of the file in which the rules will be stored. If the
+parameter is not provided, the file used is the one from which the rules have
+been pre-loaded (<code>rules-file</code>).</li>
+</ul>
+
+<p>The file will be stored in the directory specified as the <code>rules-directory</code>
+configuration and with the <code>crr</code> extension. If there is no such configuration,
+the directory of the <code>rules-file</code> configuration will be used.</p>
+
+<p>Example:</p>
+
+<pre><code>POST /save-rules HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+name=my-bkp</code></pre>
+
+<h3>Load a new set of rules</h3>
+
+<p>Path: <code>/load-rules</code></p>
+
+<p>POST Parameter:</p>
+
+<ul>
+<li><code>name</code> (optional): name of the file from which the rules will be loaded. If
+   the parameter is not provided, the file used is the one from which the rules
+   have been pre-loaded (<code>rules-file</code>).</li>
+<li><code>erase-all</code>: If this parameter is not given, an error message will be
+   sent. Since loading a new set of rules delete any other rule currently in
+   effect, this confirmation is here as a security.</li>
+</ul>
+
+<p>The file will be loaded from the directory specified as the <code>rules-directory</code>
+configuration and with the <code>crr</code> extension. If there is no such configuration,
+the directory of the <code>rules-file</code> configuration will be used.</p>
+
+<p>Example:</p>
+
+<pre><code>POST /load-rules HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+name=my-bkp
+erase-all=OK</code></pre>
+
+<h2>Domain name rule management</h2>
+
+<p>The domain rule management operations are in the &ldquo;folder&rdquo;
+<code>/domain-name-rule/</code>. For each of the following rule, the path will
+therefore be prefixed by <code>/domain-name-rule</code>.</p>
+
+<h3>List domain name rules</h3>
+
+<p>Path: <code>/list</code></p>
+
+<p>GET parameters (all optionals):</p>
+
+<ul>
+<li><code>kind</code>: The kind of the domain rule key (should be one of
+   <code>exact</code>, <code>suffix</code> or <code>regex</code>.</li>
+<li><code>match</code>: A regular expression applied on the domain rule match
+specification.</li>
+<li><code>replacement</code>: A regular expression applied on the domain rule
+replacement specification.</li>
+</ul>
+
+<p>Returns the list of domain names rules matching the parameters. If a criteria is
+omitted all rules will match this criteria.</p>
+
+<p>Example:</p>
+
+<pre><code>GET /domain-name-rule/list?kind=exact HTTP/1.1
+Host: management.invalid</code></pre>
+
+<h3>Add a domain name rule</h3>
+
+<p>Path: <code>/add</code></p>
+
+<p>POST parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of match string. Must be one of &ldquo;exact&rdquo;, &ldquo;suffix&rdquo;
+   or &ldquo;regex&rdquo;.</li>
+<li><code>match</code>: The match string used to check whether the rule matches the
+   current URL.</li>
+<li><code>replacement</code> (optional): The replacement string used to modify the URL part
+   matching the rule.</li>
+<li><code>http-code</code> (optional): The HTTP Status code to be sent along for
+   this redirection.</li>
+<li><code>position</code> (optional): Position at which the rule will be inserted
+   in the rule list. If none is provided, the rule is inserted at the beginning
+   of the list.</li>
+<li><code>protocol</code> (optional): Protocol to use after the redirection. Must be one of
+   http or https.</li>
+<li><code>port</code> (optional): Port number to use after the redirection.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /domain-name-rule/add HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+kind=exact&match=www.domain.example&position=3</code></pre>
+
+<h3>Remove a domain name rule</h3>
+
+<p>Path: <code>/remove</code></p>
+
+<p>GET parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of the rule.</li>
+<li><code>match</code>: The match spec of the rule.</li>
+</ul>
+
+<p>POST parameter:</p>
+
+<ul>
+<li><code>confirmed</code>: This parameter must be non-nil.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /domain-name-rule/remove?kind=exact&match=www.domain.example HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+confirmed=OK</code></pre>
+
+<h3>Update a domain name rule</h3>
+
+<p>Path: <code>/update</code></p>
+
+<p>GET parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of the rule.</li>
+<li><code>match</code>: The match spec of the rule.</li>
+</ul>
+
+<p>POST parameters (all optional):</p>
+
+<ul>
+<li><code>new-kind</code>: The new kind to use for the rule from now on.</li>
+<li><code>new-match</code>: The new match spec to use for the rule from now on.</li>
+<li><code>new-replacement</code>: The new replacement to use for the rule from now
+on.</li>
+<li><code>new-http-code</code>: The new HTTP Status code to be used for this rule
+redirection from now on.</li>
+</ul>
+
+<h3>Update the query string operations</h3>
+
+<p>The query string operations management is in the &ldquo;folder&rdquo;
+<code>/query-string-updates/</code>. See Query string operation management for the details.</p>
+
+<p>When applied to domain name rule, all these operations have two common GET
+parameters:</p>
+
+<ul>
+<li><code>domain-name-kind</code>: The kind of the domain name rule.</li>
+<li><code>domain-name-match</code>: The match spec of the domain name rule.</li>
+</ul>
+
+<h2>URI rule management</h2>
+
+<p>The URI rule management operations are in the &ldquo;folder&rdquo;
+<code>/uri-rule/</code>. For each of the following rule, the path will
+therefore be prefixed by <code>/uri-rule</code>.</p>
+
+<p>All this operations need to know on wich parent domain name rule they operate.
+Thus, each rule has two common GET parameters:</p>
+
+<ul>
+<li><code>domain-name-kind</code>: The kind of the domain name rule.</li>
+<li><code>domain-name-match</code>: The match spec of the domain name rule.</li>
+</ul>
+
+<h3>List URI rules</h3>
+
+<p>Path: <code>/list</code></p>
+
+<p>GET parameters (all optionals):</p>
+
+<ul>
+<li><code>kind</code>: The kind of the domain rule key (should be one of
+   <code>exact</code>, <code>prefix</code> or <code>regex</code>.</li>
+<li><code>match</code>: A regular expression applied on the domain rule match
+specification.</li>
+<li><code>replacement</code>: A regular expression applied on the domain rule
+replacement specification.</li>
+</ul>
+
+<p>Returns the list of URI rules matching the parameters. If a criteria is omitted
+all rules will match this criteria.</p>
+
+<p>Example:</p>
+
+<pre><code>GET /uri-rule/list?domain-name-kind=exact&domain-name-match=www.domain.example&kind=exact HTTP/1.1
+Host: management.invalid</code></pre>
+
+<h3>Add a URI rule</h3>
+
+<p>Path: <code>/add</code></p>
+
+<p>POST parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of match string. Must be one of &ldquo;exact&rdquo;, &ldquo;suffix&rdquo;
+   or &ldquo;regex&rdquo;.</li>
+<li><code>match</code>: The match string used to check whether the rule matches the
+   current URL.</li>
+<li><code>replacement</code> (optional): The replacement string used to modify the URL part
+   matching the rule.</li>
+<li><code>http-code</code> (optional): The HTTP Status code to be sent along for
+   this redirection.</li>
+<li><code>position</code> (optional): Position at which the rule will be inserted
+   in the rule list. If none is provided, the rule is inserted at the beginning
+   of the list.</li>
+<li><code>protocol</code> (optional): Protocol to use after the redirection. Must be one of
+   http or https.</li>
+<li><code>port</code> (optional): Port number to use after the redirection.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /uri-rule/add?domain-name-kind=exact&domain-name-match=www.domain.example HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+kind=prefix&match=%2Ffoo&position=2</code></pre>
+
+<h3>Remove a URI rule</h3>
+
+<p>Path: <code>/remove</code></p>
+
+<p>GET parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of the rule.</li>
+<li><code>match</code>: The match spec of the rule.</li>
+</ul>
+
+<p>POST parameter:</p>
+
+<ul>
+<li><code>confirmed</code>: This parameter must be non-nil.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /uri-rule/remove?domain-name-kind=exact&domain-name-match=www.domain.example&kind=exact&match=www.domain.example HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+confirmed=OK</code></pre>
+
+<h3>Update a URI rule</h3>
+
+<p>Path: <code>/update</code></p>
+
+<p>GET parameters:</p>
+
+<ul>
+<li><code>kind</code>: The kind of the rule.</li>
+<li><code>match</code>: The match spec of the rule.</li>
+</ul>
+
+<p>POST parameters (all optional):</p>
+
+<ul>
+<li><code>new-kind</code>: The new kind to use for the rule from now on.</li>
+<li><code>new-match</code>: The new match spec to use for the rule from now on.</li>
+<li><code>new-replacement</code>: The new replacement to use for the rule from now
+on.</li>
+<li><code>new-http-code</code>: The new HTTP Status code to be used for this rule
+redirection from now on.</li>
+</ul>
+
+<h3>Update the query string operations</h3>
+
+<p>The query string operations management is in the &ldquo;folder&rdquo;
+<code>/query-string-updates/</code>. See Query string operation management for the details.</p>
+
+<p>When applied to domain name rule, all these operations have two more common GET
+parameters:</p>
+
+<ul>
+<li><code>uri-kind</code>: The kind of the domain name rule.</li>
+<li><code>uri-match</code>: The match spec of the domain name rule.</li>
+</ul>
+
+<h2>Query string operations management</h2>
+
+<p>Query string management is currently very simple.</p>
+
+<h3>List query string operations</h3>
+
+<p>Path: <code>/list</code></p>
+
+<p>GET parameters (all optionals):</p>
+
+<ul>
+<li><code>operation</code>: The operation filter of the domain rule key (should be one of
+   <code>clear</code>, <code>add</code>, <code>delete</code>, <code>update</code> or <code>rename</code>).</li>
+<li>Any combination of <code>name</code>, <code>new-name</code>, <code>match</code>, <code>replacement</code>: a regex on the
+   corresponding field.</li>
+</ul>
+
+<p>Returns the list of query string operations matching the parameters. If a
+criteria is omitted all rules will match this criteria.</p>
+
+<p>Example:</p>
+
+<pre><code>GET /domain-name-rule/query-string-updates/list?domain-name-kind=exact&domain-name-match=www.domain.example&operation=clear HTTP/1.1
+Host: management.invalid</code></pre>
+
+<h3>Add a query string operation</h3>
+
+<p>Path: <code>/add</code></p>
+
+<p>POST parameters:</p>
+
+<ul>
+<li><code>operation</code>: The operation filter of the domain rule key (should be one of
+   <code>clear</code>, <code>add</code>, <code>delete</code>, <code>update</code> or <code>rename</code>).</li>
+<li>Any combination of <code>name</code>, <code>new-name</code>, <code>match</code>, <code>replacement</code> which is valid
+   for this operation.</li>
+<li><code>position</code> (optional): Position at which the operation will be inserted in
+   the operation list. If none is provided, the operation is inserted at the
+   beginning of the list.</li>
+</ul>
+
+<p>When you create an <code>add</code> operation, you should provide one of the following
+parameters (they are mutually exclusive):</p>
+
+<ul>
+<li><code>value</code>: Its value is the value that will be given to the new GET parameter</li>
+<li><code>path-as-value</code>: If present, the path will be used as value for the new GET
+   parameter</li>
+<li><code>domain-as-value</code>: If present, the domain name will be used as value for the
+   new GET parameter</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /uri-rule/query-string-updates/add?domain-name-kind=exact&domain-name-match=www.domain.example&uri-name=%2Ffoobar%2F&uri-kind=prefix HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+operation=add&name=redirect-from&domain-as-value=t</code></pre>
+
+<h3>Remove a query string operation</h3>
+
+<p>Path: <code>/remove</code></p>
+
+<p>GET parameters:</p>
+
+<ul>
+<li><code>operation</code>: The kind of the rule.</li>
+<li><code>name</code>: The name of the query parameter on which the operation is applied.</li>
+<li><code>match</code>: The match specification used in a query string update operation.</li>
+</ul>
+
+<p>If <code>name</code> or <code>match</code> is not supported by the operation you want to delete, you
+must omit them.</p>
+
+<p>POST parameter:</p>
+
+<ul>
+<li><code>confirmed</code>: This parameter must be non-nil.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>POST /uri-rule/query-string-updates/remove?domain-name-kind=exact&domain-name-match=www.domain.example&uri-name=%2Ffoobar%2F&uri-kind=prefix&operation=rename&name=domain-name-match HTTP/1.1
+Host: management.invalid
+Content-type: application/x-www-form-urlencoded
+
+confirmed=OK</code></pre>
+
+<h1>Data Storage</h1>
+
+<p>The data are stored in memory by a hierarchy of classes, check <code>redirection-rule</code>
+and subclasses.</p>
+
+<h1>Limitations</h1>
+
+<ul>
+<li><p>The implementation restricted part should be extracted away in another
+   package/project (TODO).</p></li>
+<li><p>Because of the inherent multiple domain names property of the project,
+  Cheshire supports only HTTP, no HTTPS now or in the forseenable future is
+  planned.</p></li>
+<li><p>No offline rule management.</p></li>
+</ul>
+
+<h1>License</h1>
+
+<p>This software has been originally developed by Mathieu Lemoine
+<a href="m&#x61;&#105;l&#x74;&#111;:&#x6D;&#108;e&#x6D;&#111;i&#x6E;&#101;@&#x6D;&#101;n&#x74;&#101;l&#x2E;&#99;o&#x6D;">m&#x61;&#105;l&#x74;&#111;:&#x6D;&#108;e&#x6D;&#111;i&#x6E;&#101;@&#x6D;&#101;n&#x74;&#101;l&#x2E;&#99;o&#x6D;</a> and is the sole property of Mentel Inc. (www.mentel.com).
+This software is distributed under the terms of the 3-clause BSD, stated as
+follow:</p>
+
+<p>Copyright © 2012, Mathieu Lemoine <a href="m&#x61;&#105;l&#x74;&#111;:&#x6D;&#108;e&#x6D;&#111;i&#x6E;&#101;@&#x6D;&#101;n&#x74;&#101;l&#x2E;&#99;o&#x6D;">m&#x61;&#105;l&#x74;&#111;:&#x6D;&#108;e&#x6D;&#111;i&#x6E;&#101;@&#x6D;&#101;n&#x74;&#101;l&#x2E;&#99;o&#x6D;</a>, Mentel Inc.
+All rights reserved.</p>
+
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:</p>
+
+<ul>
+<li>Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.</li>
+<li>Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.</li>
+<li>Neither the name of &ldquo;Mentel Inc.&rdquo; nor the names of its contributors may be
+   used to endorse or promote products derived from this software without
+   specific prior written permission.</li>
+</ul>
+
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &ldquo;AS IS&rdquo; AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>

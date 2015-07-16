@@ -1,0 +1,6 @@
+floating-point
+
+floating-point is a Common Lisp library with functions for calculating
+the error between and predicates for determining the equality of 2
+floating point numbers. The routines were originally developed for
+lisp-unit, but are generally useful and warranted a separate package.

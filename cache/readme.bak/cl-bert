@@ -1,0 +1,41 @@
+<h1>cl-bert</h1>
+
+<p>cl-bert is a <a href="http://bert-rpc.org/" >BERT</a> serializer.</p>
+
+<h2>API</h2>
+
+<p>[Generic Function]<br/>
+<strong>encode</strong> object &amp;key berp-header &rArr; bytes</p>
+
+<p>[Function]<br/>
+<strong>decode</strong> bytes &rArr; object</p>
+
+<p>[Function]<br/>
+<strong>binary</strong> &amp;rest bytes &rArr; binary</p>
+
+<p>[Generic Function]<br/>
+<strong>bytes</strong> binary &rArr; bytes</p>
+
+<p>[Generic Function]<br/>
+<strong>size</strong> tuple-or-binary &rArr; size</p>
+
+<p>[Function]<br/>
+<strong>string-to-binary</strong> string &rArr; binary</p>
+
+<p>[Function]<br/>
+<strong>bytes-to-binary</strong> bytes &rArr; binary</p>
+
+<p>[Function]<br/>
+<strong>binary-to-string</strong> binary &rArr; string</p>
+
+<p>[Function]<br/>
+<strong>tuple</strong> &amp;rest objects &rArr; tuple</p>
+
+<p>[Generic Function]<br/>
+<strong>elements</strong> tuple &rArr; vector</p>
+
+<p>[Generic Function]<br/>
+<strong>arity</strong> tuple &rArr; arity</p>
+
+<p>[Function]<br/>
+<strong>bool</strong> value &rArr; bert-boolean</p>

@@ -1,0 +1,27 @@
+<h1>Djula</h1>
+
+<p><a href="https://travis-ci.org/mmontone/djula" ><img src="https://travis-ci.org/mmontone/djula.svg?branch=master" alt="Build Status" /></a></p>
+
+<p>Djula is a port of Python&apos;s <a href="http://www.djangoproject.com" >Django</a> template engine to Common Lisp. </p>
+
+<h2>Nutshell</h2>
+
+<p>Here a small example of a template::</p>
+
+<pre><code>
+    {% extends "base.html" %}
+    {% block title %}Memberlist{% endblock %}
+    {% block content %}
+      &lt;ul&gt;
+      {% for user in users %}
+        &lt;li&gt;&lt;a href="{{ user.url }}"&gt;{{ user.username }}&lt;/a&gt;&lt;/li&gt;
+      {% endfor %}
+      &lt;/ul&gt;
+    {% endblock %}</code></pre>
+
+<h2>Philosophy</h2>
+
+<p>Application logic is for the controller but don&apos;t try to make the life
+for the template designer too hard by giving him too few functionality.</p>
+
+<p>For more information visit the new <a href="http://mmontone.github.io/djula" >Djula webpage</a> and <a href="http://mmontone.github.io/djula/doc/build/html/index.html" >documentation</a>.</p>

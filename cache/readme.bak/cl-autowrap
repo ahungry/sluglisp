@@ -1,0 +1,813 @@
+<h1>Issues?</h1>
+
+<p>If you have issues, do not hesitate to <a href="https://github.com/rpav/cl-autowrap/issues/new" >file an
+issue</a>!  <strong>See <a href="https://github.com/rpav/cl-autowrap/blob/master/FAQ.md" >the
+FAQ</a>
+for some quick tips.</strong></p>
+
+<h1>cl-autowrap</h1>
+
+<p>This is a new <a href="https://github.com/rpav/c2ffi" >c2ffi</a>-based wrapper
+generator for Common Lisp with a focus, performance, convenience, and
+completeness.  It works like this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span></span>)</span></span></code></pre>
+
+<p>That&apos;s it.  This calls <code>c2ffi</code> and generates architecture-specific
+<code>.spec</code> files you can distribute with your project.  <strong>Neither c2ffi,
+nor any compiler (or even <code>.h</code> files!) are necessary for your users!</strong></p>
+
+<ul>
+<li>Types: structs (including bitfields!), unions, enums, typedefs, etc.</li>
+<li>Wrappers: Thin wrappers for structs, unions, and aliases of structs
+  and unions: pointers and validation only, no expensive translation</li>
+<li>Accessors: Complete recursive accessors for structs and unions,
+  including anonymous struct members, arrays, and pointers for each
+  field.</li>
+<li>Functions: Macros which expand into foreign calls via CFFI-SYS</li>
+<li>Metadata: Full access to all the information about all types,
+  functions, etc.</li>
+</ul>
+
+<p>For instance:</p>
+
+<pre><code><span class="code"><span class="comment">/* test.h - abbreviated from example */</span>
+<span class="symbol">typedef</span> <span class="symbol">struct</span> foo <span class="paren1">{<span class="code">
+  <span class="symbol">int</span> a, b;
+  <span class="symbol">char</span> c<span class="paren2">[<span class="code">3</span>]</span>;
+
+  <span class="symbol">struct</span> <span class="paren2">{<span class="code">
+    <span class="symbol">unsigned</span> <span class="symbol">int</span> b0 : 2, b1 : 3;
+
+    <span class="symbol">struct</span> <span class="paren3">{<span class="code">
+      <span class="symbol">char</span> x, y;
+    </span>}</span> s;
+  </span>}</span> x<span class="paren2">[<span class="code">2</span>]</span>;
+</span>}</span> foo_t;
+
+foo_t* get_foo<span class="paren1">(<span class="code"></span>)</span>;
+<span class="symbol">void</span> free_foo<span class="paren1">(<span class="code">foo_t *foo</span>)</span>;
+<span class="symbol">int</span>* get_int<span class="paren1">(<span class="code"></span>)</span>;</span></code></pre>
+
+<p>Out of this, we can do the following.  (Note: dots are just part of
+the function names for disambiguation, this doesn&apos;t alter the reader):</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"test.h"</span></span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">foo <span class="paren4">(<span class="code">get-foo</span>)</span></span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">foo-t.a foo</span>)</span> 5</span>)</span>             <span class="comment">;; foo.a = 5;
+</span>  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">foo-t.x[].b0 foo 0</span>)</span> #b10</span>)</span>   <span class="comment">;; foo.x[0].b0 = 2;
+</span>  <span class="paren2">(<span class="code">print <span class="paren3">(<span class="code">foo-t.x[].s.x foo 1</span>)</span></span>)</span>      <span class="comment">;; anonymous struct
+</span>  <span class="paren2">(<span class="code">foo-t.x[].s foo 0</span>)</span>                <span class="comment">;; =&gt; child wrapper
+</span>  <span class="paren2">(<span class="code">foo-t.x[].s&amp; foo 0</span>)</span>               <span class="comment">;; &amp;(foo.x[0].s) =&gt; pointer
+</span>  <span class="paren2">(<span class="code">free-foo foo</span>)</span></span>)</span></span></code></pre>
+
+<p>Alternatively, there is now <code>cl-plus-c</code>, which can optionally be
+loaded for a different access mechanism and <strong>much quicker compile
+times</strong>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">asdf:load-system <span class="keyword">:cl-plus-c</span></span>)</span>
+<span class="paren1">(<span class="code">use-package <span class="keyword">:plus-c</span></span>)</span>
+
+<span class="comment">;;; This allocates a FOO-T and frees it at the end:
+</span><span class="paren1">(<span class="code">c-let <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">foo foo-t <span class="keyword">:free</span> t</span>)</span></span>)</span>
+  <span class="paren2">(<span class="code">print foo</span>)</span>                        <span class="comment">;; =&gt; wrapper
+</span>  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">foo <span class="keyword">:a</span></span>)</span> 5</span>)</span>                  <span class="comment">;; foo.a = 5;
+</span>  <span class="paren2">(<span class="code">setf <span class="paren3">(<span class="code">foo <span class="keyword">:x</span> 0 <span class="keyword">:b0</span></span>)</span> #b10</span>)</span>         <span class="comment">;; foo.x[0].b0 = 2;
+</span>  <span class="paren2">(<span class="code">print <span class="paren3">(<span class="code">foo <span class="keyword">:x</span> 1 <span class="keyword">:s</span> <span class="keyword">:x</span></span>)</span></span>)</span>           <span class="comment">;; anonymous struct: foo.x[1].s.x
+</span>  <span class="paren2">(<span class="code">foo <span class="keyword">:x</span> 0 <span class="keyword">:s</span></span>)</span>                      <span class="comment">;; =&gt; child wrapper
+</span>  <span class="paren2">(<span class="code">foo <span class="keyword">:x</span> 0 <span class="keyword">:s</span> &amp;</span>)</span></span>)</span>                   <span class="comment">;; &amp;(foo.x[0].s) =&gt; pointer</span></span></code></pre>
+
+<p>See
+<a href="https://github.com/rpav/cl-autowrap/blob/master/cl-plus-c.md" >cl-plus-c.md</a>
+for more information.</p>
+
+<h2>Overview</h2>
+
+<p>Using <code>cl-autowrap</code> is meant to get you to the &ldquo;lispifying&rdquo; stage of
+your wrapper as quickly and conveniently as possible:</p>
+
+<ul>
+<li>Make sure you have c2ffi</li>
+<li>Load your library as you normally would with CFFI</li>
+<li>Make a file for your <code>c-include</code></li>
+<li>Examine wrappers and tweak if necessary</li>
+<li>Back to lisp!</li>
+</ul>
+
+<h3>c2ffi</h3>
+
+<p>You will need to build <a href="https://github.com/rpav/c2ffi" >c2ffi</a> if you
+have not already done so.  This requires a repository version of LLVM
+and Clang, but the build process is straightforward.</p>
+
+<p>Again, note that <strong>your users do not need this</strong>, assuming you
+distribute the <code>.spec</code> files appropriate to their architecture.
+<code>cl-autowrap</code> should generate everything for you, though.</p>
+
+<p>If you decide not to install <code>c2ffi</code>, you can specify its path
+directly by setting <code>autowrap:*c2ffi-program*</code>, e.g.:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">setf <span class="special">autowrap:*c2ffi-program*</span> <span class="string">"/path/to/my/c2ffi"</span></span>)</span></span></code></pre>
+
+<p>This should be part of <em>your local configuration</em>; do not set this in
+code you distribute.  This includes <code>LET</code> forms around <code>C-INCLUDE</code>.</p>
+
+<h3>Loading Libraries</h3>
+
+<p>This should be done normally with CFFI.  Either the high-level
+interface with <code>CFFI:DEFINE-FOREIGN-LIBRARY</code> and
+<code>CFFI:USE-FOREIGN-LIBRARY</code> or the low-level interface with
+<code>CFFI-SYS:%LOAD-FOREIGN-LIBRARY</code> work.</p>
+
+<h3>Writing the <code>c-include</code></h3>
+
+<p>It&apos;s highly recommended that you use a separate package <em>and</em> file for
+<code>cl-autowrap</code>.  The reasons are simple:</p>
+
+<ul>
+<li>A <em>lot</em> of symbols will be generated without regard.</li>
+<li>Many symbols will also be exported.</li>
+<li>A rather large number of functions and structs will be generated,
+  resulting in a hefty compile time.  With a separate file, this only
+  needs to happen once.</li>
+</ul>
+
+<p>(In fact, you can now specify individual packages for each set of
+symbols that are generated.  See below.)</p>
+
+<p>Once you have this, you can write a simple <code>c-include</code>.  <strong>This must
+be a top-level statement</strong>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"somefile.h"</span></span>)</span></span></code></pre>
+
+<p>This will look for <code>somefile.h</code> and generate <code>.spec</code> files in
+<code>*default-pathname-defaults*</code>, which is probably not very helpful!  To
+fix this, use the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="paren2">(<span class="code">function-that-finds <span class="string">"somefile.h"</span></span>)</span>
+           <span class="keyword">:spec-path</span> #P<span class="string">"/path/to/spec"</span></span>)</span></span></code></pre>
+
+<p>(Note that while these parameters <em>are</em> <code>eval</code>&apos;d, this happens at
+<em>compile time</em>, so if you use a <code>*special-variable*</code>, its definition
+needs surrounded by an <code>EVAL-WHEN</code>.)</p>
+
+<p>Hardcoded paths and reinventing functionality aren&apos;t very nice though;
+In both cases you can specify a complete &ldquo;ASDF path&rdquo; (starting with
+the system name), and it&apos;ll query the path from ASDF.  For example, if
+we have an ASDF system called <code>my-wrapper</code>, we can do the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include '<span class="paren2">(<span class="code">my-wrapper some-module <span class="string">"localfile.h"</span></span>)</span>
+           <span class="keyword">:spec-path</span> '<span class="paren2">(<span class="code">my-wrapper spec-module</span>)</span></span>)</span></span></code></pre>
+
+<p>Assuming you had defined &ldquo;localfile.h&rdquo; as a <code>:static-file</code> of
+<code>some-module</code> in <code>my-wrapper</code>, as well as <code>spec-module</code>, everything
+would work as intended.</p>
+
+<p>This is especially useful because you can have a single local header
+that includes all the files you wish to wrap, and those will be found
+by <code>c2ffi</code> in the standard include paths.</p>
+
+<h3>Tweaking</h3>
+
+<p>While <code>c2ffi</code> and <code>cl-autowrap</code> do quite a lot, there are a few times
+where you may want to or be required to intervene.  You can look at
+any errors that occur, or the symbols that are exported, or even
+simply macroexpand the <code>c-include</code> and examine the output.</p>
+
+<p>By default, <code>c2ffi</code> outputs <em>everything</em> and likewise <code>cl-autowrap</code>
+imports <em>everything</em>.  Thus you get a rather large sampling of libc
+where you probably don&apos;t need it.  Thus you may want to <em>exclude</em> some
+definitions.  You can do this in two ways:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:exclude-sources</span> <span class="paren2">(<span class="code"><span class="string">"/path/to/source1"</span>
+                             <span class="string">"/path/.*source2"</span> ...</span>)</span>
+           <span class="keyword">:exclude-definitions</span> <span class="paren2">(<span class="code"><span class="string">"SomeFunc1"</span>
+                                 <span class="string">"_suffix$"</span></span>)</span></span>)</span></span></code></pre>
+
+<p>The first, <code>:exclude-sources</code>, looks at the source information
+generated by <code>c2ffi</code> for each definition.  This is an easy way to
+exclude the majority of irrelevant definitions.  You can make
+exceptions to this list via <code>:include-sources</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:exclude-sources</span> <span class="paren2">(<span class="code"><span class="string">"/path/to/source1"</span>
+                             <span class="string">"/path/.*source2"</span> ...</span>)</span>
+           <span class="keyword">:include-sources</span> <span class="paren2">(<span class="code"><span class="string">"/path/to/source1/but-include-this"</span></span>)</span></span>)</span></span></code></pre>
+
+<p>While everything else matching <code>&quot;/path/to/source1&quot;</code> will be excluded,
+in this example, definitions in <code>&quot;/path/to/source1/but-include-this&quot;</code>
+will still be included (if they exist).</p>
+
+<p>The next specifier, <code>:exclude-definitions</code>, excludes specific
+definitions by name.  These may be conflicting or unnecessary.  For
+instance, SDL2 includes a number of functions ending in <code>_inline</code> and
+some functions which use stdargs, all of which are unnecessary (or
+unusable).</p>
+
+<p>Both of these use <code>cl-ppcre</code> regular expressions to match, thus you
+have a great deal of flexibility with a few strings.</p>
+
+<p>You may also wish to simply <em>rename</em> some symbols.  The default
+routine generally translates symbols like you want, but you may
+occasionally find C functions named in a way that breaks this.  The
+default rules are as follows:</p>
+
+<ul>
+<li><code>XYZFooBar</code> &rArr; <code>XYZ-FOO-BAR</code></li>
+<li><code>foo_barBaz</code> &rArr; <code>FOO-BAR-BAZ</code></li>
+<li><code>_x_y</code> &rArr; <code>_X_Y</code> (because I think <code>-X-Y</code> looks worse)</li>
+</ul>
+
+<p>However if you encounter something like &ldquo;FOObar&rdquo;, it is likely you
+want &ldquo;FOO-BAR&rdquo;, not &ldquo;FO-OBAR&rdquo;, which is what you would get.  Thus you
+can specify an exception:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:symbol-exceptions</span> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="string">"FOObar"</span> . <span class="string">"FOO-BAR"</span></span>)</span> ...</span>)</span></span>)</span></span></code></pre>
+
+<p>These are simple, case-sensitive string matches and replacements.  The
+replacement is interned exactly, so if you specify lowercase here, you
+will get a symbol with lowercase characters.</p>
+
+<p>There is also a more complex <code>cl-ppcre</code>-based match and replace
+facility:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:symbol-regex</span> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="string">"^MATCH_string"</span> <span class="paren4">(<span class="code">PARAMS</span>)</span>
+                            <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code">string matches regex</span>)</span> ..
+                               NEW-STRING</span>)</span></span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>Using this facility, you may specify regex-function pairs.  <code>PARAMS</code>
+specifies further parameters to <code>PPCRE:CREATE-SCANNER</code>, e.g.,
+<code>:case-insensitive-mode</code>.  If a symbol matches the given regex, the
+function will be called with the string, any substring matches, and
+the original regex (in case you want to further apply it).  You must
+return a string, which will then be converted by the above rules into
+a final string.</p>
+
+<p>This should usually be unnecessary.  The use case for its creation was
+handling names that vary unpredictably only by <em>case</em>:</p>
+
+<pre><code><span class="code">CLUTTER_KEY_OMEGA
+CLUTTER_KEY_omega
+CLUTTER_KEY_THORN
+CLUTTER_KEY_Thorn
+CLUTTER_KEY_Adiaeresis
+CLUTTER_KEY_adiaeresis</span></code></pre>
+
+<p>In this situation, the more complicated regex-function matching is
+necessary.</p>
+
+<p>Alternatively, as was actually decided for the above clutter case,
+since there was &ldquo;no rhyme or reason&rdquo; to the naming scheme of the
+#define&apos;d constants, one may filter constant names to be interned,
+opting, instead, for referencing them through a separate constant-accessor
+macro:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+            <span class="keyword">:exclude-constants</span> <span class="paren2">(<span class="code"><span class="string">".*"</span></span>)</span>
+            <span class="keyword">:constant-accessor</span> clutter-constant</span>)</span>
+<span class="comment">;; Access constants like this:
+</span><span class="paren1">(<span class="code">clutter-constant <span class="string">"CLUTTER_Z"</span></span>)</span>
+<span class="paren1">(<span class="code">clutter-constant <span class="string">"CLUTTER_z"</span></span>)</span>
+</span></code></pre>
+
+<p>By default all &ldquo;known&rdquo; architectures (at the time of writing, windows,
+mac, linux on i686 and x86_64) are generated by default.  This may not
+always work; for instance, one architecture may require header files
+your system lacks.  You can exclude it using the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:exclude-arch</span> <span class="paren2">(<span class="code"><span class="string">"i686-pc-win32"</span> ...</span>)</span></span>)</span></span></code></pre>
+
+<p>This will exclude that target triple from being generated and causing
+a warning or output if it fails.</p>
+
+<p>You can also specify individual packages for symbol exports.  This can
+be useful if, for instance, you wish to import all accessors, or all
+functions, or similar, while not necessarily importing everything:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-include <span class="string">"file.h"</span>
+           <span class="keyword">:definition-package</span> PACKAGE
+           <span class="keyword">:function-package</span> PACKAGE
+           <span class="keyword">:wrapper-package</span> PACKAGE
+           <span class="keyword">:accessor-package</span> PACKAGE
+           <span class="keyword">:constant-package</span> PACKAGE
+           <span class="keyword">:extern-package</span> PACKAGE</span>)</span></span></code></pre>
+
+<ul>
+<li><code>:definition-package PACKAGE</code>: All &ldquo;definition&rdquo; symbols, which
+  include type names and function names (not to be confused with
+  function <em>macros</em> which you use in your code)</li>
+<li><code>:function-package PACKAGE</code>: All &ldquo;function&rdquo; symbols, which are all
+  macros expanding to foreign calls</li>
+<li><code>:wrapper-package PACKAGE</code>: All &ldquo;wrapper&rdquo; symbols, which are all
+  structs generated to wrap foreign record types</li>
+<li><code>:accessor-package PACKAGE</code>: All &ldquo;accessor&rdquo; symbols, which are all
+  functions generated to access record fields</li>
+<li><code>:constant-package PACKAGE</code>: All &ldquo;constant&rdquo; symbols, which are all
+  <code>+symbols+</code> representing C constants</li>
+<li><code>:extern-package PACKAGE</code>: All &ldquo;extern&rdquo; symbols, which are all
+  symbols (which are symbol-macros) representing C <code>extern</code> symbols</li>
+</ul>
+
+<h2>Wrappers and FFI</h2>
+
+<p>At this point you probably have definitions generated (or are
+hopefully submitting a question or bug report!).  But how to use them?</p>
+
+<p>While <code>cl-autowrap</code> uses <code>CFFI</code>, it almost exclusively uses the
+low-level <code>CFFI-SYS</code> interface.  It does not use the high-level type
+translation interface, or even <code>cffi:defcfun</code>.  Pointers are still
+whatever your Lisp provides.</p>
+
+<p>Instead, <code>cl-autowrap</code> defines a &ldquo;new&rdquo; higher-level interface I call
+<code>SFFI</code>, for &ldquo;simplified FFI&rdquo;.  While CFFI&apos;s high-level interface is
+nice for manually defining types and functions, it proves difficult
+when trying to automatically generate things or exercise precise
+control over various things like field layout.</p>
+
+<p>You should never have to deal with SFFI directly, but all the
+fine-grained type information is available should you require access.
+This is occasionally useful.  See below in the SFFI section for
+details.</p>
+
+<p>However, you cannot use CFFI constructs from another wrapper directly
+with SFFI-defined functions, or vice versa, but you can always use
+pointers between the two.</p>
+
+<h3>Functions</h3>
+
+<p><code>cl-autowrap</code> defines <em>macros</em> which wrap C calls with a few helpful
+features:</p>
+
+<ul>
+<li>Wrappers (see below) or pointers are accepted for any
+  pointer-to-struct (or union)</li>
+<li>Symbols <em>or</em> integers are accepted for any <code>enum</code></li>
+<li>Lisp strings will be temporarily converted to C strings, then freed,
+  for <code>char*</code> or <code>unsigned char*</code>.  (If you need these to persist, you
+  must provide your own pointer!)</li>
+<li>For <code>char*</code> and <code>unsigned char*</code> returns, both a lisp string and a
+  pointer are returned as <code>VALUES</code>, so you can free the pointer if
+  necessary.  You may prevent this conversion, and receive only the
+  pointer, if you wrap the call in <code>INHIBIT-STRING-CONVERSION</code>:</li>
+</ul>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">inhibit-string-conversion <span class="paren2">(<span class="code">function-returning-string ...</span>)</span></span>)</span>
+  <span class="comment">;; =&gt; pointer</span></span></code></pre>
+
+<p>Otherwise, the call will be like any C call; there is no other type
+translation.  In my experience, all but the most trivial C functions
+benefit from some wrapping, so this shouldn&apos;t be a big issue.</p>
+
+<p>However, see &ldquo;Other Features&rdquo; below for some other helpful features,
+such as bitmasks.</p>
+
+<h3>Wrappers</h3>
+
+<p>Instead of merely returning pointers, <code>cl-autowrap</code> defines <em>very
+thin</em> wrappers for non-atomic named types.  Wrappers are structs which
+contain two things:</p>
+
+<ul>
+<li>A pointer, which is accessible with <code>AUTOWRAP:PTR</code></li>
+<li>A <code>VALID-P</code> field, which is used for storing pointer validity,
+   and can be checked by <code>AUTOWRAP:VALID-P</code></li>
+</ul>
+
+<p>Wrappers are extremely useful for &ldquo;safely&rdquo; managing pointers, and are
+meant to be safe and &ldquo;pretty&rdquo; enough for users of your wrapper to use
+directly.  Any dereference using <code>PTR</code> automatically checks validity,
+and you can use finalizers to clean them up.  Note however that this
+is up to you: <code>cl-autowrap</code> merely provides the facility, nothing
+else.  See &ldquo;Garbage Collection and Wrappers&rdquo; below.</p>
+
+<p>Additionally, <code>cl-autowrap</code> generates a correct &ldquo;type hierarchy&rdquo;, as
+much as such applies to C:</p>
+
+<pre><code><span class="code"><span class="symbol">struct</span> x <span class="paren1">{<span class="code"> ... </span>}</span>;
+<span class="symbol">typedef</span> <span class="symbol">struct</span> x y;</span></code></pre>
+
+<p>Results in:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defstruct</span></i> <span class="paren2">(<span class="code">x <span class="paren3">(<span class="code"><span class="keyword">:include</span> wrapper</span>)</span></span>)</span></span>)</span>
+<span class="paren1">(<span class="code"><i><span class="symbol">defstruct</span></i> <span class="paren2">(<span class="code">y <span class="paren3">(<span class="code"><span class="keyword">:include</span> x</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>This ensures type compatibility where the C side may arbitrarily
+specify compatible type aliases.</p>
+
+<p>You may also obtain a &ldquo;child&rdquo; wrapper for a struct which is a field in
+another struct, using accessors:</p>
+
+<pre><code><span class="code"><span class="symbol">struct</span> foo_t <span class="paren1">{<span class="code">
+   :
+   <span class="symbol">struct</span> <span class="paren2">{<span class="code"> <span class="symbol">int</span> a, b; </span>}</span> x;
+</span>}</span>;</span></code></pre>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let*</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">foo <span class="paren4">(<span class="code">get-foo-somehow</span>)</span></span>)</span>
+       <span class="paren3">(<span class="code">x <span class="paren4">(<span class="code">foo-t.x foo</span>)</span></span>)</span></span>)</span>
+  <span class="keyword">:</span>
+  <span class="keyword">:</span>
+  ... </span>)</span></span></code></pre>
+
+<p>This keeps a reference to the parent.  These may also be safely
+dereferenced using <code>AUTOWRAP:PTR</code>, and checked using
+<code>AUTOWRAP:VALID-P</code>.  Because there is a reference is kept to the
+parent, even if a reference is discarded by the user, the child is
+still safe to use.</p>
+
+<h3>Garbage Collection and Wrappers</h3>
+
+<p>One of the primary motivators behind wrappers is the ability to easily
+garbage collect C data.  However, this still requires some care.  To
+this end, the <code>AUTOCOLLECT</code> macro has been added; see below.</p>
+
+<p>First, nothing besides checking is done automatically.  Pointers are
+assumed valid when they are returned and made into wrappers.  Any
+further invalidation and garbage collection must be handled by the one
+writing the wrapper.</p>
+
+<p><strong>Important:</strong> Absolutely no effort is made to keep wrappers unique or
+manage duplicates.  Again: <strong>YOU CAN HAVE DUPLICATE WRAPPERS AND THIS
+CAN LEAD TO BAD THINGS.</strong>  Generally this should only occur if you
+obtain the same pointer from a C API multiple times, such as a
+function which returns a global context pointer.  It is up to you to
+handle this.  <em>Beware.</em></p>
+
+<p>Once you are aware of this, you can use something like
+<code>trivial-garbage</code> to free pointers when you need:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> lispy-get-thing <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">let*</span></i> <span class="paren3">(<span class="code"><span class="paren4">(<span class="code">thing <span class="paren5">(<span class="code">get-thing</span>)</span></span>)</span>
+         <span class="paren4">(<span class="code">ptr <span class="paren5">(<span class="code">autowrap:ptr thing</span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">tg:finalize thing <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code"></span>)</span> <span class="paren5">(<span class="code">free-thing ptr</span>)</span></span>)</span></span>)</span>
+    thing</span>)</span></span>)</span></span></code></pre>
+
+<p>Note as as always to <strong>never</strong> reference the object, only the pointer,
+in the finalizer, or it will never be collected.</p>
+
+<p>It is often useful to free things when you still have a reference.  In
+this case, the pointer becomes invalid, and this is also handled by
+<code>WRAPPER</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> lispy-free-thing <span class="paren2">(<span class="code">thing</span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">unwind-protect</span></i> <span class="paren3">(<span class="code">free-thing thing</span>)</span>
+    <span class="paren3">(<span class="code">tg:cancel-finalization thing</span>)</span>
+    <span class="paren3">(<span class="code">autowrap:invalidate thing</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>In this case, further attempts to dereference <code>THING</code> via
+<code>AUTOWRAP:PTR</code> will result in an <code>INVALID-WRAPPER</code> error.</p>
+
+<p>You may be tempted to do this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> bad-free-thing <span class="paren2">(<span class="code">thing</span>)</span>
+  <span class="paren2">(<span class="code">tg:cancel-finalization thing</span>)</span>
+  <span class="paren2">(<span class="code">autowrap:invalidate thing</span>)</span>
+  <span class="paren2">(<span class="code">free-thing thing</span>)</span></span>)</span></span></code></pre>
+
+<p>Unfortunately, since you invalidated <code>THING</code>, when you pass it to
+<code>FREE-THING</code>, it will be invalid &hellip; resulting in an error.</p>
+
+<p><strong>Never manage &ldquo;child&rdquo; wrapper objects.</strong> This probably goes without
+saying, but they&apos;re tied to the parent object, and not meant to be
+managed separately.</p>
+
+<p>Also, you may be tempted to do this, to avoid &ldquo;dangling pointers&rdquo;:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> terrible-get-thing <span class="paren2">(<span class="code"></span>)</span>
+  <span class="paren2">(<span class="code"><i><span class="symbol">let*</span></i> <span class="paren3">(<span class="code"><span class="paren4">(<span class="code">thing <span class="paren5">(<span class="code">get-thing</span>)</span></span>)</span>
+         <span class="paren4">(<span class="code">ptr <span class="paren5">(<span class="code">autowrap:ptr thing</span>)</span></span>)</span></span>)</span>
+    <span class="paren3">(<span class="code">tg:finalize thing
+      <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code"></span>)</span>
+        <span class="paren5">(<span class="code">free-thing ptr</span>)</span>
+        <span class="paren5">(<span class="code">setf <span class="paren6">(<span class="code">autowrap:wrapper-ptr thing</span>)</span>
+              <span class="paren6">(<span class="code">cffi:null-pointer</span>)</span></span>)</span></span>)</span></span>)</span>
+    thing</span>)</span></span>)</span></span></code></pre>
+
+<p>This is both wrong and silly: there is a reference to <code>THING</code> in
+the finalizer, so it will never get freed.  And if you had gotten here
+normally, there would be <em>no</em> references, so nothing would have the
+dangling pointer!</p>
+
+<p>To facilitate doing this correctly, the <code>AUTOCOLLECT</code> macro has been
+added:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">autocollect <span class="paren2">(<span class="code">&amp;optional PTR</span>)</span> WRAPPER-FORM &amp;body</span>)</span> =&gt; WRAPPER-FORM-RESULT</span></code></pre>
+
+<p>If you are using <code>trivial-garbage</code>, this will extract the pointer from
+<code>WRAPPER-FORM</code> and call <code>tg:finalize</code> on the wrapper.  The body forms
+should use <code>POINTER</code> to free the object.  If you are not using
+<code>trivial-garbage</code>, it will produce an error.</p>
+
+<p>For instance:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">autocollect <span class="paren2">(<span class="code">pointer</span>)</span>
+    <span class="paren2">(<span class="code">get-thing</span>)</span>
+  <span class="paren2">(<span class="code">free-thing pointer</span>)</span></span>)</span> <span class="comment">;; =&gt; THING-WRAPPER</span></span></code></pre>
+
+<p>This will call <code>GET-THING</code> and finalize the resulting wrapper with the
+body.  <code>POINTER</code> is the pointer; this defaults to the symbol <code>PTR</code>.</p>
+
+<p><strong>This is not fool-proof.</strong>  Things to watch out for:</p>
+
+<ul>
+<li>If you reference the wrapper, and not the pointer, it will never be
+  collected.</li>
+<li>If you try to autocollect a child wrapper, you will probably crash.</li>
+<li>If you provide a function to manually free resources, <em>you must use</em>
+  <code>tg:cancel-finalization</code> or this finalizer will still be called,
+  likely double-freeing the memory and crashing.</li>
+<li>It&apos;s still up to you to call something to free the pointer.</li>
+</ul>
+
+<h3>Accessors</h3>
+
+<p>Having wrappers and functions are nice, but getting at the data is
+important too.  Accessors are generated recursively (up to a depth of
+5, barring recursive types) for highly convenient access.  From the
+top:</p>
+
+<pre><code><span class="code"><span class="symbol">typedef</span> <span class="symbol">struct</span> foo <span class="paren1">{<span class="code">
+  <span class="symbol">int</span> a, b;
+  <span class="symbol">char</span> c<span class="paren2">[<span class="code">3</span>]</span>;
+
+  <span class="symbol">struct</span> <span class="paren2">{<span class="code">
+    <span class="symbol">unsigned</span> <span class="symbol">int</span> b0 : 2, b1 : 3;
+
+    <span class="symbol">struct</span> <span class="paren3">{<span class="code">
+      <span class="symbol">char</span> x, y;
+    </span>}</span> s;
+  </span>}</span> x<span class="paren2">[<span class="code">2</span>]</span>;
+</span>}</span> foo_t;</span></code></pre>
+
+<p>Accessors are named starting with their type name (in this case, <code>FOO</code>
+and <code>FOO-T</code>), followed by fields, separated by dots.  There is no
+reader magic here: these are functions with dots as part of the name.
+(Dots were used mostly for disambiguation; if only dashes were used,
+name collision would be probable, since underscores are converted to
+dashes by default.)</p>
+
+<p>The following special cases are available:</p>
+
+<ul>
+<li><code>type.foo</code> in the case of <code>foo</code> being a record type (struct or
+  union), will return a child wrapper.</li>
+<li><code>type.foo</code> in the case of <code>foo</code> being a pointer will return the
+  pointer</li>
+<li><code>type.foo&amp;</code> will return a <em>pointer</em> to the <em>field</em>, not a wrapper,
+  regardless of the type of <code>foo</code>.  If <code>foo</code> is a pointer, then you
+  get a pointer-pointer.  This is just the same as <code>&amp;(x.foo)</code> in C.
+  This does not exist for bitfields.</li>
+<li><code>type.foo*</code> will <em>dereference</em> <code>foo</code> where <code>foo</code> is a pointer to a
+  well-defined type, including record fields. E.g., <code>type.foo*.bar</code>;
+  there is no <code>type.foo.bar</code>.</li>
+<li><code>type.foo[]</code> references an <em>array element</em>, where <code>foo</code> is declared
+  as an array (not just as a pointer).  Array indices are specified
+  in order after the object: <code>(type.foo[].bar[] obj i0 i1)</code> is the
+  equivalent of C&apos;s <code>obj.foo[i0].bar[i1]</code>.</li>
+</ul>
+
+<p>Additionally, <code>SETF</code> can set almost any field.  The exceptions are any
+accessor which dereferences a record (i.e. returns a child wrapper),
+or is suffixed with <code>&amp;</code>.</p>
+
+<p>Bitfields are supported under the assumption that they are packed
+LSB-to-MSB on little endian and MSB-to-LSB on big endian
+architectures.  If you <em>actually encounter</em> a problem with this, file
+a bug report with full details: the architecture, OS, lisp, C
+compiler, and an example struct.  Theoretical possibilities are not
+considered bugs.</p>
+
+<p>Note that bitfield operations cannot be done atomically and <em>may</em> not
+be done field-atomically (that is, you <em>may</em> have to lock the entire
+struct).  Additionally, you cannot take the address of a bitfield.
+However, you <em>can</em> get information from SFFI metadata, or simply using
+the convenience function <code>AUTOWRAP:BITFIELD-MASK</code>.</p>
+
+<h2>Other Features</h2>
+
+<p><code>cl-autowrap</code> has a number of other features that have not been
+discussed:</p>
+
+<ul>
+<li>Allocation</li>
+<li>Enums</li>
+<li>Bitmasks</li>
+<li>Callbacks</li>
+<li>SFFI metadata and functions</li>
+</ul>
+
+<h3>Allocation</h3>
+
+<p>Since autowrap implements its own higher-level constructs over
+lower-level CFFI, you can&apos;t use CFFI&apos;s <code>FOREIGN-ALLOC</code> or similar
+functions and macros to easily allocate foreign records.  Thus there
+are new constructs for doing so:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">thing <span class="paren4">(<span class="code">autowrap:alloc 'type</span>)</span></span>)</span></span>)</span>
+  <span class="keyword">:</span>
+  <span class="paren2">(<span class="code">autowrap:free thing</span>)</span></span>)</span></span></code></pre>
+
+<p>As you might expect, <code>ALLOC</code> will allocate memory of sufficient size
+for <code>TYPE</code>, and <code>FREE</code> will free it (and invalidate the wrapper for
+you).  Note that if you are doing garbage collection as above, this
+does <strong>NOT</strong> remove finalizers for you: you MUST take care of this
+yourself where applicable.</p>
+
+<p>There are also macros which will help with temporary allocation:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">with-alloc</span></i> <span class="paren2">(<span class="code">thing 'type</span>)</span>
+   <span class="keyword">:</span>
+   <span class="keyword">:</span>
+   </span>)</span></span></code></pre>
+
+<p>This will take care of allocation and freeing within the block.  You
+should not use finalizers here.  If you try to reference the value
+outside of the scope of the block, it will be invalid.  If you wish to
+allocate multiple objects and free them, you can use the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">with-many-alloc</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">thing1 'type1</span>)</span>
+                  <span class="paren3">(<span class="code">thing2 'type2</span>)</span>
+                  <span class="keyword">:</span>
+                   </span>)</span>
+  <span class="keyword">:</span>
+  </span>)</span></span></code></pre>
+
+<p>Note that while any <code>typedef</code> type aliases can be referenced simply by
+symbol as in C, record types are called <code>(:struct (NAME))</code> or <code>(:union
+(NAME))</code>, and also like C, you must write this out if there is no type
+alias for <code>NAME</code>.  For example:</p>
+
+<pre><code><span class="code"><span class="symbol">struct</span> X <span class="paren1">{<span class="code"> ... </span>}</span>;
+<span class="symbol">typedef</span> <span class="symbol">struct</span> Y <span class="paren1">{<span class="code"> ... </span>}</span> Y;
+
+<span class="symbol">int</span> main<span class="paren1">(<span class="code"></span>)</span> <span class="paren1">{<span class="code">
+    <span class="symbol">struct</span> X foo;    <span class="comment">/* No type alias */</span>
+    Y bar;           <span class="comment">/* Type alias */</span>
+</span>}</span></span></code></pre>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">with-many-alloc</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">foo '<span class="paren4">(<span class="code"><span class="keyword">:struct</span> <span class="paren5">(<span class="code">X</span>)</span></span>)</span></span>)</span> <span class="comment">;; No type alias
+</span>                  <span class="paren3">(<span class="code">bar 'Y</span>)</span></span>)</span>            <span class="comment">;; Type alias
+</span>    <span class="keyword">:</span>
+    </span>)</span></span></code></pre>
+
+<h3>Arrays</h3>
+
+<p>In addition to single objects, autowrap also allows allocation and
+reference to arrays of objects.  <strong>This is less safe, however</strong>: there
+are no provisions for bounds-checking, since the data is simply not
+there.  (While in theory, we could add size data on the lisp side,
+this is a false sense of security, since you will often be dealing
+arrays from C.)</p>
+
+<p>Allocation methods all take an optional <code>COUNT</code> parameter:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">alloc x 'type 3</span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">with-alloc</span></i> <span class="paren2">(<span class="code">x 'type 5</span>)</span> ...</span>)</span>
+
+<span class="paren1">(<span class="code"><i><span class="symbol">with-many-alloc</span></i> <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">x 'type 5</span>)</span>
+                  <span class="paren3">(<span class="code">y 'type 2</span>)</span></span>)</span>
+  ...</span>)</span></span></code></pre>
+
+<p>To reference these, you can use <code>C-APTR</code> and <code>C-AREF</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-aptr x 1</span>)</span> <span class="comment">;; =&gt; raw pointer
+</span><span class="paren1">(<span class="code">c-aref y 2</span>)</span> <span class="comment">;; =&gt; wrapper</span></span></code></pre>
+
+<p>Unfortunately, this may present some performance issues, since
+<em>unlike</em> record accessors, the type must be looked up at runtime.  In
+theory, autowrap could generate array accessors for all types, but
+this would vastly increase the number of accessors generated with
+little value, since most will not be used.</p>
+
+<p>Instead, you may specify the type explicitly:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-aptr x 1 'type</span>)</span> <span class="comment">;; =&gt; pointer
+</span><span class="paren1">(<span class="code">c-aptr y 2 'type</span>)</span> <span class="comment">;; =&gt; wrapper</span></span></code></pre>
+
+<p>In this case, as long as <code>'type</code> is <code>constant-p</code>, the compiler macro
+should expand it at compile-time.</p>
+
+<p>Basic C types (e.g., <code>:int</code>, <code>:char</code>, etc) are also supported; in this
+case, a wrapper is not returned, but the value itself:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">c-aref x 1 <span class="keyword">:int</span></span>)</span> <span class="comment">;; =&gt; number</span></span></code></pre>
+
+<p>You can also set array members <em>for basic types only</em>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">setf <span class="paren2">(<span class="code">c-aref x 1 <span class="keyword">:int</span></span>)</span> 10</span>)</span></span></code></pre>
+
+<p>In both of these cases, since autowrap does not provide additional
+wrappers for basic types, you <em>must</em> specify the type explicitly.</p>
+
+<h3>Enums</h3>
+
+<p>Enums are imported and created as types, but they&apos;re typically used by
+specifying a keyword:</p>
+
+<pre><code><span class="code"><span class="symbol">enum</span> E <span class="paren1">{<span class="code">
+  FOO_X, FOO_Y, FOO_Z
+</span>}</span>;
+
+<span class="symbol">void</span> fun<span class="paren1">(<span class="code">E</span>)</span>;</span></code></pre>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">fun <span class="keyword">:x</span></span>)</span></span></code></pre>
+
+<p>As you can see, common prefixes are eliminated and the symbols are
+interned as keywords.  Additionally, functions taking enum symbols can
+<em>also</em> take numbers:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">fun 1</span>)</span></span></code></pre>
+
+<p>You can also find the value or keyword for an enum as follows:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">autowrap:enum-key '<span class="paren2">(<span class="code"><span class="keyword">:enum</span> <span class="paren3">(<span class="code">enum-name</span>)</span></span>)</span> <span class="keyword">:key</span></span>)</span>
+<span class="paren1">(<span class="code">autowrap:enum-value '<span class="paren2">(<span class="code"><span class="keyword">:enum</span> <span class="paren3">(<span class="code">enum-name</span>)</span></span>)</span> 1</span>)</span></span></code></pre>
+
+<p>An actual <code>AUTOWRAP:FOREIGN-ENUM</code> can be used in place of <code>'enum-name</code>
+if desired; otherwise it will be looked up via <code>AUTOWRAP:FIND-TYPE</code>.</p>
+
+<h3>Bitmasks</h3>
+
+<p>Bitmasks aren&apos;t actually a type in C, and are often defined as
+constants instead of enums or similar.  Therefore, there is no real
+automatic way to determine a bitmask.  Thus <code>cl-autowrap</code> provides a
+number of convenience facilities for doing this:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">autowrap:define-bitmask</span></i> 'NAME
+  '<span class="paren2">(<span class="code"><span class="paren3">(<span class="code"><span class="keyword">:key1</span> . #x0001</span>)</span>
+     <span class="keyword">:</span>
+      ...</span>)</span></span>)</span></span></code></pre>
+
+<p>This defines a bitmask called <code>NAME</code>, which is separate from other C
+types, and can be used with the <code>MASK</code> function:</p>
+
+<pre><code>(some-function (autowrap:mask 'NAME :key1 :key5))</code></pre>
+
+<p>This also has a compiler macro which will expand to an integer
+constant if the value can be determined at compile-time.</p>
+
+<p>Additionally, to aid in converting predefined constants to bitmasks,
+there is the following macro, which expands to an
+<code>AUTOWRAP:DEFINE-BITMASK</code> call:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">autowrap:define-bitmask-from-constants</span></i> <span class="paren2">(<span class="code">name</span>)</span>
+  +some-foo+
+  +some-bar+
+  +some-baz+</span>)</span></span></code></pre>
+
+<p>This essentially expands to the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">autowrap:define-bitmask</span></i> 'name
+  <span class="paren2">(<span class="code">list `<span class="paren3">(<span class="code"><span class="keyword">:foo</span> . ,+some-foo+</span>)</span>
+        `<span class="paren3">(<span class="code"><span class="keyword">:bar</span> . ,+some-bar+</span>)</span>
+        `<span class="paren3">(<span class="code"><span class="keyword">:baz</span> . ,+some-baz+</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<h3>Callbacks</h3>
+
+<p>Autowrap now provides a thin layer on top of <code>CFFI-SYS:%DEFCALLBACK</code>:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">autowrap:defcallback</span></i> NAME RETURN-TYPE
+    <span class="paren2">(<span class="code"><span class="paren3">(<span class="code">PARAM TYPE</span>)</span>
+     ...</span>)</span>
+  ...</span>)</span></span></code></pre>
+
+<p>The main difference is that you may specify SFFI type aliases as
+parameters, since these are not available to the higher-level
+<code>CFFI:DEFCALLBACK</code>.</p>
+
+<p>Additionally, there is the following:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">autowrap:callback 'name</span>)</span></span></code></pre>
+
+<p>This simply expands to <code>CFFI-SYS:%CALLBACK</code>, but is provided for
+convenience.</p>
+
+<h3>SFFI Metadata and Functions</h3>
+
+<p>This is not fully-documented at the moment, but full access to
+metadata and definition functions is available.  For instance:</p>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code">autowrap:find-type '<span class="paren2">(<span class="code"><span class="keyword">:struct</span> <span class="paren3">(<span class="code">struct-name</span>)</span></span>)</span></span>)</span></span></code></pre>
+
+<p>This will return the object that represents <code>struct struct_name</code>, or
+nil.  If nothing else, it should be fairly easy to inspect this value
+and look at fields, types, etc.  Accessors are exported for all types
+(or should be); see <code>package.lisp</code> for a complete list.</p>
+
+<p>These values can certainly be useful when doing various tricky things
+with C data, and it&apos;s also certainly possible to manually write
+definitions for every type and generate lisp functions, though for
+records (i.e. struct and union), this requires explicitly specifying
+bit sizes and field layouts.  While probably not directly useful (or
+necessary) for importing C types, these could be useful for generating
+similar definitions via other means than <code>c2ffi</code>.</p>
+
+<h2>Copying</h2>
+
+<p>This is licensed under the <a href="http://opensource.org/licenses/BSD-2-Clause" >BSD
+2-Clause</a> license.</p>

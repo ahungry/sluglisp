@@ -1,0 +1,36 @@
+<h1>hdf5-cffi</h1>
+
+<p><code>hdf5-cffi</code> is a <a href="http://common-lisp.net/project/cffi/" >CFFI</a> wrapper for the HDF5 library. It does <strong>not</strong> provide a LISPy (= pretty) interface to HDF5. All it lets you do is to use HDF5 from Common LISP as you would from C. Not a pleasant sight, but hey, LISP is the <em>programmable programming language</em> (John Foderaro) and your imagination is the limit. If you&lsquo;d like to see Common LISP and HDF5 in action, have a look at Gary Hollis&rsquo; <a href="https://github.com/ghollisjr/cl-ana" >cl-ana</a> package, which was also the main inspiration for this package.</p>
+
+<p>Bindings for FORTRAN, arguably the oldest high-level programming language, were introduced in HDF5 1.4.0, which was released about 13 years ago. LISP, &ldquo;the greatest single programming language ever designed&rdquo; (Alan Kay), has not gotten the attention it deserves.  This is a first step towards rectifying the situation.</p>
+
+<h2>Installation</h2>
+
+<p>Install <code>hdf5-cffi</code> via <a href="http://www.quicklisp.org/" >Quicklisp</a>. The installation might fail because the installer doesn&apos;t
+find the HDF5 header files (<code>hdf5.h</code> &amp; Co.) or the shared library (<code>libhdf5.so</code>). The former are necessary for the CFFI groveller and, yes, you also need a C compiler. If HDF5 is installed in a &ldquo;standard&rdquo; location such as <code>/usr/local</code>
+you should be fine. Otherwise, you might have to adjust your <code>CC</code> and <code>LD_LIBRARY_PATH</code> environment variables, e.g.,
+<code>
+export CC=~/bin/h5cc
+export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
+</code>
+Check out the examples in the <code>examples</code> directory. For example, to run <code>examples/datasets/h5ex-d-checksum.lisp</code> with SBCL,
+open a shell and run <code>sbcl --load examples/datasets/h5ex-d-checksum.lisp</code>. The output should look like this:
+```
+This is SBCL 1.2.5, an implementation of ANSI Common Lisp.
+More information about SBCL is available at <a href="http://www.sbcl.org/">http://www.sbcl.org/</a>.</p>
+
+<p>SBCL is free software, provided as is, with absolutely no warranty.
+It is mostly in the public domain; some portions are provided under
+BSD-style licenses.  See the CREDITS and COPYING files in the
+distribution for more information.
+Filter type is: H5Z_FILTER_FLETCHER32
+Maximum value in DS1 is: 1890
+```
+Enjoy!</p>
+
+<h2>References</h2>
+
+<ol>
+<li><a href="https://github.com/ghollisjr/cl-ana" >Garry Hollis&apos; cl-ana</a></li>
+<li><a href="https://gitorious.org/dh-misc/hdf5" >Daniel Herring&apos;s dh-misc/hdf5</a></li>
+</ol>

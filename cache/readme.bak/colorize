@@ -1,0 +1,34 @@
+<h1>colorize</h1>
+
+<p>colorize is a lisp library for syntax highlighting supporting the following languages:
+* Common Lisp, <code>:common-lisp</code>
+* Emacs Lisp, <code>:elisp</code>
+* Scheme, <code>:scheme</code>
+* Clojure, <code>:clojure</code> <em>alpha</em>
+* C, <code>:c</code>
+* C++, <code>:c++</code>
+* Java, <code>:java</code>
+* Python, <code>:python</code>
+* Erlang, <code>:erlang</code>
+* Haskell, <code>:haskell</code>
+* Objective-C, <code>:objective-c</code>
+* Diff, <code>:diff</code>
+* Webkit, <code>:webkit</code></p>
+
+<h2>Install</h2>
+
+<p>You are strongly encouraged to use this library via <a href="http://quicklisp.org/" >Quicklisp</a>. Simply start your lisp and run: <code>(ql:quickload 'colorize)</code>.</p>
+
+<h2>Getting Started</h2>
+
+<p><a href="http://redlinernotes.com/docs/colorize.html" >The API</a> has three main entry points:</p>
+
+<ol>
+<li>COLORIZE-FILE which takes a language keyword and input file and writes the result to an html file in the same directory. An alternate path for the output file may be provided as a third argument.</li>
+<li>COLORIZE-FILE-TO-STREAM takes a keyword indicating the language, the path of a file to color, and a stream to write the result to. By default, it writes a complete self-contained page but if the :wrap keyword is given nil it only writes the colorized code snippet.</li>
+<li>HTML-COLORIZATION takes a keyword indicating the language and a string of code and returns the colorized html.</li>
+</ol>
+
+<p>In addition, the COLORING-TYPES function takes no arguments and returns a list of the supported coloring types as keywords. Finally, the variable <em>COLORING-CSS</em> returns suggested css code for highlighting the produced html.</p>
+
+<p>That&apos;s all for now. And remember, patches welcome!</p>

@@ -1,0 +1,123 @@
+<h1>Legion</h1>
+
+<p><a href="https://circleci.com/gh/fukamachi/legion" ><img src="https://img.shields.io/circleci/project/fukamachi/legion.svg" alt="Build Status" /></a>
+<a href="https://coveralls.io/r/fukamachi/legion" ><img src="https://coveralls.io/repos/fukamachi/legion/badge.svg?branch=master" alt="Coverage Status" /></a></p>
+
+<blockquote>
+<p>Jesus asked him, &ldquo;What is your name?&rdquo; And he said, &ldquo;My name is Legion, for we are many.&rdquo;
+&#x2500;&#x2500; Gospel of Mark chapter 5, verse 9</p>
+</blockquote>
+
+<h2>Usage</h2>
+
+<h3>Worker</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*worker*</span>
+  <span class="paren2">(<span class="code">make-worker
+    <span class="paren3">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code">out <span class="special">*standard-output*</span></span>)</span></span>)</span>
+      <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code">worker</span>)</span>
+        <span class="paren5">(<span class="code">multiple-value-bind <span class="paren6">(<span class="code">val existsp</span>)</span>
+            <span class="paren6">(<span class="code">next-job worker</span>)</span>
+          <span class="paren6">(<span class="code">format out <span class="string">"Processed: ~S~%"</span> val</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">start-worker <span class="special">*worker*</span></span>)</span>
+
+<span class="paren1">(<span class="code">add-job <span class="special">*worker*</span> 10</span>)</span>
+<span class="paren1">(<span class="code">add-job <span class="special">*worker*</span> <span class="string">"Hi"</span></span>)</span>
+
+<span class="paren1">(<span class="code">stop-worker <span class="special">*worker*</span></span>)</span></span></code></pre>
+
+<h3>Cluster</h3>
+
+<pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defparameter</span></i> <span class="special">*cluster*</span>
+  <span class="paren2">(<span class="code">make-cluster 4
+    <span class="paren3">(<span class="code"><i><span class="symbol">let</span></i> <span class="paren4">(<span class="code"><span class="paren5">(<span class="code">out <span class="special">*standard-output*</span></span>)</span></span>)</span>
+      <span class="paren4">(<span class="code"><i><span class="symbol">lambda</span></i> <span class="paren5">(<span class="code">worker</span>)</span>
+        <span class="paren5">(<span class="code">multiple-value-bind <span class="paren6">(<span class="code">val existsp</span>)</span>
+            <span class="paren6">(<span class="code">next-job worker</span>)</span>
+          <span class="paren6">(<span class="code">format out <span class="string">"Processed: ~S~%"</span> val</span>)</span></span>)</span></span>)</span></span>)</span></span>)</span></span>)</span>
+
+<span class="paren1">(<span class="code">start-cluster <span class="special">*cluster*</span></span>)</span>
+
+<span class="paren1">(<span class="code">add-job <span class="special">*cluster*</span> 10</span>)</span>
+<span class="paren1">(<span class="code">add-job <span class="special">*cluster*</span> <span class="string">"Hi"</span></span>)</span>
+
+<span class="paren1">(<span class="code">stop-cluster <span class="special">*cluster*</span></span>)</span></span></code></pre>
+
+<p>NOTE: Cluster doesn&apos;t guarantee the order of processing jobs.</p>
+
+<h2>Functions</h2>
+
+<h3>[Structure] worker</h3>
+
+<p>Base structure class of workers.</p>
+
+<h3>[Function] (make-worker process-fn &amp;key (queue-size 128))</h3>
+
+<p>Create and return a worker thread which has a fixed-length queue. <code>process-fn</code> is a funcallable object which takes a single value.</p>
+
+<p>You can specify the value by specifying <code>:queue-size</code>. The default value is <code>128</code>.</p>
+
+<h3>[Function] (worker-status worker)</h3>
+
+<p>Return the worker&apos;s status which is specifically one of <code>:running</code>, <code>:idle</code>, <code>:shutting</code> and <code>:shutdown</code>.</p>
+
+<h3>[Function] (worker-queue-count worker)</h3>
+
+<p>Return the number of outstanding jobs of the <code>worker</code>.</p>
+
+<h3>[Function] (start-worker worker)</h3>
+
+<p>Start the given <code>worker</code> to process jobs.</p>
+
+<h3>[Function] (stop-worker worker)</h3>
+
+<p>Stop the given <code>worker</code> after processing its queued jobs.</p>
+
+<h3>[Function] (kill-worker worker)</h3>
+
+<p>Stop the given <code>worker</code> immediately (outstanding jobs will be remained in its queue).</p>
+
+<h3>[Function] (add-job worker-or-cluster val)</h3>
+
+<p>Enqueue a new job <code>val</code> which will be passed to a function specified for <code>make-worker</code>.</p>
+
+<h3>[Function] (next-job worker) &rArr; val, existsp</h3>
+
+<p>Dequeue a job from <code>worker</code>&apos;s queue.</p>
+
+<h3>[Structure] cluster</h3>
+
+<p>Base structure class of clusters.</p>
+
+<h3>[Function] (make-cluster worker-num process-fn &amp;key (queue-size 128) scheduler)</h3>
+
+<p>Create and return a cluster with <code>worker-num</code> workers with <code>process-fn</code>.</p>
+
+<p>You can specify a <code>scheduler</code> function which takes exact 2 arguments &ndash; workers and a job &ndash; for task-scheduling. The default is round-robin scheduler.</p>
+
+<h3>[Function] (cluster-status cluster)</h3>
+
+<p>Return the cluster&apos;s status which is one of <code>:running</code>, <code>:shutting</code> and <code>:shutdown</code>.</p>
+
+<h3>[Function] (start-cluster cluster)</h3>
+
+<p>Start workers of <code>cluster</code>.</p>
+
+<h3>[Function] (cluster-workers cluster) &rArr; workers-array</h3>
+
+<p>Return workers of <code>cluster</code> in simple-array.</p>
+
+<h2>Author</h2>
+
+<ul>
+<li>Eitaro Fukamachi (e.arrows@gmail.com)</li>
+</ul>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2015 Eitaro Fukamachi (e.arrows@gmail.com)</p>
+
+<h2>License</h2>
+
+<p>Licensed under the BSD 2-Clause License.</p>

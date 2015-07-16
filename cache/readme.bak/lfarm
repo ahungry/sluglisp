@@ -1,0 +1,317 @@
+<h1>lfarm</h1>
+
+<p>lfarm is a Common Lisp library for distributing work across machines
+using the <a href="http://lparallel.org" >lparallel</a> API.</p>
+
+<h3>Download</h3>
+
+<p>The easiest way to obtain lfarm is through
+<a href="http://www.quicklisp.org/beta/" >Quicklisp</a>. Alternatively, one may
+<a href="https://github.com/lmj/lfarm.git" >clone the repository</a>.</p>
+
+<h3>Synopsis</h3>
+
+<p>In lparallel a <em>kernel</em> was defined as abstract entity that schedules
+and executes tasks. lparallel implements it with a thread pool, while
+in lfarm it is implemented with a set of servers that execute tasks.</p>
+
+<pre><code>;; Create two servers bound to ports 11111 and 22222.
+(ql:quickload :lfarm-server)
+(lfarm-server:start-server &quot;127.0.0.1&quot; 11111 :background t)
+(lfarm-server:start-server &quot;127.0.0.1&quot; 22222 :background t)
+
+;; Connect to the servers. `lfarm' is a package nickname for `lfarm-client'.
+(ql:quickload :lfarm-client)
+(setf lfarm:*kernel* (lfarm:make-kernel '((&quot;127.0.0.1&quot; 11111)
+                                          (&quot;127.0.0.1&quot; 22222))))
+
+;; Use the lparallel API.
+(defpackage :example (:use :cl :lfarm))
+(in-package :example)
+
+(let ((channel (make-channel)))
+  (submit-task channel #'+ 3 4)
+  (receive-result channel))
+;; =&gt; 7
+
+(let ((f (future (+ 3 4))))
+  (force f))
+;; =&gt; 7
+
+(plet ((x (+ 3 4))
+       (y (+ 5 6)))
+  (+ x y))
+;; =&gt; 18
+
+(pmapcar '1+ #(1 2 3))         ; =&gt; (2 3 4)
+(pmapcar #'1+ #(1 2 3))        ; =&gt; (2 3 4)
+(preduce '+ #(1 2 3))          ; =&gt; 6
+(pmap-reduce '1+ '+ #(1 2 3))  ; =&gt; 9
+</code></pre>
+
+<p>Although the servers in this example are local, lfarm servers may run
+in separate Lisp instances on remote machines.</p>
+
+<h3>Tasks</h3>
+
+<p>There are some restrictions on a task slated for remote execution. A
+task must be</p>
+
+<ol>
+<li>a lambda form, or</li>
+<li>a function that exists on the remote servers, or</li>
+<li>a function defined with <code>deftask</code>.</li>
+</ol>
+
+<p><code>deftask</code> is just like <code>defun</code> except the function definition is
+recorded. (A Lisp implementation may record a function definition, but
+is not required to do so.)</p>
+
+<pre><code>(deftask add (x y)
+  (+ x y))
+
+(let ((channel (make-channel)))
+  (submit-task channel #'add 3 4)
+  (receive-result channel))
+;; =&gt; 7
+</code></pre>
+
+<p><code>submit-task</code> notices that <code>add</code> was defined with <code>deftask</code> and
+converts it to a named lambda before submitting it to a server.</p>
+
+<p>To define <code>add</code> remotely use <code>broadcast-task</code>, which executes a given
+task on all servers.</p>
+
+<pre><code>(broadcast-task (lambda () (defun add (x y) (+ x y))))
+</code></pre>
+
+<p>Or more likely <code>add</code> would be part of a system that is loaded on all
+servers.</p>
+
+<pre><code>(broadcast-task #'ql:quickload :my-stuff)
+</code></pre>
+
+<p>Limited support for closures is available on SBCL, CCL, LispWorks, and
+Allegro. Lexical variables and symbol macrolets are captured, but
+lexical functions (<code>flet</code>, <code>labels</code>) are not.</p>
+
+<p>Tasks are not macroexpanded in order to ensure portability across
+clients and servers.</p>
+
+<h3>API</h3>
+
+<p>The <code>lfarm-client</code> system defines the <code>lfarm-client</code> package which has
+the nickname <code>lfarm</code>. It exports the <a href="http://lparallel.org/api/kernel" >lparallel kernel
+API</a> with the following differences.</p>
+
+<ul>
+<li>tasks have the aforementioned restrictions placed upon them</li>
+<li>the addition of <code>deftask</code></li>
+<li><code>make-kernel</code> expects addresses, and lacks the <code>:context</code> and
+  <code>:bindings</code> arguments</li>
+<li><code>task-handler-bind</code> does not exist</li>
+<li><code>*debug-tasks-p*</code> and <code>*kernel-spin-count*</code> exist but have no effect</li>
+<li><code>submit-task</code> is a macro that wraps <code>submit-task*</code> (see the Details section)</li>
+<li>the addition of <code>broadcast-task</code> which similarly wraps <code>broadcast-task*</code></li>
+<li><code>task-execution-error</code> is signaled when a task fails on a remote
+server, instead of the actual error (which may not have local meaning)</li>
+</ul>
+
+<p><a href="http://lparallel.org/api/promises/" >Promises</a> and a limited number of
+<a href="http://lparallel.org/api/cognates/" >cognates</a> are also available,
+found in the packages <code>lfarm-client.promise</code> and
+<code>lfarm-client.cognate</code> respectively and also exported by
+<code>lfarm-client</code>.</p>
+
+<p>The systems <code>lfarm-server</code> and <code>lfarm-admin</code> provide the following functions.</p>
+
+<ul>
+<li><p><code>lfarm-server:start-server host port &amp;key background name</code> &ndash; Start a
+server instance listening at <code>host</code>:<code>port</code>. If <code>background</code> is true
+then spawn the server in a separate thread named <code>name</code>.</p></li>
+<li><p><code>lfarm-admin:ping host port &amp;key timeout</code> &ndash; Send a ping to the lfarm
+server at <code>host</code>:<code>port</code>. Keep trying to make contact for <code>timeout</code>
+seconds, or if <code>timeout</code> is nil then try forever. Default is 3
+seconds. Returns true if successful and nil otherwise.</p></li>
+<li><p><code>lfarm-admin:end-server host port</code> &ndash; End the server at <code>host</code>:<code>port</code>.
+This only stops new connections from being made. Connections in
+progress are unaffected.</p></li>
+</ul>
+
+<h3>Security</h3>
+
+<p>The purpose of an lfarm server is to execute arbitrary code, so it is
+highly advised to enable some form of security. lfarm directly
+supports Kerberos (or Active Directory) authentication. Alternatively,
+SSH tunnels may be used.</p>
+
+<h4>Security with SSH tunneling</h4>
+
+<pre><code>;; On the remote machine
+(ql:quickload :lfarm-server)
+(lfarm-server:start-server &quot;127.0.0.1&quot; 33333)
+</code></pre>
+
+<p>To create a tunnel,</p>
+
+<pre><code># On the local machine
+$ ssh -f -L 33333:127.0.0.1:33333 &lt;remote-address&gt; -N
+</code></pre>
+
+<p>The remote server should now be accessible locally.</p>
+
+<pre><code>;; On the local machine
+(ql:quickload :lfarm-admin)
+(lfarm-admin:ping &quot;127.0.0.1&quot; 33333) ;=&gt; T
+</code></pre>
+
+<p>Of course there is still local security to consider, as local users on
+both ends have access to the server. If this is a concern then a
+packet filtering tool such as iptables may be used.</p>
+
+<h4>Security with Kerberos/GSSAPI</h4>
+
+<p>The <code>lfarm-gss</code> system provides support for GSSAPI authentication. The
+<code>:auth</code> argument to <code>lfarm-server:start-server</code> and
+<code>lfarm-client:make-kernel</code> accepts an instance of
+<code>lfarm-gss:gss-auth-server</code> and <code>lfarm-gss:gss-auth-client</code>
+respectively.</p>
+
+<p>When creating a server, the class <code>lfarm-gss:gss-auth-server</code> accepts
+the initialization keyword <code>:service-name</code>. This value is indicats
+which service type should be used when requesting a ticket for the
+remote service. The default is <code>lfarm</code>. In other words, if an attempt
+is done to connect to the server at <code>server.example.com</code>, the service
+principal will be <code>lfarm/server.example.com</code>.</p>
+
+<p>When creating a kernel (client), the class <code>lfarm-gss:gss-auth-client</code>
+accepts the initialization keyword <code>:allowed-users</code> which specifies a
+list of all users that are allowed to connect to the server. Each
+element should be a string representing the principal name (including
+realm) of the user that is allowed to connect. For example:
+<code>user@EXAMPLE.COM</code>.</p>
+
+<p>If a more complex authorization mechanism is needed which is not
+covered by the simple user list as described above, you can subclass
+the <code>gss-auth-server</code> class and then implement the method
+<code>lfarm-gss:name-accepted</code> on your new class. This generic function
+takes two arguments, the authentication object and the name to be
+verified, and should return non-NIL if the user is allowed to connect.
+Note that the name is an instance of <code>cl-gss:name</code>, and you need to
+call the function <code>cl-gss:name-to-string</code> on it to extract the actual
+name.</p>
+
+<p>The server needs to have access to the service principal in a keytab
+file. How to create the keytab file depends on your Kerberos server
+implementation:</p>
+
+<ul>
+<li><p>For MIT Kerberos:
+  http://web.mit.edu/kerberos/krb5-1.5/krb5-1.5.4/doc/krb5-admin/Adding-Principals-to-Keytabs.html</p></li>
+<li><p>For Heimdal:
+  http://www.h5l.org/manual/HEAD/info/heimdal/keytabs.html (don&apos;t
+  forget to add the <code>-k</code> flag to specify the file to which the key
+  should be written)</p></li>
+<li><p>For Active Directory:
+  http://technet.microsoft.com/en-us/library/bb742433.aspx</p></li>
+</ul>
+
+<p>Once you have the keytab file, you have to make sure that it is
+loaded. The easiest way to do this is to simply call
+<code>CL-GSS:KRB5-REGISTER-ACCEPTOR-IDENTITY</code> and pass in the name of the
+keytab file.</p>
+
+<p>The other way is to make sure the environment variable <code>KRB5_KTNAME</code>
+is set to the path of the keytab file and that it is readable by the
+lfarm server instance.</p>
+
+<p>If the keytab file has not been loaded, the server will fail to
+authenticate and you will get a security error when the client
+attempts to connect to the server.</p>
+
+<h2>Details</h2>
+
+<p>That covers perhaps all you need to know about lfarm. Those who are
+curious may read on (or not).</p>
+
+<h3>Serialization</h3>
+
+<p>Serialization is done with
+<a href="http://common-lisp.net/project/cl-store/" >cl-store</a>. It uses a
+portable serialization format, allowing lfarm clients and servers to
+run on different Lisp implementations.</p>
+
+<h3>Packages</h3>
+
+<p>A symbol is deserialized on the remote server with its home package
+intact. If the server encounters a symbol whose package does not
+exist, an empty version of the package is automatically generated.</p>
+
+<h3>Connection errors</h3>
+
+<p>The lfarm client is obstinate with regards to connections: if there is
+a connection error then it tries to reconnect, and will continue
+trying. We may therefore restart servers while using the same kernel
+instance, or call <code>make-kernel</code> before any servers exist (the call
+will block until they do).</p>
+
+<p>Note it is possible for a task to be executed twice (or more). If a
+connection error occurs in the time interval after a task has been
+submitted and before its result has been received, the client will
+attempt to submit the task again.</p>
+
+<h3>submit-task</h3>
+
+<p>In lparallel <code>submit-task</code> is a function, but in lfarm it is a macro
+that provides syntactic sugar for the function <code>submit-task*</code>.</p>
+
+<pre><code>(submit-task channel #'+ 3 4)
+;; =macroexpand=&gt; (SUBMIT-TASK* CHANNEL '+ 3 4)
+
+(submit-task channel (lambda (x) (1+ x)) 3)
+;; =macroexpand=&gt; (SUBMIT-TASK* CHANNEL '(LAMBDA (X) (1+ X)) 3)
+</code></pre>
+
+<p><code>submit-task</code> may alter the task argument before giving it to
+<code>submit-task*</code>, which expects a symbol or a lambda form. Sharp-quote
+is replaced with quote, and a lambda form gets quoted. This provides a
+semblance with <code>lparallel:submit-task</code> and relieves us from having to
+write <code>'(lambda ...)</code> and <code>'f</code> in place of <code>(lambda ...)</code> and <code>#'f</code>.</p>
+
+<h3>Logging</h3>
+
+<p>Verbose logging is enabled by binding <code>lfarm-common:*log-level*</code> to
+<code>:info</code> (default is <code>:error</code>). The log stream is
+<code>lfarm-common:*log-stream*</code> (default is <code>*debug-io*</code>).</p>
+
+<h3>Tests</h3>
+
+<p>The lfarm test suite assumes a working ssh executable is present and
+that passwordless authorization has been set up for &ldquo;ssh localhost&rdquo;.
+To run it load the <code>lfarm-test</code> system and call <code>lfarm-test:execute</code>,
+which may be given some configuration options. Unrecognized Lisp
+implementations will require configuration (namely, specifying the
+lisp executable and the command-line switch to eval a form). Tests
+also assume that Quicklisp has been installed (but not necessarily
+loaded), although configuration may remove this assumption.</p>
+
+<h3>Implementation</h3>
+
+<p>The client has an internal lparallel kernel in which each worker
+thread manages a connection to an assigned remote server, one worker
+per server. When a worker connects to a server, the server enters a
+task execution loop wherein a form is deserialized, maybe compiled,
+and funcalled; repeat. A server may serve multiple clients.</p>
+
+<p>Though an async backend is possible, this threaded implementation was
+chosen because it was easy and portable.</p>
+
+<p>Opportunities for optimization in the realm of remote task queues and
+remote task stealing have been callously ignored. Task queues are
+local.</p>
+
+<h3>Author</h3>
+
+<p>James M. Lawrence <a href="m&#x61;&#105;l&#x74;&#111;:&#x6C;&#108;m&#x6A;&#106;m&#x6C;&#108;@&#x67;&#109;a&#x69;&#108;.&#x63;&#111;m">m&#x61;&#105;l&#x74;&#111;:&#x6C;&#108;m&#x6A;&#106;m&#x6C;&#108;@&#x67;&#109;a&#x69;&#108;.&#x63;&#111;m</a></p>
+
+<p>Kerberos support by Elias Martenson <a href="m&#x61;&#105;l&#x74;&#111;:&#x6C;&#111;k&#x65;&#100;h&#x73;&#64;g&#x6D;&#97;i&#x6C;&#46;c&#x6F;&#109;">m&#x61;&#105;l&#x74;&#111;:&#x6C;&#111;k&#x65;&#100;h&#x73;&#64;g&#x6D;&#97;i&#x6C;&#46;c&#x6F;&#109;</a></p>

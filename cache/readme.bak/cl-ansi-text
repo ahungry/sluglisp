@@ -1,0 +1,135 @@
+<h1>cl-ansi-text</h1>
+
+<p>Because color in your terminal is nice.
+<a href="https://travis-ci.org/pnathan/cl-ansi-text" ><img src="https://travis-ci.org/pnathan/cl-ansi-text.svg?branch=master" alt="Build Status" /></a></p>
+
+<h2>Usage example -</h2>
+
+<pre><code><span class="code">* <span class="paren1">(<span class="code">ql:quickload <span class="keyword">:cl-ansi-text</span></span>)</span>
+<span class="comment">;To load "cl-ansi-text":
+</span><span class="comment">;  Load 1 ASDF system:
+</span><span class="comment">;    cl-ansi-text
+</span><span class="comment">;; Loading "cl-ansi-text"
+</span><span class="comment">; =&gt; (:CL-ANSI-TEXT)</span></span></code></pre>
+
+<p>The main macro is called <code>with-color</code>, which creates an enviroment where everything that is put on <code>stream</code> gets colored according to <code>color</code>. Color options are <code>:black</code>, <code>:red</code>, <code>:green</code>, <code>:yellow</code>, <code>:blue</code>, <code>:magenta</code>, <code>:cyan</code> and <code>:white</code>. You can also use a color structure from <code>CL-COLORS</code>, like <code>cl-colors:+red+</code>.</p>
+
+<pre><code><span class="code">* <span class="paren1">(<span class="code">import '<i><span class="symbol">cl-ansi-text:with-color</span></i></span>)</span>
+<span class="comment">; =&gt; T
+</span>* <span class="paren1">(<span class="code"><i><span class="symbol">with-color</span></i> <span class="paren2">(<span class="code"><span class="keyword">:red</span></span>)</span>
+    <span class="paren2">(<span class="code">princ <span class="string">"Gets printed red..."</span></span>)</span>
+    <span class="paren2">(<span class="code">princ <span class="string">"and this too!"</span></span>)</span></span>)</span>
+<span class="comment">; Gets printed red...and this too!
+</span><span class="comment">; =&gt; "and this too!"</span></span></code></pre>
+
+<p>There are also functions with the name of the colors, that return the string, colored:
+<code>lisp
+* (import 'cl-ansi-text:yellow)
+; =&gt; T
+* (yellow &quot;Yellow string&quot;)
+; =&gt; &quot;Yellow string&quot;
+* (princ (yellow &quot;String with yellow background&quot; :style :background))
+; &quot;String with yellow background&quot;
+; =&gt; &quot;String with yellow background&quot;
+* (import 'cl-ansi-text:red)
+; =&gt; T
+* (princ
+   (concatenate
+    'string
+    (yellow &quot;Five&quot;) &quot; test results went &quot; (red &quot;terribly wrong&quot;) &quot;!&quot;))
+; Five test results went terribly wrong!
+; =&gt; &quot;Five test results went terribly wrong!&quot;
+</code>
+At any point, you can bind the <code>*enabled*</code> special variable to <code>nil</code>, and anything inside that binding will not be printed colorfully:
+<code>lisp
+* (let (cl-ansi-text:*enabled*)
+    (princ (red &quot;This string is printed normally&quot;)))
+</code></p>
+
+<h1>API</h1>
+
+<h2>BLUE</h2>
+
+<p>Returns a string with the <code>blue'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>MAGENTA</h2>
+
+<p>Returns a string with the <code>magenta'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>CYAN</h2>
+
+<p>Returns a string with the <code>cyan'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>GREEN</h2>
+
+<p>Returns a string with the <code>green'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>WITH-COLOR</h2>
+
+<p>Writes out the string denoting a switch to <code>color</code>, executes body,
+then writes out the string denoting a <code>reset</code>.</p>
+
+<p><em>enabled</em> dynamically controls expansion..</p>
+
+<h2>YELLOW</h2>
+
+<p>Returns a string with the <code>yellow'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>BLACK</h2>
+
+<p>Returns a string with the <code>black'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2><em>ENABLED</em></h2>
+
+<p>Turns on/off the colorization of functions</p>
+
+<h2>MAKE-COLOR-STRING</h2>
+
+<p>Takes either a cl-color or a list denoting the ANSI colors and
+returns a string sufficient to change to the given color.</p>
+
+<p>Will be dynamically controlled by <em>enabled</em> unless manually specified
+otherwise</p>
+
+<h2>RED</h2>
+
+<p>Returns a string with the <code>red'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>WHITE</h2>
+
+<p>Returns a string with the <code>white'string denotation preppended and the</code>reset&apos; string denotation appended.</p>
+
+<p><em>enabled</em> dynamically controls the function.</p>
+
+<h2>+RESET-COLOR-STRING+</h2>
+
+<p>This string will reset ANSI colors</p>
+
+<h1>Note</h1>
+
+<p>Note that your terminal MUST be ANSI-compliant to show these
+colors. My SLIME REPL (as of Feb 2013) does not display these
+colors. I have to use a typical Linux/OSX terminal to see them.</p>
+
+<p>This has been tested to work on a Linux system with SBCL, CLISP and
+CCL. CCL may not work quite perfectly, some level of conniptions were
+encountered in testing. The interested reader is advised to check the
+MAKE-LOAD-FORM defmethod in cl-ansi-text.lisp.</p>
+
+<p>An earlier variant was tested on OSX 10.6 with SBCL.</p>
+
+<p>License: LLGPL</p>

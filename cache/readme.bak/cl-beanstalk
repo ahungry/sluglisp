@@ -1,0 +1,82 @@
+<h1>CL-BEANSTALK, an Implementation of the beanstalk v1.4.2 protocol in Common Lisp</h1>
+
+<p>CL-BEANSTALK implements the version 1.4.2 of the Beanstalk queuing service protocol. It allows splitting programs into &ldquo;worker&rdquo; parts that execute units of work asynchronously, by fetching them from the beanstalk daemon.</p>
+
+<h2>Installing CL-BEANSTALK</h2>
+
+<p>CL-BEANSTALK requires three CL libraries to run:</p>
+
+<ol>
+<li><a href="http://common-lisp.net/project/usocket" >usocket</a></li>
+<li><a href="http://weitz.de/flexi-streams/" >flexi-streams</a></li>
+<li><a href="http://www.cliki.net/SPLIT-SEQUENCE" >split-sequence</a></li>
+</ol>
+
+<p>All of these libraries are available via <a href="http://quicklisp.org/" >quicklisp</a>.</p>
+
+<h3>Getting cl-beanstalk from quicklisp</h3>
+
+<p>On the lisp REPL, with quicklisp loaded, run:</p>
+
+<pre><code>    (ql:quickload :cl-beanstalk)
+</code></pre>
+
+<p>And you&apos;re done!</p>
+
+<h3>Getting cl-beanstalk from source</h3>
+
+<pre><code>git clone git://github.com/antifuchs/cl-beanstalk.git
+</code></pre>
+
+<p>Then, add the directory to your asdf system definition directory. After this, asdf:load-system should be able to find and load cl-beanstalk.</p>
+
+<h2>Using CL-BEANSTALK</h2>
+
+<p>First, all protocol functions reside in the <strong>BEANSTALK:</strong> package. Their names are the same as in the <a href="http://github.com/kr/beanstalkd/blob/v1.4.2/doc/protocol.txt?raw=true" >beanstalk protocol documentation</a>.</p>
+
+<p>Second, there are several error conditions specified in the protocol document, and all of these map to a specific lisp condition. All error conditions are subtypes of <code>BEANSTALK:BEANSTALK-ERROR</code>. There are several such error conditions, for an exhaustive list see the file <a href="package.lisp" >package.lisp</a>. </p>
+
+<h3>Connecting to the queue server and a little example</h3>
+
+<p>To start using CL-BEANSTALK, you need to connect to a beanstalk daemon. To do this, it provides functions <code>BEANSTALK:CONNECT</code> and <code>BEANSTALK:DISCONNECT</code>, and the macro <code>BEANSTALK:WITH-BEANSTALK-CONNECTION</code>:</p>
+
+<pre><code>(beanstalk:with-beanstalk-connection (conn &quot;localhost&quot; 11300)
+  ;; Put jobs into a specific tube:
+  (beanstalk:use conn &quot;URLs-to-fetch&quot;)
+  ;; Put two pieces of work into the tube, both at priority 100, 
+  ;; no delay, with 180 seconds maximum running time:
+  (beanstalk:put conn 100 0 180 &quot;http://boinkor.net/&quot;)
+  (beanstalk:put conn 100 0 180 &quot;http://planet.lisp.org/&quot;))
+</code></pre>
+
+<h3>Getting work from the queue server</h3>
+
+<p>Workers need to get their units of work from somewhere, and they need to tell the queue server that they have performed (or failed to perform that work). Here&apos;s a simple (meaning, untested) worker implementation that fetches URLs from the tube in the last example and handles them in some way:</p>
+
+<pre><code>(beanstalk:with-beanstalk-connection (conn &quot;localhost&quot; 11300)
+      ;; Get jobs from a specific tube:
+      (beanstalk:watch conn &quot;URLs-to-fetch&quot;)
+      (loop 
+        ;; reserve the next job:
+        (multiple-value-bind (url id status) (beanstalk:reserve conn :timeout 1)
+              ;; If no new jobs arrived within 1 second, quit:
+              (when (eql status :timed-out) (return))
+              (handle-response (drakma:http-request url))
+              ;; The job is done, remove it from the queue:
+              (beanstalk:delete conn id))))
+</code></pre>
+
+<p>Note that this code can run on several worker processes (indeed, worker machines) at once, and perform several thousands units of work in parallel.</p>
+
+<p>For a complete reference, see the <a href="http://github.com/kr/beanstalkd/blob/v1.4.2/doc/protocol.txt?raw=true" >beanstalk protocol documentation</a>.</p>
+
+<h3>Conditions and errors</h3>
+
+<p>Whenever it makes sense to do so, a function signals a non-error condition to highlight an untypical event: For example, if a job is buried instead of put on the &ldquo;ready&rdquo; queue because the server can&apos;t reverve enough memory, that results in a condition being signaled via WARN or SIGNAL.</p>
+
+<p>These functions will signal out-of-band information from the queue server:</p>
+
+<ul>
+<li><code>BEANSTALK:PUT</code> and <code>BEANSTALK:RELEASE</code> will signal <code>beanstalk:buried-job</code> if the queue server ran out of memory while allocating a bigger priority queue. This (along with the third return value, :buried) indicates that the job was not put on the &ldquo;ready&rdquo; queue, but is now buried.</li>
+<li><code>BEANSTALK:RESERVE</code> will signal <code>beanstalk:deadline-soon</code> indicating that a job previously reserved in this worker process (a job that was neither deleted nor released) job is within 1 second of its allocated time to run deadline. The worker can choose to extend the deadline by applying <code>BEANSTALK:TOUCH</code> to the reserved job ID.</li>
+</ul>

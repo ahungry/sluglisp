@@ -1,0 +1,51 @@
+myweb - simple web server written in common lisp for educational reasons (tested on sbcl but should work with other implementations)
+
+Author: Dmitry Geurkov <dmitry_627@mail.ru>
+
+Licensed under LGPL v3 (see LICENSE file)
+
+
+Meaning?
+	It was written so that i could become more acquainted with Common Lisp 
+	It doesn't support parsing of POST requests (if you need it you can implement it)
+	It's not 100% accurate and it might be buggy so it's not for a production use
+	It's not striving to become anything more than a hobby 
+
+Things you need
+	sbcl (or any other Common Lisp implementation)
+	quicklisp (will download all needed dependencies for you)
+
+Depends on 
+	swank
+	usocket
+	bordeaux-threads
+	trivial-utf-8
+	cl-log
+	local-time
+	
+To start type
+	sbcl --load load.lisp
+	
+And then to start web server type
+	(myweb:start-http "localhost" 8080)
+
+Open your browser at http://localhost:8080
+
+Additional start options
+	you can specify worker limit (maximum number of threads that will process http requests) and idle worker number using
+	(myweb:start-http "localhost" 8080 :worker-limit 100 :idle-workers 10)
+	
+Where do i start if i want to have my code?
+	Well first of all you should see handler.lisp
+	This file contains all request processing logic and you can modify
+	it to suite your needs
+	
+What encondings it support?
+	well since it uses trivial-utf-8 it supports only utf-8 enconding sorry
+	
+How can i test load on it?
+	well if you have apache2 installed you could try doing
+	ab -n 10000 -c 10 http://localhost:8080
+
+How can i log something when i'm processing my request?
+	Use myweb.util:log-info myweb.util:log-warning and myweb.util:log-error functions

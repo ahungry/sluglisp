@@ -1,0 +1,60 @@
+This project contains several heap data structures with priority queue
+and melding functionality. The heaps are hard-wired to min-heap only
+functionality on fixnum keys as I needed maximum performance for this
+use case. Since key comparison is in general limited to one or two
+places for every data structure variant only, an extension/re-use for
+max-heap functionality should be trivial.
+
+
+Implemented heap data structures and their properties are collected in
+the table below.
+
+Executive summary: for almost all cases the 'pairing heap' should give
+                   you the best performance. The 'rank pairing heap'
+                   has slightly worse overall performance but better
+                   worst case behaviour.
+
+The different heap data structures posess the following computational
+complexities (amortized complexity is annotated with a '*'):
+
+binary heap:
+- insert O(lg n)
+- find/peek min O(1)
+- delete min O(lg n)
+- delete node O(lg n)
+- decrease key O(lg n)
+- meld O(lg n)
+
+splay heap:
+- insert O(lg n)*
+- find/peek min O(lg n)*
+- delete min O(lg n)*
+- delete node O(lg n)*
+- decrease key N/A
+- meld N/A
+
+fibonacci heap:
+- insert O(1)*
+- find/peek min O(1)*
+- delete min O(lg n)*
+- delete node O(lg n)*
+- decrease key O(1)*
+- meld O(1)*
+
+pairing heap and variants:
+- insert O(1)*
+- find/peek min O(1)*
+- delete min O(lg n)*
+- delete node O(lg n)*
+- decrease key O(1)*
+- meld O(1)*
+
+violation heap:
+- insert O(1)*
+- find/peek min O(1)*
+- delete min O(lg n)*
+- delete node O(lg n)*
+- decrease key O(1)*
+- meld O(1)*
+
+

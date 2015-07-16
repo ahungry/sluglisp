@@ -1,0 +1,43 @@
+cl-m4 - Common Lisp re-implementation of GNU M4
+===============================================
+cl-m4 is a complete M4 implementation from scratch targeted at GNU M4
+compatibility.
+
+cl-m4 is completely written in Common Lisp and licensed under the
+GPLv3+[1]. Please see the file COPYING in the top-level directory of the
+distribution tarball or see the link at [1] if you didn't receive a copy along
+with this file.
+
+Since distribution in binary form requires static linking of Common Lisp
+libraries, distribution *must* include the file CREDITS also found in mentioned
+top-level directory to respect copyright of the respective holders.
+
+
+Installation
+============
+Please see file INSTALL.
+
+
+Links and References
+====================
+Homepage:           http://www.cliki.net/cl-m4
+Hacking:            http://github.com/e-user/cl-m4
+
+[1] http://www.gnu.org/licenses/gpl-3.0-standalone.html
+
+
+--------------------------------------------------------------------------------
+Copyright (C) 2009, 2010  Alexander Kahl <e-user@fsfe.org>
+This file is part of cl-m4.
+cl-m4 is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+cl-m4 is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

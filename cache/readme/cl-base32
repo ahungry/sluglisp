@@ -1,0 +1,16 @@
+CL-Base32 is a Common Lisp library for encoding / decoding bytes to / from base32 strings
+(e.g., RFC 4648).
+
+One advantage of base32 encoding is that the resulting strings do not require URL encoding
+for use in an URL, as the base32 alphabet contains no characters that must be encoded
+to appear in an URL.
+
+This package is intended to be portable across as many Common Lisp implementations
+and platforms as possible.  Any issues with such portability should be reported
+phil@haphazardhouse.net.
+
+Known to work on CCL & SBCL for Mac OS X.
+
+Current source can be found here: http://github.com/hargettp/cl-base32. 
+
+Home page is here: http://haphazardhouse.net/projects/cl-base32.

@@ -1,0 +1,15 @@
+cl-libusb provides an easy interface to libusb-0.1. There are two
+systems/packages: libusb-ffi, which provides a (somewhat lispified)
+ffi to libusb-0.1, and cl-libusb, which provides an easier interface.
+
+Buffers are dealt with using unsigned byte arrays from grid and
+foreign-array.
+
+libusb-ffi (and thus cl-libusb) is not complete, but should be usable.
+
+Tested and found to work on:
+linux amd64 (sbcl)
+Windows XP Professional 32-bit (clisp, mingw)
+
+To do: Antik is larger than what cl-libusb requires; use static-vectors
+instead.

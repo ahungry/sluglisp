@@ -1,0 +1,77 @@
+This is an alpha release of foreign-numeric-vector, a package of
+functions and accessors for working with numeric vectors stored in the
+foreign (non-Lisp) heap.  The hope is that this package will be useful
+for implementing foreign function interfaces to foreign libraries
+(e.g. BLAS, LAPACK, FFTW).  It is especially useful for wrapping
+libraries portably across CL implementations which vary in their
+choices of boxing or unboxing of individual elements of native arrays,
+and which may or may not offer the ability to protect an array from
+being moved by the CL garbage collector.
+
+foreign-numeric-vector requires CFFI and ITERATE.  The dependence on
+CFFI is fundamental.  The dependence on ITERATE could be removed
+fairly easily.  I had originally thought that a good approach would be
+to use iterate to integrate the foreign-numeric-vectors with other
+sequences.  Currently, it is not clear to me that ITERATE makes it
+sufficiently easy to generate sufficiently efficient code; this is
+something I need to investigate further.
+
+There is no real documentation, but usage is fairly straightforward.
+Basic usage (showing a couple different modes of access, and using
+some included utilities) looks something like:
+
+    
+(defun double-float-readme-example (length)
+  (let ((fnv (make-fnv-double length)))
+    (fixtimes (i length)
+      (setf (fnv-double-ref fnv i) (random 1.0d0)))
+    
+    (let ((sum 0.0d0))
+      (declare (type double-float sum))
+      (over-fnv-double (v) fnv
+	(dfinc sum v))
+      (format t "Sum of array is ~A~%" sum))
+
+    (sort-fnv-double-<! fnv)
+    (format t "The smallest few entries: ~A~%" fnv)
+    (sort-fnv-double->! fnv)
+    (format t "The largest few entries: ~A~%" fnv)
+    ))
+	
+See the file examples.lisp for some basic examples, discussion of
+efficient choices, and some benchmarks to run.
+
+Substantial effort has been made to make foreign-numeric-vector
+efficient.  We make great use of type declarations and compiler macros
+to promote inlining.  We are of course reliant on the underlying
+compilers and foreign function interfaces, and on CFFI.  For instance,
+on SBCL, it is much faster to use mem-ref rather than mem-aref, making
+our own guarantees that the index to byte conversion involves only
+fixnums.  More testing is required, but preliminary testing on SBCL
+indicates that for double-float operations, we are competitive with
+native array accesses in all cases.  For complex double-floats,
+writing the complex number #C(1.0d0 1.0d0) to a foreign-numeric-vector
+is about twice as slow as writing it to a native array, but adding up
+a bunch of complex numbers is about the same speed.  Sorting is quite
+efficient, because the comparison functions are required at compile
+time and get inlined.  We use a template style architecture and
+macro-generating-macros to make the operations on different types.
+
+The code is released under the BSD license without the advertising
+clause (see LICENSE).  
+
+As of 04 November 2006, this code is available at
+http://middleangle.com/rif/software/fnv-alpha-2.tar.gz
+
+All comments, suggestions, performance reports, and assistance should
+be sent to
+
+rif
+rif@mit.edu
+
+;;;; Continuation
+
+Additional maintainance by AJ Rossini <blindglobe@gmail.com>,
+distributed via github (http://github.com/blindglobe/fnv.git) 
+(FIXME: VERIFY URL!).
+
