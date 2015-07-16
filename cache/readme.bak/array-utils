@@ -1,3 +1,0 @@
-<h2>About Array-Utils</h2>
-
-<p>A miniature toolkit that contains some useful shifting/popping/pushing functions for arrays and vectors. This exists mostly because I&apos;ve used these functions in multiple places already, so splitting it off into its own thing is a good idea. Originally from <a href="http://shinmera.github.io/plump/" >Plump</a>.</p>

@@ -1,8 +1,0 @@
-<h1>bytecurry.asdf-ext</h1>
-
-<p>ASDF extensions</p>
-
-<p>Some ASDF extensions.
-At the moment there are two packages:
-- <em>bytecurry.asdf-ext/doc-op</em> &ndash; Adds a doc-op operation.
-- <em>bytecurry.asdf-ext/atdoc</em> &ndash; Adds a component to generate atdoc documentation.</p>
