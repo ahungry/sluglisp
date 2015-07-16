@@ -19,6 +19,10 @@
 (defparameter *project-stars* (make-hash-table :test #'equal))
 (defparameter *loaded-projects-p* nil)
 
+(defun reset-cache ()
+  (defparameter *project-readme* (make-hash-table :test #'equal))
+  (defparameter *project-stars* (make-hash-table :test #'equal)))
+
 (defun read-and-cache-projects ()
   "get the list of packages"
   (setf *loaded-projects-p* t)
@@ -92,7 +96,7 @@ cl-json."
   "Load up a previously cached file"
   (let ((file-name (format nil "~~/src/lisp/sluglisp/cache/~a/~a" type name)))
     (when (probe-file file-name)
-      (format nil "~{~a~%~}"
+      (format nil "~{~a~^~%~}"
               (with-open-file (s file-name)
                 (loop for line = (read-line s nil 'eof)
                    until (eq line 'eof)
@@ -117,10 +121,15 @@ cl-json."
 
 (defun package-stars (name)
   "Pull out the package stars or get the remote endpoint"
-  (if (gethash name *project-stars*) (gethash name *project-stars*)
-      (setf (gethash name *project-stars*)
-            (or (cache-load name "stars")
-                (cache-save name "stars" (package-stars-remote name))))))
+  (unless (gethash name *project-stars*)
+    (setf (gethash name *project-stars*)
+          (or (cache-load name "stars")
+              (cache-save name "stars" (package-stars-remote name)))))
+  (when (equal (gethash name *project-stars*) "0")
+    (setf (gethash name *project-stars*)
+          (cache-save name "stars" (package-stars-remote name))))
+  (gethash name *project-stars*))
+
 
 (defun package-readme-remote (name)
   "Get the readme data remotely"
