@@ -1,0 +1,113 @@
+cl-ewkb is a geospatial library, based on cl-wkb, that implements the OGC Well-Known Binary geographic geometry data model with PostGIS 3d, 4d extensions, and provides WKB and EWKB encoding and decoding functionality. cl-wkb author is J.P. Larocue.
+Library also provide module cl-wkb, which has CLOS-based API like http://enroutesystems.com/software/cl-wkb/ with PostGIS extensions.
+
+Depends on:
+ ieee-floats
+ flexi-streams
+
+PostGIS extension WKB is described in postgis-1.5/doc/ZMSgeoms.txt
+All extensions are supported: 3dz, 3dm, 4d, embedded SRID.
+
+Exported structs
+
+point-primitive x y
+pointz-primitive x y z
+pointm-primitive x y m
+pointzm-primitive x y z m
+point-primtive structs contain coordinates (2d, 3d, 4d)
+
+
+linear-ring points-primitive
+linear-ring struct contains array of point-primitive
+
+geometry type srid
+geometry parent struct for other types and also contains "GEOMETRYCOLLECTION"
+
+point type srid point-primitive
+line-string type srid points-primitive
+polygon type srid linear-rings
+multi-point type srid points
+multi-line-string type srid line-strings
+multi-polygon type srid polygons
+geometry-collection type srid geometries
+
+Exported functions
+
+(decode octets)
+Decode from wkb sequence
+(decode-from stream)
+Decode from wkb stream
+
+Functions for encoding:
+
+(encode object endianness)
+Encode object to vector
+
+(encode-to object stream endianness)
+Encode object to stream with endianness
+
+Example:
+
+Getting data from postgresql and decode it:
+
+(decode (caar (postmodern:query (:select (:ST_AsEWKB "SRID=4326;LINESTRING(0 0 1 2, 1 1 2 3, 2 2 3 4)")))))
+
+Result:
+
+#(CL-EWKB::GISGEOMETRY 3758096386 4326
+  #(CL-EWKB::LINEAR-RING
+    #(#(CL-EWKB::POINT-PRIMITIVE 0.0d0 0.0d0 CL-EWKB::POINTZ-PRIMITIVE 1.0d0
+        CL-EWKB::POINTZM-PRIMITIVE 2.0d0)
+      #(CL-EWKB::POINT-PRIMITIVE 1.0d0 1.0d0 CL-EWKB::POINTZ-PRIMITIVE 2.0d0
+        CL-EWKB::POINTZM-PRIMITIVE 3.0d0)
+      #(CL-EWKB::POINT-PRIMITIVE 2.0d0 2.0d0 CL-EWKB::POINTZ-PRIMITIVE 3.0d0
+        CL-EWKB::POINTZM-PRIMITIVE 4.0d0)))
+  CL-EWKB::LINESTRING)
+
+
+Drawing data with opengl (using cl-opengl):
+
+Draw pointXX-primitive
+
+(defun draw-point-primitive (point)
+    (cond
+        ((point-primitive-p point)
+            (gl:vertex
+                (point-primitive-x point)
+                (point-primitive-y point)))
+        ((pointz-primitive-p point)
+            (gl:vertex
+                (point-primitive-x point)
+                (point-primitive-y point)
+                (pointz-primitive-z point)))
+        ((pointm-primitive-p point)
+            (gl:vertex
+                (point-primitive-x point)
+                (point-primitive-y point)
+                0.0
+                (pointm-primitive-m point)))
+        ((pointzm-primitive-p point)
+            (gl:vertex
+                (point-primitive-x point)
+                (point-primitive-y point)
+                (pointz-primitive-z point)
+                (pointzm-primitive-m point)))))
+
+Drawing objects
+
+(defun draw-point (point)
+    (gl:with-primitives :points
+        (draw-point-primitive (point-primitive point))))
+
+(defun draw-points (line-string)
+    (gl:with-primitives :line-strip
+        (map 'nil (lambda (point) (draw-point-primitive point))
+             (line-string-points-primitive line-string))))
+
+
+General drawing function
+
+(defun draw-gisobject (object)
+    (cond
+        ((point-p object) (draw-point object))
+        ((line-string-p object) (draw-points object))))
