@@ -114,11 +114,13 @@ cl-json."
 
 (defun package-stars-remote (name)
   "Get the stargazers from github"
-  (or (let* ((source (package-source name))
-             (stars-url (build-github-stargazers-url (cadr source))))
-        (when (and (equal "git" (car source))
-                   stars-url)
-          (jkey :stargazers--count (remote-json-request stars-url)))) 0))
+  (let ((source (package-source name)))
+    (if source
+      (or (let ((stars-url (build-github-stargazers-url (cadr source))))
+            (when (and (equal "git" (car source))
+                       stars-url)
+              (jkey :stargazers--count (remote-json-request stars-url)))) 0)
+      0)))
 
 (defun package-stars (name)
   "Pull out the package stars or get the remote endpoint"
