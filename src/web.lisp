@@ -42,15 +42,16 @@
              ))))
 
 (defroute "/package/*" (&key splat)
-  (render #P"package.html"
-          (list
-           :package (list :name (car splat)
-                          :type (car (package-source (car splat)))
-                          :href (build-github-href (cadr (package-source (car splat))))
-                          :remote (cadr (package-source (car splat)))
-                          :stars (package-stars (car splat))
-                          :readme (package-readme (car splat))
-                          ))))
+  (let ((package-source (package-source (car splat))))
+    (render #P"package.html"
+            (list
+             :package (list :name (car splat)
+                            :type (car package-source)
+                            :href (if package-source (build-github-href package-source) "")
+                            :remote (cadr package-source)
+                            :stars (package-stars (car splat))
+                            :readme (package-readme (car splat))
+                            )))))
 
 
 ;;
