@@ -43,16 +43,17 @@
 
 (defroute "/package/*" (&key splat)
   (let ((package-source (package-source (car splat))))
-    (render #P"package.html"
-            (list
-             :package (list :name (car splat)
-                            :type (car package-source)
-                            :href (if package-source (build-github-href package-source) "")
-                            :remote (cadr package-source)
-                            :stars (package-stars (car splat))
-                            :readme (package-readme (car splat))
-                            )))))
-
+    (if package-source
+        (render #P"package.html"
+                (list
+                 :package (list :name (car splat)
+                                :type (car package-source)
+                                :href (build-github-href (cadr package-source))
+                                :remote (cadr package-source)
+                                :stars (package-stars (car splat))
+                                :readme (package-readme (car splat))
+                                )))
+        (throw-code 404))))
 
 ;;
 ;; Error pages
