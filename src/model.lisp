@@ -67,6 +67,11 @@
    ~"(https|git|http)://github.com(.*).git"~ → |"https://raw.githubusercontent.com\\2/master/README"|)
 
 ;; https://github.com/ahungry/glyphs.git
+;; https://raw.githubusercontent.com/ahungry/glyphs/master/README.org
+(ƒ build-github-readme-url-org
+   ~"(https|git|http)://github.com(.*).git"~ → |"https://raw.githubusercontent.com\\2/master/README.org"|)
+
+;; https://github.com/ahungry/glyphs.git
 ;; https://api.github.com/repos/ahungry/glyphs/stargazers
 (ƒ build-github-stargazers-url
    ~"(https|git|http)://github.com(.*).git"~ → |"https://api.github.com/repos\\2"|)
@@ -146,6 +151,8 @@ cl-json."
           (setf readme-html (drakma:http-request (build-github-readme-url-long (cadr source)))))
         (unless (stringp readme-html)
           (setf readme-html (drakma:http-request (build-github-readme-url-tiny (cadr source)))))
+        (unless (stringp readme-html)
+          (setf readme-html (drakma:http-request (build-github-readme-url-org (cadr source)))))
         readme-html))))
 
 (defun package-readme (name)
