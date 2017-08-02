@@ -48,9 +48,8 @@ a:hover {
     z-index:9;
     text-align:left;
     margin-right:10px;
-    height:180px;
+    min-height:180px;
     padding:10px;
-    max-height:30%;
 }
 
 #plist {
@@ -143,7 +142,7 @@ a:hover {
     #plist {
         border-bottom:2px solid #bbb;
         box-shadow:3px 3px 6px #000 inset;
-        height:200px;
+        min-height:200px;
         position:absolute;
         width:100%;
         margin-top:150px;
@@ -164,7 +163,7 @@ a:hover {
         padding-top:400px;
     }
     #filter-area {
-        height:150px;
+        min-height:150px;
         width:100%;
     }
     #filter-area input {
